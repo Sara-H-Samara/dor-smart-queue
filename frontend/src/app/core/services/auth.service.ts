@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
-
+import { environment } from '../../../environments/environment';
 import { LoginRequest, LoginResponse, RegisterRequest, Role, User } from '../models/auth.model';
 
 const TOKEN_KEY = 'dor_token';
@@ -15,7 +15,7 @@ interface Session {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = '/api/auth';
+  private readonly apiUrl = `${environment.apiUrl}/api/auth`;
 
   private readonly session = signal<Session | null>(this.readSession());
 
