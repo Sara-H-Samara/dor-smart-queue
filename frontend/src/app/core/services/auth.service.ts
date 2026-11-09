@@ -4,10 +4,11 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginRequest, LoginResponse, RegisterRequest, Role, User } from '../models/auth.model';
 
-const TOKEN_KEY = 'dor_token';
-const SESSION_KEY = 'dor_session';
+const STORAGE_KEY = 'dor_auth';
+const ROLES: readonly Role[] = ['STUDENT', 'STAFF', 'ADMIN'];
 
 interface Session {
+  token: string;
   fullName: string;
   role: Role;
 }
@@ -34,30 +35,65 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(SESSION_KEY);
+    this.clearStorage();
     this.session.set(null);
   }
 
   getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    return this.session()?.token ?? null;
   }
 
   private saveSession(response: LoginResponse): void {
-    const session: Session = { fullName: response.fullName, role: response.role };
-    localStorage.setItem(TOKEN_KEY, response.token);
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    const session: Session = {
+      token: response.token,
+      fullName: response.fullName,
+      role: response.role,
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    } catch {
+      // Storage is blocked: the session still works in memory until reload.
+    }
     this.session.set(session);
   }
 
   private readSession(): Session | null {
-    if (!localStorage.getItem(TOKEN_KEY)) {
-      return null;
-    }
+    let raw: string | null;
     try {
-      return JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null') as Session | null;
+      raw = localStorage.getItem(STORAGE_KEY);
     } catch {
       return null;
+    }
+    if (raw === null) {
+      return null;
+    }
+
+    try {
+      const data: unknown = JSON.parse(raw);
+      if (typeof data === 'object' && data !== null) {
+        const { token, fullName, role } = data as Record<string, unknown>;
+        if (
+          typeof token === 'string' &&
+          token.length > 0 &&
+          typeof fullName === 'string' &&
+          typeof role === 'string' &&
+          (ROLES as readonly string[]).includes(role)
+        ) {
+          return { token, fullName, role: role as Role };
+        }
+      }
+    } catch {
+      // Invalid JSON falls through to clearing the storage.
+    }
+    this.clearStorage();
+    return null;
+  }
+
+  private clearStorage(): void {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore: storage is blocked.
     }
   }
 }
