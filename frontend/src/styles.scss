@@ -106,6 +106,16 @@ h1 {
   border-radius: 10px;
 }
 
+.notice {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.875rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
 .btn {
   width: 100%;
   min-height: 44px;

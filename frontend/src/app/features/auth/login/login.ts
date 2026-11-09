@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ROLE_HOME } from '../../../core/role-routes';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -15,9 +15,11 @@ export class Login {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal('');
+  protected readonly justRegistered = this.route.snapshot.queryParamMap.get('registered') === '1';
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
