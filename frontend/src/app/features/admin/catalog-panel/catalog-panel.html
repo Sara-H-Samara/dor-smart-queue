@@ -5,7 +5,7 @@
     <p class="alert" role="alert">{{ message }}</p>
   }
 
-  <form class="add-form" (ngSubmit)="add()">
+  <form class="add-form" (submit)="$event.preventDefault(); add()">
     <div class="field">
       <label [for]="resource() + '-new'">New name</label>
       <input [id]="resource() + '-new'" type="text" maxlength="100" [formControl]="addControl" />
@@ -25,7 +25,7 @@
       @for (item of items(); track item.id) {
         <li class="item">
           @if (editingId() === item.id) {
-            <form class="edit-form" (ngSubmit)="saveEdit(item)">
+            <form class="edit-form" (submit)="$event.preventDefault(); saveEdit(item)">
               <div class="field">
                 <label [for]="resource() + '-rename-' + item.id">New name for {{ item.name }}</label>
                 <input
