@@ -27,13 +27,9 @@ and no way to leave the office while they wait.
 ## Project structure
 - `backend/`: Spring Boot server (controller, service, repository layers)
 - `frontend/`: Angular interface
-- `docs/`: roadmap, requirements, database and API design
 
 ## How to run
 Coming in Release 1.
-
-## Roadmap
-See [docs/roadmap.md](docs/roadmap.md).
 
 ## License
 MIT
