@@ -1,0 +1,14 @@
+<main class="admin-page">
+  <header class="admin-header">
+    <div>
+      <h1>Admin</h1>
+      <p class="subtitle">Signed in as {{ fullName() }}.</p>
+    </div>
+    <button class="btn btn-secondary" type="button" (click)="logout()">Sign out</button>
+  </header>
+
+  <div class="panels">
+    <app-catalog-panel resource="services" title="Services" />
+    <app-catalog-panel resource="counters" title="Counters" />
+  </div>
+</main>

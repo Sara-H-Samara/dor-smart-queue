@@ -1,0 +1,80 @@
+:host {
+  display: block;
+}
+
+.panel {
+  max-width: none;
+}
+
+h2 {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.add-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+
+  .field {
+    flex: 1 1 12rem;
+    margin-bottom: 0;
+  }
+
+  .btn {
+    width: auto;
+    padding: 0 1.25rem;
+  }
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.name {
+  flex: 1 1 8rem;
+  font-weight: 500;
+}
+
+.status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+
+  &.inactive {
+    color: var(--text-muted);
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.edit-form {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+
+  .field {
+    flex: 1 1 12rem;
+    margin-bottom: 0;
+  }
+}

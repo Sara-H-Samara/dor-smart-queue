@@ -1,0 +1,66 @@
+<section class="card panel" [attr.aria-labelledby]="resource() + '-heading'">
+  <h2 [id]="resource() + '-heading'">{{ title() }}</h2>
+
+  @if (error(); as message) {
+    <p class="alert" role="alert">{{ message }}</p>
+  }
+
+  <form class="add-form" (ngSubmit)="add()">
+    <div class="field">
+      <label [for]="resource() + '-new'">New name</label>
+      <input [id]="resource() + '-new'" type="text" maxlength="100" [formControl]="addControl" />
+      @if (addControl.touched && addControl.invalid) {
+        <p class="field-error" role="alert">Name is required.</p>
+      }
+    </div>
+    <button class="btn" type="submit" [disabled]="busy()">Add {{ title() }}</button>
+  </form>
+
+  @if (loading() && items().length === 0) {
+    <p class="notice" role="status">Loading…</p>
+  } @else if (items().length === 0) {
+    <p class="notice">Nothing here yet.</p>
+  } @else {
+    <ul class="items">
+      @for (item of items(); track item.id) {
+        <li class="item">
+          @if (editingId() === item.id) {
+            <form class="edit-form" (ngSubmit)="saveEdit(item)">
+              <div class="field">
+                <label [for]="resource() + '-rename-' + item.id">New name for {{ item.name }}</label>
+                <input
+                  [id]="resource() + '-rename-' + item.id"
+                  type="text"
+                  maxlength="100"
+                  [formControl]="renameControl"
+                />
+                @if (renameControl.touched && renameControl.invalid) {
+                  <p class="field-error" role="alert">Name is required.</p>
+                }
+              </div>
+              <div class="actions">
+                <button class="btn btn-secondary" type="submit" [disabled]="busy()">Save name</button>
+                <button class="btn btn-secondary" type="button" [disabled]="busy()" (click)="cancelEdit()">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          } @else {
+            <span class="name">{{ item.name }}</span>
+            <span class="status" [class.inactive]="!item.active">
+              {{ item.active ? 'Active' : 'Inactive' }}
+            </span>
+            <div class="actions">
+              <button class="btn btn-secondary" type="button" [disabled]="busy()" (click)="startEdit(item)">
+                Rename {{ item.name }}
+              </button>
+              <button class="btn btn-secondary" type="button" [disabled]="busy()" (click)="toggle(item)">
+                {{ item.active ? 'Deactivate' : 'Activate' }} {{ item.name }}
+              </button>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
