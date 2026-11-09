@@ -1,13 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideRouter([])],
     }).compileComponents();
   });
 
@@ -16,12 +15,10 @@ describe('App', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should show the backend status', async () => {
+  it('should render a router outlet', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
-    TestBed.inject(HttpTestingController).expectOne('/api/health').flush('OK');
-    await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('p')?.textContent).toContain('Backend status: OK');
+    expect(compiled.querySelector('router-outlet')).not.toBeNull();
   });
 });
