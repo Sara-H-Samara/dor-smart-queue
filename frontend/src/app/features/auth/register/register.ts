@@ -2,7 +2,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { switchMap } from 'rxjs';
 
 import { ROLE_HOME } from '../../../core/role-routes';
 import { AuthService } from '../../../core/services/auth.service';
@@ -38,19 +37,22 @@ export class Register {
 
     const { fullName, email, password } = this.form.getRawValue();
 
-    this.auth
-      .register({ fullName, email, password })
-      .pipe(switchMap(() => this.auth.login({ email, password })))
-      .subscribe({
-        next: (response) => this.router.navigateByUrl(ROLE_HOME[response.role]),
-        error: (error: HttpErrorResponse) => {
-          this.loading.set(false);
-          this.errorMessage.set(
-            error.status === 409
-              ? 'This email is already registered.'
-              : 'Could not create the account. Check your details and try again.',
-          );
-        },
-      });
+    this.auth.register({ fullName, email, password }).subscribe({
+      next: () => {
+        this.auth.login({ email, password }).subscribe({
+          next: (response) => this.router.navigateByUrl(ROLE_HOME[response.role]),
+          error: () =>
+            this.router.navigate(['/login'], { queryParams: { registered: 1 } }),
+        });
+      },
+      error: (error: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.errorMessage.set(
+          error.status === 409
+            ? 'This email is already registered.'
+            : 'Could not create the account. Check your details and try again.',
+        );
+      },
+    });
   }
 }
