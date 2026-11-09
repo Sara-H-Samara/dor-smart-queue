@@ -178,8 +178,8 @@ class AuthControllerTest {
     void adminEndpoint_asAdmin_passesTheRoleCheck() throws Exception {
         String token = loginAndGetToken("admin@dor.com", "admin12345");
 
-        // 404 until the admin services endpoint is built on Day 4. The point is: not 401 and not 403.
+        // The admin services endpoint exists now, so an admin gets 200 (not 401 and not 403).
         mockMvc.perform(get("/api/admin/services").header("Authorization", "Bearer " + token))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
     }
 }
