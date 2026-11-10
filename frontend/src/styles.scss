@@ -1,28 +1,121 @@
+/*
+ * Dor design foundation.
+ * Source: the approved design reference (dor-design-reference.html).
+ *
+ * Rules:
+ * - One system font stack, 4 text sizes (34, 22, 17, 14 px) plus the ticket number, 2 weights (400, 700).
+ * - Light is the default; dark follows prefers-color-scheme.
+ * - Every text and control color pair is checked for WCAG 2.2 AA (4.5:1 text, 3:1 controls and borders).
+ * - The old variable names (--bg, --surface, --text, ...) stay as aliases so existing screens keep working.
+ */
+
 :root {
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-  --bg: #f5f5f7;
-  --surface: #ffffff;
-  --text: #1d1d1f;
-  --text-muted: #6e6e73;
-  --accent: #0071e3;
-  --accent-hover: #0077ed;
-  --danger: #d70015;
-  --border: #d2d2d7;
-  --radius: 14px;
-  --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  color-scheme: light dark;
+
+  /* ---- Typography ---- */
+  --font-family: -apple-system, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  --fs-large-title: 2.125rem; /* 34px */
+  --fs-title: 1.375rem; /* 22px */
+  --fs-body: 1.0625rem; /* 17px */
+  --fs-small: 0.875rem; /* 14px */
+  --fs-ticket-number: 5.5rem; /* 88px, the only size above the four */
+  --fw-regular: 400;
+  --fw-bold: 700;
+  --lh-tight: 1.15;
+  --lh-body: 1.4;
+
+  /* ---- Spacing scale (4px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* ---- Radii ---- */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* ---- Sizing ---- */
+  --control-height: 3rem; /* 48px, above the 24px minimum target size */
+  --focus-width: 2px;
+  --focus-offset: 2px;
+
+  /* ---- Color: surfaces and text (light) ---- */
+  --color-bg: #f4f2ec;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1c;
+  --color-text-muted: #5f5f64;
+  --color-border-strong: #7a7a7e; /* inputs and outlined controls, at least 3:1 */
+  --color-separator: rgba(60, 60, 67, 0.18); /* decorative hairlines only */
+
+  /* ---- Color: brand and actions (light) ---- */
+  --color-brand: #1b45b8; /* primary button background */
+  --color-brand-hover: #153a9c;
+  --color-on-brand: #ffffff;
+  --color-link: #1b45b8; /* links, quiet buttons, focus ring */
+  --color-danger: #b3261e;
+
+  /* ---- Color: ticket states (light), text on tint ---- */
+  --state-waiting-bg: #ffefc7;
+  --state-waiting-fg: #6f3e00;
+  --state-called-bg: #d6f2dd;
+  --state-called-fg: #0d5527;
+  --state-served-bg: #e4e5ea;
+  --state-served-fg: #34383f;
+  --state-noshow-bg: #ffe0dc;
+  --state-noshow-fg: #8f1a14;
+
+  /* ---- Elevation ---- */
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.05);
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration: 0.18s;
+
+  /* ---- Old names kept as aliases (do not remove while screens use them) ---- */
+  --font: var(--font-family);
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --text: var(--color-text);
+  --text-muted: var(--color-text-muted);
+  --accent: var(--color-link);
+  --accent-hover: var(--color-brand-hover);
+  --danger: var(--color-danger);
+  --border: var(--color-border-strong);
+  --radius: var(--radius-lg);
+  --shadow: var(--shadow-soft);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111113;
-    --surface: #1c1c1e;
-    --text: #f5f5f7;
-    --text-muted: #a1a1a6;
-    --accent: #0a84ff;
-    --accent-hover: #409cff;
-    --danger: #ff6961;
-    --border: #38383a;
-    --shadow: none;
+    --color-bg: #0c0c0e;
+    --color-surface: #1b1b1e;
+    --color-text: #f5f5f7;
+    --color-text-muted: #a5a5ac;
+    --color-border-strong: #8e8e93;
+    --color-separator: rgba(235, 235, 245, 0.16);
+
+    --color-brand: #2f5fe0;
+    --color-brand-hover: #2551c4;
+    --color-on-brand: #ffffff;
+    --color-link: #8eb1ff;
+    --color-danger: #ff8f88;
+
+    --state-waiting-bg: #3b2b05;
+    --state-waiting-fg: #ffd27d;
+    --state-called-bg: #123d22;
+    --state-called-fg: #86e6a3;
+    --state-served-bg: #2b2e36;
+    --state-served-fg: #cdd1da;
+    --state-noshow-bg: #471a1a;
+    --state-noshow-fg: #ffa5a0;
+
+    --shadow-soft: none;
   }
 }
 
@@ -34,137 +127,218 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
-  font-family: var(--font);
-  color: var(--text);
-  background: var(--bg);
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh;
+  font-family: var(--font-family);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+  background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
 }
 
-h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+::selection {
+  background: color-mix(in srgb, var(--color-link) 28%, transparent);
 }
+
+b,
+strong {
+  font-weight: var(--fw-bold);
+}
+
+h1 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--fs-large-title);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+h2 {
+  margin: 0;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  line-height: 1.25;
+}
+
+/* ---- Layout ---- */
 
 .auth-page {
   display: grid;
   place-items: center;
-  min-height: 100vh;
-  padding: 1.5rem;
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh;
+  padding: var(--space-5);
 }
 
 .card {
   width: 100%;
   max-width: 26rem;
-  padding: 2rem;
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
 }
 
 .subtitle {
-  margin: 0 0 1.5rem;
-  color: var(--text-muted);
+  margin: 0 0 var(--space-5);
+  color: var(--color-text-muted);
 }
+
+/* ---- Fields ---- */
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
 
   label {
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: var(--fs-small);
+    font-weight: var(--fw-bold);
+  }
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  min-height: var(--control-height);
+  padding: 0 var(--space-4);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  caret-color: var(--color-link);
+
+  &::placeholder {
+    color: var(--color-text-muted);
+    opacity: 1;
   }
 
-  input {
-    min-height: 44px;
-    padding: 0 0.85rem;
-    font: inherit;
-    color: var(--text);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
+
+  &[aria-invalid="true"],
+  &.ng-invalid.ng-touched {
+    border-color: var(--color-danger);
+  }
+}
+
+textarea {
+  padding-block: var(--space-3);
 }
 
 .field-error {
   margin: 0;
-  font-size: 0.8rem;
-  color: var(--danger);
+  font-size: var(--fs-small);
+  color: var(--color-danger);
 }
 
+/* ---- Messages ---- */
+
 .alert {
-  margin: 0 0 1rem;
-  padding: 0.7rem 0.85rem;
-  font-size: 0.875rem;
-  color: var(--danger);
-  border: 1px solid var(--danger);
-  border-radius: 10px;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-small);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
 }
 
 .notice {
-  margin: 0 0 1rem;
-  padding: 0.7rem 0.85rem;
-  font-size: 0.875rem;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-small);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
 }
 
+/* ---- Buttons: primary (.btn), secondary (.btn-secondary), quiet (.btn-quiet) ---- */
+
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  min-height: 44px;
+  min-height: var(--control-height);
+  padding: 0 var(--space-5);
   font: inherit;
-  font-weight: 600;
-  color: #fff;
-  background: var(--accent);
-  border: 0;
-  border-radius: 10px;
+  font-weight: var(--fw-bold);
+  color: var(--color-on-brand);
+  background: var(--color-brand);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition:
+    background var(--duration) var(--ease-out),
+    transform var(--duration) var(--ease-out);
 
   &:hover:not(:disabled) {
-    background: var(--accent-hover);
+    background: var(--color-brand-hover);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 }
 
 .btn-secondary {
   width: auto;
-  padding: 0 1rem;
-  color: var(--text);
+  color: var(--color-text);
   background: transparent;
-  border: 1px solid var(--border);
+  border-color: var(--color-border-strong);
 
   &:hover:not(:disabled) {
-    background: var(--bg);
+    background: var(--color-bg);
   }
 }
 
+.btn-quiet {
+  width: auto;
+  padding: 0 var(--space-4);
+  font-weight: var(--fw-regular);
+  color: var(--color-link);
+  background: transparent;
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    background: transparent;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+/* ---- Links ---- */
+
 .switch {
-  margin: 1.25rem 0 0;
+  margin: var(--space-5) 0 0;
   text-align: center;
-  font-size: 0.875rem;
-  color: var(--text-muted);
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
 
   a {
-    color: var(--accent);
+    color: var(--color-link);
     text-decoration: none;
   }
 }
 
+/* ---- Focus: 2px ring on every focusable element ---- */
+
 :focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
+  outline: var(--focus-width) solid var(--color-link);
+  outline-offset: var(--focus-offset);
 }
 
 @media (prefers-reduced-motion: reduce) {
