@@ -12,8 +12,9 @@ export class CatalogService {
     return this.http.get<CatalogItem[]>(this.url(resource));
   }
 
-  create(resource: CatalogResource, name: string): Observable<CatalogItem> {
-    return this.http.post<CatalogItem>(this.url(resource), { name });
+  create(resource: CatalogResource, name: string, code?: string): Observable<CatalogItem> {
+    const body = resource === 'services' && code !== undefined ? { name, code } : { name };
+    return this.http.post<CatalogItem>(this.url(resource), body);
   }
 
   rename(resource: CatalogResource, id: number, name: string): Observable<CatalogItem> {

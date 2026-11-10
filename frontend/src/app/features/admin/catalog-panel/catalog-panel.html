@@ -45,6 +45,9 @@
               </div>
             </form>
           } @else {
+            @if (hasCode && item.code) {
+              <span class="code-tile" [attr.aria-label]="'Code ' + item.code">{{ item.code }}</span>
+            }
             <span class="name">{{ item.name }}</span>
             <span class="status" [class.inactive]="!item.active">
               {{ item.active ? 'Active' : 'Inactive' }}
@@ -76,19 +79,48 @@
   }
 
   <form class="add-form" (submit)="$event.preventDefault(); add()" novalidate>
-    <div class="field">
-      <label [for]="resource() + '-new'">{{ singular() }} name</label>
-      <input
-        [id]="resource() + '-new'"
-        type="text"
-        maxlength="100"
-        autocomplete="off"
-        [formControl]="addControl"
-        [attr.aria-invalid]="addControl.touched && addControl.invalid"
-        [attr.aria-describedby]="addControl.touched && addControl.invalid ? resource() + '-new-error' : null"
-      />
-      @if (addControl.touched && addControl.invalid) {
-        <p class="field-error" role="alert" [id]="resource() + '-new-error'">Name is required.</p>
+    <div class="add-fields">
+      <div class="field field-name">
+        <label [for]="resource() + '-new'">{{ singular() }} name</label>
+        <input
+          [id]="resource() + '-new'"
+          type="text"
+          maxlength="100"
+          autocomplete="off"
+          [formControl]="addControl"
+          [attr.aria-invalid]="addControl.touched && addControl.invalid"
+          [attr.aria-describedby]="addControl.touched && addControl.invalid ? resource() + '-new-error' : null"
+        />
+        @if (addControl.touched && addControl.invalid) {
+          <p class="field-error" role="alert" [id]="resource() + '-new-error'">Name is required.</p>
+        }
+      </div>
+      @if (hasCode) {
+        <div class="field field-code">
+          <label [for]="resource() + '-new-code'">Code</label>
+          <input
+            [id]="resource() + '-new-code'"
+            class="code-input"
+            type="text"
+            maxlength="2"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            [formControl]="codeControl"
+            (input)="onCodeInput()"
+            [attr.aria-invalid]="showCodeError || !!codeServerError()"
+            [attr.aria-describedby]="
+              showCodeError || codeServerError() ? resource() + '-new-code-error' : null
+            "
+          />
+          @if (showCodeError) {
+            <p class="field-error" role="alert" [id]="resource() + '-new-code-error'">
+              Enter 1 or 2 English letters.
+            </p>
+          } @else if (codeServerError(); as message) {
+            <p class="field-error" role="alert" [id]="resource() + '-new-code-error'">{{ message }}</p>
+          }
+        </div>
       }
     </div>
     <button class="btn" type="submit" [disabled]="busy()">Add {{ singular().toLowerCase() }}</button>
