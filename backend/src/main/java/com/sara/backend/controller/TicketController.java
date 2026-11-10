@@ -1,6 +1,7 @@
 package com.sara.backend.controller;
 
 import com.sara.backend.dto.request.TakeTicketRequest;
+import com.sara.backend.dto.response.MyTicketResponse;
 import com.sara.backend.dto.response.TicketResponse;
 import com.sara.backend.service.TicketService;
 import jakarta.validation.Valid;
@@ -20,5 +21,10 @@ public class TicketController {
     @ResponseStatus(HttpStatus.CREATED)
     public TicketResponse take(Authentication authentication, @Valid @RequestBody TakeTicketRequest request) {
         return ticketService.takeTicket(authentication.getName(), request);
+    }
+
+    @GetMapping("/me")
+    public MyTicketResponse me(Authentication authentication) {
+        return ticketService.getMyTicket(authentication.getName());
     }
 }

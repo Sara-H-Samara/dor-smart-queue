@@ -10,6 +10,7 @@ import com.sara.backend.entity.User;
 import com.sara.backend.repository.ServiceTypeRepository;
 import com.sara.backend.repository.TicketRepository;
 import com.sara.backend.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +70,12 @@ class TicketControllerTest {
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();
+    }
+
+    @AfterEach
+    void cleanUp() {
+        // Other test classes do not clear tickets, so leave none behind.
+        ticketRepository.deleteAll();
     }
 
     // ---------- Helpers ----------

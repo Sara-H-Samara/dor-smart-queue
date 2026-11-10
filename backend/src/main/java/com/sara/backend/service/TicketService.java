@@ -1,6 +1,7 @@
 package com.sara.backend.service;
 
 import com.sara.backend.dto.request.TakeTicketRequest;
+import com.sara.backend.dto.response.MyTicketResponse;
 import com.sara.backend.dto.response.TicketResponse;
 import com.sara.backend.entity.ServiceType;
 import com.sara.backend.entity.Ticket;
@@ -21,6 +22,9 @@ import java.util.List;
 
 @Service
 public class TicketService {
+
+    // Release 1 uses a fixed estimate; Release 2 will use real service times.
+    private static final int ESTIMATED_MINUTES_PER_PERSON = 5;
 
     @Autowired
     private TicketRepository ticketRepository;
@@ -68,5 +72,24 @@ public class TicketService {
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Please try again.");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public MyTicketResponse getMyTicket(String email) {
+        Long studentId = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."))
+                .getId();
+
+        Ticket ticket = ticketRepository.findFirstByStudentIdAndStatusIn(
+                        studentId, List.of(TicketStatus.WAITING, TicketStatus.CALLED))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
+
+        if (ticket.getStatus() == TicketStatus.CALLED) {
+            return MyTicketResponse.called(ticket);
+        }
+
+        int peopleAhead = (int) ticketRepository.countByServiceTypeIdAndTicketDateAndStatusAndNumberLessThan(
+                ticket.getServiceType().getId(), ticket.getTicketDate(), TicketStatus.WAITING, ticket.getNumber());
+        return MyTicketResponse.waiting(ticket, peopleAhead, ESTIMATED_MINUTES_PER_PERSON);
     }
 }
