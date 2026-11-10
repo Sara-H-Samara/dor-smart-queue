@@ -34,17 +34,53 @@ export class CatalogPanel implements OnInit {
     validators: [Validators.required, Validators.maxLength(100)],
   });
 
+  protected readonly codeControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.pattern(/^[A-Za-z]{1,2}$/)],
+  });
+  protected readonly codeServerError = signal<string | null>(null);
+  protected readonly submitted = signal(false);
+
+  protected get hasCode(): boolean {
+    return this.resource() === 'services';
+  }
+
+  protected get showCodeError(): boolean {
+    return this.codeControl.invalid && (this.codeControl.touched || this.submitted());
+  }
+
   ngOnInit(): void {
     this.reload();
   }
 
+  protected onCodeInput(): void {
+    const cleaned = this.codeControl.value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 2);
+    if (cleaned !== this.codeControl.value) {
+      this.codeControl.setValue(cleaned);
+    }
+    this.codeServerError.set(null);
+  }
+
   protected add(): void {
     const name = this.addControl.value.trim();
+    if (this.hasCode) {
+      this.submitted.set(true);
+    }
     if (!name) {
       this.addControl.markAsTouched();
+    }
+    if (!name || (this.hasCode && this.codeControl.invalid)) {
       return;
     }
-    this.run(this.catalog.create(this.resource(), name), () => this.addControl.reset(''));
+    const request = this.hasCode
+      ? this.catalog.create(this.resource(), name, this.codeControl.value.toUpperCase())
+      : this.catalog.create(this.resource(), name);
+    this.codeServerError.set(null);
+    this.run(request, () => {
+      this.addControl.reset('');
+      this.codeControl.reset('');
+      this.submitted.set(false);
+    });
   }
 
   protected startEdit(item: CatalogItem): void {
@@ -81,9 +117,26 @@ export class CatalogPanel implements OnInit {
       },
       error: (err: unknown) => {
         this.busy.set(false);
-        this.error.set(this.messageFor(err));
+        const duplicateCode = this.duplicateCodeMessage(err);
+        if (duplicateCode) {
+          this.codeServerError.set(duplicateCode);
+        } else {
+          this.error.set(this.messageFor(err));
+        }
       },
     });
+  }
+
+  /** The server's message when a 409 is about the code rather than the name. */
+  private duplicateCodeMessage(err: unknown): string | null {
+    if (!this.hasCode || !(err instanceof HttpErrorResponse) || err.status !== 409) {
+      return null;
+    }
+    const body = err.error as { message?: unknown } | string | null;
+    const message = typeof body === 'string' ? body : body?.message;
+    return typeof message === 'string' && /\bcode\b/i.test(message) && /already used/i.test(message)
+      ? message
+      : null;
   }
 
   private reload(): void {
