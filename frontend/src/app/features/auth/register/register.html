@@ -1,42 +1,99 @@
-<main class="auth-page">
-  <section class="card">
-    <h1>Create account</h1>
-    <p class="subtitle">Take a ticket from your phone, no paper needed.</p>
+<div class="auth-screen">
+  <header class="brand">
+    <span class="wordmark" role="img" aria-label="Dor">D<i class="o"></i>r</span>
+  </header>
 
-    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <div class="field">
-        <label for="fullName">Full name</label>
-        <input id="fullName" type="text" formControlName="fullName" autocomplete="name" />
-        @if (form.controls.fullName.touched && form.controls.fullName.invalid) {
-          <p class="field-error">Enter your name (up to 100 characters).</p>
-        }
+  <main class="auth-main">
+    <div class="hero">
+      <p class="hero-title">A digital queue for the Student Affairs office.</p>
+      <p class="hero-text">Sign in or create an account to continue.</p>
+    </div>
+
+    <div class="side">
+      <div class="tk-wrap">
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <article class="ticket">
+            <div class="t-main">
+              <span class="svc">Student Affairs office</span>
+              <h1>Create an account</h1>
+              <p class="lede">It takes a minute. You will sign in with your email.</p>
+
+              @let fullName = form.controls.fullName;
+              @let email = form.controls.email;
+              @let password = form.controls.password;
+
+              <div class="group">
+                <div class="row">
+                  <label for="fullName">Name</label>
+                  <input
+                    id="fullName"
+                    type="text"
+                    formControlName="fullName"
+                    autocomplete="name"
+                    aria-required="true"
+                    [attr.aria-invalid]="fullName.touched && fullName.invalid"
+                    [attr.aria-describedby]="fullName.touched && fullName.invalid ? 'fullName-error' : null"
+                  />
+                </div>
+                @if (fullName.touched && fullName.invalid) {
+                  <p class="field-error" id="fullName-error">Enter your name.</p>
+                }
+
+                <div class="row">
+                  <label for="email">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    formControlName="email"
+                    autocomplete="email"
+                    inputmode="email"
+                    aria-required="true"
+                    [attr.aria-invalid]="email.touched && email.invalid"
+                    [attr.aria-describedby]="email.touched && email.invalid ? 'email-error' : null"
+                  />
+                </div>
+                @if (email.touched && email.invalid) {
+                  <p class="field-error" id="email-error">
+                    Enter a valid email.
+                  </p>
+                }
+
+                <div class="row">
+                  <label for="password">Password</label>
+                  <input
+                    id="password"
+                    type="password"
+                    formControlName="password"
+                    autocomplete="new-password"
+                    aria-required="true"
+                    [attr.aria-invalid]="password.touched && password.invalid"
+                    [attr.aria-describedby]="password.touched && password.invalid ? 'password-error' : null"
+                  />
+                </div>
+                @if (password.touched && password.invalid) {
+                  <p class="field-error" id="password-error">
+                    Use 8 to 72 characters.
+                  </p>
+                }
+              </div>
+
+
+              @if (errorMessage()) {
+                <p class="alert" role="alert">{{ errorMessage() }}</p>
+              }
+            </div>
+
+            <div class="t-stub">
+              <button class="btn" type="submit" [disabled]="loading()">
+                {{ loading() ? 'Creating account...' : 'Create account' }}
+              </button>
+            </div>
+          </article>
+        </form>
       </div>
 
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" type="email" formControlName="email" autocomplete="email" />
-        @if (form.controls.email.touched && form.controls.email.invalid) {
-          <p class="field-error">Enter a valid email address.</p>
-        }
-      </div>
-
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" type="password" formControlName="password" autocomplete="new-password" />
-        @if (form.controls.password.touched && form.controls.password.invalid) {
-          <p class="field-error">Use 8 to 72 characters.</p>
-        }
-      </div>
-
-      @if (errorMessage()) {
-        <p class="alert" role="alert">{{ errorMessage() }}</p>
-      }
-
-      <button class="btn" type="submit" [disabled]="loading()">
-        {{ loading() ? 'Creating account...' : 'Create account' }}
-      </button>
-    </form>
-
-    <p class="switch">Already have an account? <a routerLink="/login">Sign in</a></p>
-  </section>
-</main>
+      <p class="foot">Already registered?</p>
+      <a class="btn-text" routerLink="/login">Sign in</a>
+    </div>
+  </main>
+</div>
