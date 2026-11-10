@@ -17,6 +17,7 @@ export class CatalogPanel implements OnInit {
 
   readonly resource = input.required<CatalogResource>();
   readonly title = input.required<string>();
+  readonly singular = input.required<string>();
 
   protected readonly items = signal<CatalogItem[]>([]);
   protected readonly loading = signal(false);

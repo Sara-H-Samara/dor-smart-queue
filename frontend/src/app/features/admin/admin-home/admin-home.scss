@@ -1,25 +1,71 @@
-.admin-page {
-  max-width: 64rem;
-  margin: 0 auto;
-  padding: 1.5rem;
+/* Admin screen; tokens from src/styles.scss. Header matches the auth screens. */
+
+:host {
+  display: block;
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh;
 }
 
-.admin-header {
+.brand {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  min-height: 3.5rem;
+  padding: 0 var(--space-2) 0 var(--space-5);
+  border-bottom: 1px solid var(--color-separator);
+  font-size: var(--fs-title);
+}
 
-  .subtitle {
-    margin: 0;
-  }
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.04em;
+}
+
+.wordmark .o {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin: 0 0.04em 0 0.03em;
+  border: 0.14em solid var(--color-link);
+  border-radius: 50%;
+}
+
+.brand .btn-quiet {
+  font-size: var(--fs-body);
+}
+
+.admin-main {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+}
+
+.subtitle {
+  margin: 0 0 var(--space-6);
+  overflow-wrap: anywhere;
 }
 
 .panels {
   display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--space-7);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
+}
+
+@media (min-width: 48rem) {
+  .brand {
+    padding: 0 var(--space-5) 0 var(--space-6);
+  }
+
+  .admin-main {
+    padding-top: var(--space-6);
+  }
+
+  .panels {
+    gap: var(--space-6);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
