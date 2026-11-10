@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/health", "/api/auth/register", "/api/auth/login",
                                 "/api/waiting-room", "/error").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/tickets/**").hasRole("STUDENT")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
