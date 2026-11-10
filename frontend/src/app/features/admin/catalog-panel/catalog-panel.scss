@@ -1,80 +1,142 @@
+/* Catalog panel (services or counters); tokens from src/styles.scss. */
+
 :host {
   display: block;
 }
 
-.panel {
-  max-width: none;
-}
-
 h2 {
-  margin: 0 0 1rem;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.add-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: flex-end;
-  margin-bottom: 1rem;
-
-  .field {
-    flex: 1 1 12rem;
-    margin-bottom: 0;
-  }
-
-  .btn {
-    width: auto;
-    padding: 0 1.25rem;
-  }
+  margin: 0 0 var(--space-4);
+  letter-spacing: -0.015em;
 }
 
 .items {
-  margin: 0;
+  margin: 0 0 var(--space-5);
   padding: 0;
   list-style: none;
+  overflow: hidden;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
 }
 
 .item {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
+  gap: 0 var(--space-3);
   align-items: center;
-  padding: 0.75rem 0;
-  border-top: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4) var(--space-1);
+
+  & + .item {
+    border-top: 1px solid var(--color-separator);
+  }
 }
 
 .name {
   flex: 1 1 8rem;
-  font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
+/* Status: a dot plus text, so state never relies on color alone. */
 .status {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  color: var(--state-called-fg);
+  background: var(--state-called-bg);
+  border-radius: var(--radius-pill);
+
+  &::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    background: currentColor;
+    border-radius: 50%;
+  }
 
   &.inactive {
-    color: var(--text-muted);
+    color: var(--state-served-fg);
+    background: var(--state-served-bg);
   }
 }
 
 .actions {
   display: flex;
+  flex: 1 1 100%;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-1);
+  margin-left: calc(var(--space-3) * -1);
+
+  .btn-quiet {
+    min-height: 2.75rem;
+    padding: 0 var(--space-3);
+    font-size: var(--fs-small);
+  }
 }
 
 .edit-form {
-  display: flex;
   flex: 1 1 100%;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: flex-end;
+  padding-bottom: var(--space-3);
 
   .field {
-    flex: 1 1 12rem;
+    margin-bottom: var(--space-3);
+  }
+
+  .actions {
+    align-items: center;
+    margin-left: 0;
+    gap: var(--space-3);
+
+    .btn {
+      width: auto;
+      min-height: var(--control-height);
+      padding: 0 var(--space-5);
+      font-size: var(--fs-body);
+    }
+
+    .btn-quiet {
+      padding: 0 var(--space-3);
+    }
+  }
+}
+
+.empty {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+
+  p {
+    margin: 0;
+  }
+
+  .empty-title {
+    font-weight: var(--fw-bold);
+  }
+
+  .empty-text {
+    margin-top: var(--space-1);
+    font-size: var(--fs-small);
+    color: var(--color-text-muted);
+  }
+}
+
+.add-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+
+  .field {
+    width: 100%;
     margin-bottom: 0;
+  }
+
+  .btn {
+    width: auto;
   }
 }

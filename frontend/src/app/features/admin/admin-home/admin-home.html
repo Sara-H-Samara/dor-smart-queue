@@ -1,14 +1,16 @@
-<main class="admin-page">
-  <header class="admin-header">
-    <div>
-      <h1>Admin</h1>
-      <p class="subtitle">Signed in as {{ fullName() }}.</p>
-    </div>
-    <button class="btn btn-secondary" type="button" (click)="logout()">Sign out</button>
+<div class="admin-screen">
+  <header class="brand">
+    <span class="wordmark" role="img" aria-label="Dor">D<i class="o"></i>r</span>
+    <button class="btn btn-quiet" type="button" (click)="logout()">Sign out</button>
   </header>
 
-  <div class="panels">
-    <app-catalog-panel resource="services" title="Services" />
-    <app-catalog-panel resource="counters" title="Counters" />
-  </div>
-</main>
+  <main class="admin-main">
+    <h1>Admin</h1>
+    <p class="subtitle">Signed in as {{ fullName() }}.</p>
+
+    <div class="panels">
+      <app-catalog-panel resource="services" title="Services" singular="Service" />
+      <app-catalog-panel resource="counters" title="Counters" singular="Counter" />
+    </div>
+  </main>
+</div>

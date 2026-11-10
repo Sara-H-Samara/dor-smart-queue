@@ -1,25 +1,17 @@
-<section class="card panel" [attr.aria-labelledby]="resource() + '-heading'">
+<section class="panel" [attr.aria-labelledby]="resource() + '-heading'">
   <h2 [id]="resource() + '-heading'">{{ title() }}</h2>
 
   @if (error(); as message) {
     <p class="alert" role="alert">{{ message }}</p>
   }
 
-  <form class="add-form" (submit)="$event.preventDefault(); add()">
-    <div class="field">
-      <label [for]="resource() + '-new'">New name</label>
-      <input [id]="resource() + '-new'" type="text" maxlength="100" [formControl]="addControl" />
-      @if (addControl.touched && addControl.invalid) {
-        <p class="field-error" role="alert">Name is required.</p>
-      }
-    </div>
-    <button class="btn" type="submit" [disabled]="busy()">Add {{ title() }}</button>
-  </form>
-
   @if (loading() && items().length === 0) {
     <p class="notice" role="status">Loading…</p>
   } @else if (items().length === 0) {
-    <p class="notice">Nothing here yet.</p>
+    <div class="empty">
+      <p class="empty-title">No {{ title().toLowerCase() }} yet</p>
+      <p class="empty-text">Add a {{ singular().toLowerCase() }} below to get started.</p>
+    </div>
   } @else {
     <ul class="items">
       @for (item of items(); track item.id) {
@@ -32,15 +24,22 @@
                   [id]="resource() + '-rename-' + item.id"
                   type="text"
                   maxlength="100"
+                  autocomplete="off"
                   [formControl]="renameControl"
+                  [attr.aria-invalid]="renameControl.touched && renameControl.invalid"
+                  [attr.aria-describedby]="
+                    renameControl.touched && renameControl.invalid ? resource() + '-rename-error-' + item.id : null
+                  "
                 />
                 @if (renameControl.touched && renameControl.invalid) {
-                  <p class="field-error" role="alert">Name is required.</p>
+                  <p class="field-error" role="alert" [id]="resource() + '-rename-error-' + item.id">
+                    Name is required.
+                  </p>
                 }
               </div>
               <div class="actions">
-                <button class="btn btn-secondary" type="submit" [disabled]="busy()">Save name</button>
-                <button class="btn btn-secondary" type="button" [disabled]="busy()" (click)="cancelEdit()">
+                <button class="btn" type="submit" [disabled]="busy()">Save</button>
+                <button class="btn btn-quiet" type="button" [disabled]="busy()" (click)="cancelEdit()">
                   Cancel
                 </button>
               </div>
@@ -51,11 +50,23 @@
               {{ item.active ? 'Active' : 'Inactive' }}
             </span>
             <div class="actions">
-              <button class="btn btn-secondary" type="button" [disabled]="busy()" (click)="startEdit(item)">
-                Rename {{ item.name }}
+              <button
+                class="btn btn-quiet"
+                type="button"
+                [disabled]="busy()"
+                [attr.aria-label]="'Rename ' + item.name"
+                (click)="startEdit(item)"
+              >
+                Rename
               </button>
-              <button class="btn btn-secondary" type="button" [disabled]="busy()" (click)="toggle(item)">
-                {{ item.active ? 'Deactivate' : 'Activate' }} {{ item.name }}
+              <button
+                class="btn btn-quiet"
+                type="button"
+                [disabled]="busy()"
+                [attr.aria-label]="(item.active ? 'Deactivate ' : 'Activate ') + item.name"
+                (click)="toggle(item)"
+              >
+                {{ item.active ? 'Deactivate' : 'Activate' }}
               </button>
             </div>
           }
@@ -63,4 +74,23 @@
       }
     </ul>
   }
+
+  <form class="add-form" (submit)="$event.preventDefault(); add()" novalidate>
+    <div class="field">
+      <label [for]="resource() + '-new'">{{ singular() }} name</label>
+      <input
+        [id]="resource() + '-new'"
+        type="text"
+        maxlength="100"
+        autocomplete="off"
+        [formControl]="addControl"
+        [attr.aria-invalid]="addControl.touched && addControl.invalid"
+        [attr.aria-describedby]="addControl.touched && addControl.invalid ? resource() + '-new-error' : null"
+      />
+      @if (addControl.touched && addControl.invalid) {
+        <p class="field-error" role="alert" [id]="resource() + '-new-error'">Name is required.</p>
+      }
+    </div>
+    <button class="btn" type="submit" [disabled]="busy()">Add {{ singular().toLowerCase() }}</button>
+  </form>
 </section>
