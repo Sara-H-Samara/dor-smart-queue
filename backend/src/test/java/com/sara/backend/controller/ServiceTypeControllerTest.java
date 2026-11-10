@@ -75,12 +75,16 @@ class ServiceTypeControllerTest {
         return "{\"name\":\"%s\"}".formatted(name);
     }
 
+    private String json(String name, String code) {
+        return "{\"name\":\"%s\",\"code\":\"%s\"}".formatted(name, code);
+    }
+
     /** Creates a record as admin and returns its id. */
-    private long create(String token, String name) throws Exception {
+    private long create(String token, String name, String code) throws Exception {
         String body = mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(name)))
+                        .content(json(name, code)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return ((Number) JsonPath.read(body, "$.id")).longValue();
@@ -91,8 +95,8 @@ class ServiceTypeControllerTest {
     @Test
     void admin_canListServices() throws Exception {
         String token = adminToken();
-        create(token, "Fees");
-        create(token, "Admissions");
+        create(token, "Fees", "F");
+        create(token, "Admissions", "A");
 
         mockMvc.perform(get(URL).header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -106,7 +110,7 @@ class ServiceTypeControllerTest {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Fees")))
+                        .content(json("Fees", "F")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.name").value("Fees"))
@@ -116,7 +120,7 @@ class ServiceTypeControllerTest {
     @Test
     void admin_canRenameService() throws Exception {
         String token = adminToken();
-        long id = create(token, "Fees");
+        long id = create(token, "Fees", "F");
 
         mockMvc.perform(put(URL + "/" + id)
                         .header("Authorization", "Bearer " + token)
@@ -130,7 +134,7 @@ class ServiceTypeControllerTest {
     @Test
     void admin_canToggleActive() throws Exception {
         String token = adminToken();
-        long id = create(token, "Fees");
+        long id = create(token, "Fees", "F");
 
         mockMvc.perform(patch(URL + "/" + id + "/active")
                         .header("Authorization", "Bearer " + token)
@@ -158,7 +162,7 @@ class ServiceTypeControllerTest {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Fees")))
+                        .content(json("Fees", "F")))
                 .andExpect(status().isForbidden());
         mockMvc.perform(put(URL + "/1")
                         .header("Authorization", "Bearer " + token)
@@ -178,7 +182,7 @@ class ServiceTypeControllerTest {
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(post(URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Fees")))
+                        .content(json("Fees", "F")))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(put(URL + "/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -195,31 +199,31 @@ class ServiceTypeControllerTest {
     @Test
     void create_withDuplicateName_returnsConflict() throws Exception {
         String token = adminToken();
-        create(token, "Fees");
+        create(token, "Fees", "F");
 
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Fees")))
+                        .content(json("Fees", "X")))
                 .andExpect(status().isConflict());
     }
 
     @Test
     void create_withDuplicateNameInDifferentCase_returnsConflict() throws Exception {
         String token = adminToken();
-        create(token, "Fees");
+        create(token, "Fees", "F");
 
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("fees")))
+                        .content(json("fees", "X")))
                 .andExpect(status().isConflict());
     }
 
     @Test
     void rename_toItsOwnCurrentName_works() throws Exception {
         String token = adminToken();
-        long id = create(token, "Fees");
+        long id = create(token, "Fees", "F");
 
         mockMvc.perform(put(URL + "/" + id)
                         .header("Authorization", "Bearer " + token)
@@ -232,14 +236,52 @@ class ServiceTypeControllerTest {
     @Test
     void rename_toAnotherRecordsName_returnsConflict() throws Exception {
         String token = adminToken();
-        create(token, "Fees");
-        long otherId = create(token, "Admissions");
+        create(token, "Fees", "F");
+        long otherId = create(token, "Admissions", "A");
 
         mockMvc.perform(put(URL + "/" + otherId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("fees")))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void create_withDuplicateCode_returnsConflict() throws Exception {
+        String token = adminToken();
+        create(token, "Fees", "F");
+
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("Payments", "F")))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void create_withDuplicateCodeInDifferentCase_returnsConflict() throws Exception {
+        String token = adminToken();
+        create(token, "Fees", "F");
+
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("Payments", "f")))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void rename_keepsTheSameCode() throws Exception {
+        String token = adminToken();
+        long id = create(token, "Fees", "F");
+
+        mockMvc.perform(put(URL + "/" + id)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("Payments")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Payments"))
+                .andExpect(jsonPath("$.code").value("F"));
     }
 
     // ---------- Unknown id ----------
@@ -269,7 +311,7 @@ class ServiceTypeControllerTest {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("   ")))
+                        .content(json("   ", "F")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -278,14 +320,14 @@ class ServiceTypeControllerTest {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("a".repeat(101))))
+                        .content(json("a".repeat(101), "F")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void rename_withBlankName_returnsBadRequest() throws Exception {
         String token = adminToken();
-        long id = create(token, "Fees");
+        long id = create(token, "Fees", "F");
 
         mockMvc.perform(put(URL + "/" + id)
                         .header("Authorization", "Bearer " + token)
@@ -297,7 +339,7 @@ class ServiceTypeControllerTest {
     @Test
     void rename_withTooLongName_returnsBadRequest() throws Exception {
         String token = adminToken();
-        long id = create(token, "Fees");
+        long id = create(token, "Fees", "F");
 
         mockMvc.perform(put(URL + "/" + id)
                         .header("Authorization", "Bearer " + token)
@@ -306,12 +348,69 @@ class ServiceTypeControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void create_savesCodeInUpperCase() throws Exception {
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("Registration", "r")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value("R"));
+    }
+
+    @Test
+    void create_withTwoLetterCode_works() throws Exception {
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("Registration", "rg")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value("RG"));
+    }
+
+    @Test
+    void create_withThreeLetterCode_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("Registration", "ABC")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void create_withDigitInCode_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("Registration", "R1")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void create_withBlankCode_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("Registration", "  ")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void list_containsTheCode() throws Exception {
+        String token = adminToken();
+        create(token, "Fees", "F");
+
+        mockMvc.perform(get(URL).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].code").value("F"));
+    }
+
     // ---------- Deactivating keeps the row ----------
 
     @Test
     void deactivate_keepsRecordInAdminList() throws Exception {
         String token = adminToken();
-        long id = create(token, "Fees");
+        long id = create(token, "Fees", "F");
 
         mockMvc.perform(patch(URL + "/" + id + "/active")
                         .header("Authorization", "Bearer " + token)

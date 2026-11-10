@@ -2,6 +2,7 @@ package com.sara.backend.controller;
 
 import com.sara.backend.dto.request.ActiveRequest;
 import com.sara.backend.dto.request.NameRequest;
+import com.sara.backend.dto.request.ServiceTypeCreateRequest;
 import com.sara.backend.dto.response.ServiceTypeResponse;
 import com.sara.backend.service.ServiceTypeService;
 import jakarta.validation.Valid;
@@ -25,7 +26,7 @@ public class ServiceTypeController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ServiceTypeResponse create(@Valid @RequestBody NameRequest request) {
+    public ServiceTypeResponse create(@Valid @RequestBody ServiceTypeCreateRequest request) {
         return service.create(request);
     }
 

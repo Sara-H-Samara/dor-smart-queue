@@ -10,6 +10,8 @@ public interface ServiceTypeRepository extends JpaRepository<ServiceType, Long> 
 
     boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
 
+    boolean existsByCodeIgnoreCase(String code);
+
     List<ServiceType> findAllByOrderByNameAsc();
 
     List<ServiceType> findByActiveTrueOrderByNameAsc();
