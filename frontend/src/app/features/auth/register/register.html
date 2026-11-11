@@ -1,6 +1,6 @@
 <div class="auth-screen">
-  <header class="brand">
-    <span class="wordmark" role="img" aria-label="Dor">D<i class="o"></i>r</span>
+  <header class="app-header">
+    <span class="wordmark" role="img" aria-label="Dor">D<i class="wordmark-o"></i>r</span>
   </header>
 
   <main class="auth-main">
@@ -10,11 +10,11 @@
     </div>
 
     <div class="side">
-      <div class="tk-wrap">
+      <div class="ticket-shadow">
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <article class="ticket">
-            <div class="t-main">
-              <span class="svc">Student Affairs office</span>
+            <div class="ticket-body">
+              <span class="service-name">Student Affairs office</span>
               <h1>Create an account</h1>
               <p class="lede">It takes a minute. You will sign in with your email.</p>
 
@@ -22,8 +22,8 @@
               @let email = form.controls.email;
               @let password = form.controls.password;
 
-              <div class="group">
-                <div class="row">
+              <div class="field-group">
+                <div class="field-row">
                   <label for="fullName">Name</label>
                   <input
                     id="fullName"
@@ -39,7 +39,7 @@
                   <p class="field-error" id="fullName-error">Enter your name.</p>
                 }
 
-                <div class="row">
+                <div class="field-row">
                   <label for="email">Email</label>
                   <input
                     id="email"
@@ -58,7 +58,7 @@
                   </p>
                 }
 
-                <div class="row">
+                <div class="field-row">
                   <label for="password">Password</label>
                   <input
                     id="password"
@@ -83,16 +83,16 @@
               }
             </div>
 
-            <div class="t-stub">
-              <button class="btn" type="submit" [disabled]="loading()">
-                {{ loading() ? 'Creating account...' : 'Create account' }}
+            <div class="ticket-stub">
+              <button class="btn" type="submit" [disabled]="isSubmitting()">
+                {{ isSubmitting() ? 'Creating account...' : 'Create account' }}
               </button>
             </div>
           </article>
         </form>
       </div>
 
-      <p class="foot">Already registered?</p>
+      <p class="switch-prompt">Already registered?</p>
       <a class="btn-text" routerLink="/login">Sign in</a>
     </div>
   </main>

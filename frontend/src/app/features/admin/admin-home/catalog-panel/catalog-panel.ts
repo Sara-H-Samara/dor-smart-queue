@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, input, OnInit, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.model';
@@ -17,23 +17,21 @@ export class CatalogPanel implements OnInit {
 
   readonly resource = input.required<CatalogResource>();
   readonly heading = input.required<string>();
-  readonly singular = input.required<string>();
+  readonly itemLabel = input.required<string>();
 
   protected readonly items = signal<CatalogItem[]>([]);
-  protected readonly loading = signal(false);
-  protected readonly busy = signal(false);
+  protected readonly isLoadingList = signal(false);
+  protected readonly isSaving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly dialogOpen = signal(false);
   protected readonly dialogMode = signal<'add' | 'rename'>('add');
   private readonly renamingItem = signal<CatalogItem | null>(null);
 
-  private readonly addDialog = viewChild.required(CatalogFormDialog);
+  private readonly formDialog = viewChild.required(CatalogFormDialog);
 
   protected readonly codeServerError = signal<string | null>(null);
 
-  protected get hasCode(): boolean {
-    return this.resource() === 'services';
-  }
+  protected readonly supportsCode = computed(() => this.resource() === 'services');
 
   ngOnInit(): void {
     this.reload();
@@ -43,7 +41,7 @@ export class CatalogPanel implements OnInit {
     this.error.set(null);
     this.dialogMode.set('add');
     this.dialogOpen.set(true);
-    this.addDialog().open();
+    this.formDialog().open();
   }
 
   protected openRename(item: CatalogItem): void {
@@ -51,7 +49,7 @@ export class CatalogPanel implements OnInit {
     this.dialogMode.set('rename');
     this.renamingItem.set(item);
     this.dialogOpen.set(true);
-    this.addDialog().open(item.name);
+    this.formDialog().open(item.name);
   }
 
   /** Runs when the dialog closes by any route, including the Esc key. */
@@ -66,39 +64,39 @@ export class CatalogPanel implements OnInit {
   protected onSubmitted(value: CatalogFormValue): void {
     const item = this.renamingItem();
     if (this.dialogMode() === 'rename' && item) {
-      this.rename(item, value.name);
+      this.renameItem(item, value.name);
     } else {
-      this.add(value);
+      this.createItem(value);
     }
   }
 
-  private add(value: CatalogFormValue): void {
-    const request = this.hasCode
+  private createItem(value: CatalogFormValue): void {
+    const request = this.supportsCode()
       ? this.catalog.create(this.resource(), value.name, value.code ?? '')
       : this.catalog.create(this.resource(), value.name);
     this.codeServerError.set(null);
-    this.run(request, () => this.addDialog().close());
+    this.sendAndReload(request, () => this.formDialog().close());
   }
 
-  private rename(item: CatalogItem, name: string): void {
-    this.run(this.catalog.rename(this.resource(), item.id, name), () => this.addDialog().close());
+  private renameItem(item: CatalogItem, name: string): void {
+    this.sendAndReload(this.catalog.rename(this.resource(), item.id, name), () => this.formDialog().close());
   }
 
-  protected toggle(item: CatalogItem): void {
-    this.run(this.catalog.setActive(this.resource(), item.id, !item.active));
+  protected toggleItemActive(item: CatalogItem): void {
+    this.sendAndReload(this.catalog.setActive(this.resource(), item.id, !item.active));
   }
 
-  private run(request: Observable<unknown>, onSuccess?: () => void): void {
+  private sendAndReload(request: Observable<unknown>, onSuccess?: () => void): void {
     this.error.set(null);
-    this.busy.set(true);
+    this.isSaving.set(true);
     request.subscribe({
       next: () => {
         onSuccess?.();
-        this.busy.set(false);
+        this.isSaving.set(false);
         this.reload();
       },
       error: (err: unknown) => {
-        this.busy.set(false);
+        this.isSaving.set(false);
         const duplicateCode = this.duplicateCodeMessage(err);
         if (duplicateCode) {
           this.codeServerError.set(duplicateCode);
@@ -111,25 +109,26 @@ export class CatalogPanel implements OnInit {
 
   /** The server's message when a 409 is about the code rather than the name. */
   private duplicateCodeMessage(err: unknown): string | null {
-    if (!this.hasCode || !(err instanceof HttpErrorResponse) || err.status !== 409) {
+    if (!this.supportsCode() || !(err instanceof HttpErrorResponse) || err.status !== 409) {
       return null;
     }
     const body = err.error as { message?: unknown } | string | null;
     const message = typeof body === 'string' ? body : body?.message;
+    // Matches the server message text, so it breaks if that wording changes.
     return typeof message === 'string' && /\bcode\b/i.test(message) && /already used/i.test(message)
       ? message
       : null;
   }
 
   private reload(): void {
-    this.loading.set(true);
+    this.isLoadingList.set(true);
     this.catalog.list(this.resource()).subscribe({
       next: (items) => {
         this.items.set(items);
-        this.loading.set(false);
+        this.isLoadingList.set(false);
       },
       error: (err: unknown) => {
-        this.loading.set(false);
+        this.isLoadingList.set(false);
         this.error.set(this.messageFor(err));
       },
     });

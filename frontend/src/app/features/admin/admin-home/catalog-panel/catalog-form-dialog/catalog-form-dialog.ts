@@ -20,7 +20,7 @@ export class CatalogFormDialog {
   readonly nameLabel = input.required<string>();
   readonly submitLabel = input('Add');
   readonly showCode = input(false);
-  readonly busy = input(false);
+  readonly isSaving = input(false);
   readonly error = input<string | null>(null);
   readonly codeServerError = input<string | null>(null);
 
@@ -29,7 +29,7 @@ export class CatalogFormDialog {
   /** The user typed in the code field (the parent clears its server error). */
   readonly codeEdited = output<void>();
 
-  private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly dialogElement = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly nameInput = viewChild.required<ElementRef<HTMLInputElement>>('nameInput');
 
   protected readonly nameControl = new FormControl('', {
@@ -40,10 +40,10 @@ export class CatalogFormDialog {
     nonNullable: true,
     validators: [Validators.required, Validators.pattern(/^[A-Za-z]{1,2}$/)],
   });
-  protected readonly attempted = signal(false);
+  protected readonly submitAttempted = signal(false);
 
   protected get showCodeError(): boolean {
-    return this.codeControl.invalid && (this.codeControl.touched || this.attempted());
+    return this.codeControl.invalid && (this.codeControl.touched || this.submitAttempted());
   }
 
   /** Opens the dialog; an initial name pre-fills the field and is selected. */
@@ -51,14 +51,14 @@ export class CatalogFormDialog {
     if (initialName !== undefined) {
       this.nameControl.setValue(initialName);
     }
-    this.dialog().nativeElement.showModal();
-    const input = this.nameInput().nativeElement;
-    input.focus();
-    input.select();
+    this.dialogElement().nativeElement.showModal();
+    const nameField = this.nameInput().nativeElement;
+    nameField.focus();
+    nameField.select();
   }
 
   close(): void {
-    this.dialog().nativeElement.close();
+    this.dialogElement().nativeElement.close();
     this.reset();
   }
 
@@ -79,7 +79,7 @@ export class CatalogFormDialog {
   protected submit(): void {
     const name = this.nameControl.value.trim();
     if (this.showCode()) {
-      this.attempted.set(true);
+      this.submitAttempted.set(true);
     }
     if (!name) {
       this.nameControl.markAsTouched();
@@ -95,6 +95,6 @@ export class CatalogFormDialog {
   private reset(): void {
     this.nameControl.reset('');
     this.codeControl.reset('');
-    this.attempted.set(false);
+    this.submitAttempted.set(false);
   }
 }

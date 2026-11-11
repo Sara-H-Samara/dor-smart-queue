@@ -2,18 +2,19 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 import { Role } from '../models/auth.model';
-import { ROLE_HOME } from '../role-routes';
+import { HOME_PATH_BY_ROLE } from '../role-routes';
 import { AuthService } from '../services/auth.service';
 
 export const roleGuard =
-  (role: Role): CanActivateFn =>
+  (requiredRole: Role): CanActivateFn =>
   () => {
     const auth = inject(AuthService);
     const router = inject(Router);
 
-    const current = auth.role();
-    if (!current) {
+    const currentRole = auth.role();
+    if (!currentRole) {
       return router.createUrlTree(['/login']);
     }
-    return current === role ? true : router.createUrlTree([ROLE_HOME[current]]);
+    // A user with the wrong role is sent to their own home page instead of an error.
+    return currentRole === requiredRole ? true : router.createUrlTree([HOME_PATH_BY_ROLE[currentRole]]);
   };

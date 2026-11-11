@@ -1,6 +1,6 @@
 <div class="admin-screen">
-  <header class="brand">
-    <span class="wordmark" role="img" aria-label="Dor">D<i class="o"></i>r</span>
+  <header class="app-header">
+    <span class="wordmark" role="img" aria-label="Dor">D<i class="wordmark-o"></i>r</span>
     <button class="btn btn-quiet btn-sm" type="button" (click)="logout()">Sign out</button>
   </header>
 
@@ -9,8 +9,8 @@
     <p class="subtitle">Signed in as {{ fullName() }}.</p>
 
     <div class="panels">
-      <app-catalog-panel resource="services" heading="Services" singular="Service" />
-      <app-catalog-panel resource="counters" heading="Counters" singular="Counter" />
+      <app-catalog-panel resource="services" heading="Services" itemLabel="Service" />
+      <app-catalog-panel resource="counters" heading="Counters" itemLabel="Counter" />
     </div>
   </main>
 </div>

@@ -4,10 +4,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
-  selector: 'app-role-home',
-  templateUrl: './role-home.html',
+  selector: 'app-placeholder-home',
+  templateUrl: './placeholder-home.html',
 })
-export class RoleHome {
+export class PlaceholderHome {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
