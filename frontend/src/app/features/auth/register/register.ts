@@ -10,7 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
   selector: 'app-register',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './register.html',
-  styleUrl: './register.scss',
+  styleUrls: ['../auth-ticket.scss'],
 })
 export class Register {
   private readonly fb = inject(FormBuilder);

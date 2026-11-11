@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/services/auth.service';
   selector: 'app-login',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
-  styleUrl: './login.scss',
+  styleUrls: ['../auth-ticket.scss'],
 })
 export class Login {
   private readonly fb = inject(FormBuilder);
