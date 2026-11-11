@@ -42,6 +42,7 @@
 
   /* ---- Sizing ---- */
   --control-height: 3rem; /* 48px, above the 24px minimum target size */
+  --control-height-sm: 2.25rem;
   --focus-width: 2px;
   --focus-offset: 2px;
 
@@ -317,6 +318,17 @@ textarea {
     background: transparent;
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+}
+
+.btn-sm {
+  width: auto;
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-4);
+  font-size: var(--fs-small);
+
+  @media (pointer: coarse) {
+    min-height: 2.75rem;
   }
 }
 

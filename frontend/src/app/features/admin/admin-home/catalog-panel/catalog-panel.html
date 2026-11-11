@@ -38,8 +38,8 @@
                 }
               </div>
               <div class="actions">
-                <button class="btn" type="submit" [disabled]="busy()">Save</button>
-                <button class="btn btn-quiet" type="button" [disabled]="busy()" (click)="cancelEdit()">
+                <button class="btn btn-sm" type="submit" [disabled]="busy()">Save</button>
+                <button class="btn btn-quiet btn-sm" type="button" [disabled]="busy()" (click)="cancelEdit()">
                   Cancel
                 </button>
               </div>
@@ -54,7 +54,7 @@
             </span>
             <div class="actions">
               <button
-                class="btn btn-quiet"
+                class="btn btn-quiet btn-sm"
                 type="button"
                 [disabled]="busy()"
                 [attr.aria-label]="'Rename ' + item.name"
@@ -63,7 +63,7 @@
                 Rename
               </button>
               <button
-                class="btn btn-quiet"
+                class="btn btn-quiet btn-sm"
                 type="button"
                 [disabled]="busy()"
                 [attr.aria-label]="(item.active ? 'Deactivate ' : 'Activate ') + item.name"
