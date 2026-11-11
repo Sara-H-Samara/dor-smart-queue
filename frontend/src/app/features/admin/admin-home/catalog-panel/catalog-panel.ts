@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, input, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 
@@ -16,7 +16,7 @@ export class CatalogPanel implements OnInit {
   private readonly catalog = inject(CatalogService);
 
   readonly resource = input.required<CatalogResource>();
-  readonly title = input.required<string>();
+  readonly heading = input.required<string>();
   readonly singular = input.required<string>();
 
   protected readonly items = signal<CatalogItem[]>([]);
@@ -24,6 +24,10 @@ export class CatalogPanel implements OnInit {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly editingId = signal<number | null>(null);
+  protected readonly addOpen = signal(false);
+
+  private readonly addDialog = viewChild.required<ElementRef<HTMLDialogElement>>('addDialog');
+  private readonly addNameInput = viewChild.required<ElementRef<HTMLInputElement>>('addNameInput');
 
   protected readonly addControl = new FormControl('', {
     nonNullable: true,
@@ -61,6 +65,32 @@ export class CatalogPanel implements OnInit {
     this.codeServerError.set(null);
   }
 
+  protected openAdd(): void {
+    this.error.set(null);
+    this.addOpen.set(true);
+    this.addDialog().nativeElement.showModal();
+    this.addNameInput().nativeElement.focus();
+  }
+
+  protected closeAdd(): void {
+    this.addDialog().nativeElement.close();
+    this.resetAdd();
+  }
+
+  /** Runs when the dialog closes by any route, including the Esc key. */
+  protected onAddDialogClose(): void {
+    this.resetAdd();
+  }
+
+  private resetAdd(): void {
+    this.addOpen.set(false);
+    this.addControl.reset('');
+    this.codeControl.reset('');
+    this.codeServerError.set(null);
+    this.submitted.set(false);
+    this.error.set(null);
+  }
+
   protected add(): void {
     const name = this.addControl.value.trim();
     if (this.hasCode) {
@@ -80,6 +110,7 @@ export class CatalogPanel implements OnInit {
       this.addControl.reset('');
       this.codeControl.reset('');
       this.submitted.set(false);
+      this.closeAdd();
     });
   }
 

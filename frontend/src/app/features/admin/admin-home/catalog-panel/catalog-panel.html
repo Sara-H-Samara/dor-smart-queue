@@ -1,7 +1,10 @@
 <section class="panel" [attr.aria-labelledby]="resource() + '-heading'">
-  <h2 [id]="resource() + '-heading'">{{ title() }}</h2>
+  <div class="panel-head">
+    <h2 [id]="resource() + '-heading'">{{ heading() }}</h2>
+    <button class="btn btn-sm" type="button" (click)="openAdd()">Add {{ singular().toLowerCase() }}</button>
+  </div>
 
-  @if (error(); as message) {
+  @if (addOpen() ? null : error(); as message) {
     <p class="alert" role="alert">{{ message }}</p>
   }
 
@@ -9,8 +12,8 @@
     <p class="notice" role="status">Loading…</p>
   } @else if (items().length === 0) {
     <div class="empty">
-      <p class="empty-title">No {{ title().toLowerCase() }} yet</p>
-      <p class="empty-text">Add a {{ singular().toLowerCase() }} below to get started.</p>
+      <p class="empty-title">No {{ heading().toLowerCase() }} yet</p>
+      <p class="empty-text">Use the Add button to create your first {{ singular().toLowerCase() }}.</p>
     </div>
   } @else {
     <ul class="items">
@@ -78,51 +81,69 @@
     </ul>
   }
 
-  <form class="add-form" (submit)="$event.preventDefault(); add()" novalidate>
-    <div class="add-fields">
-      <div class="field field-name">
-        <label [for]="resource() + '-new'">{{ singular() }} name</label>
-        <input
-          [id]="resource() + '-new'"
-          type="text"
-          maxlength="100"
-          autocomplete="off"
-          [formControl]="addControl"
-          [attr.aria-invalid]="addControl.touched && addControl.invalid"
-          [attr.aria-describedby]="addControl.touched && addControl.invalid ? resource() + '-new-error' : null"
-        />
-        @if (addControl.touched && addControl.invalid) {
-          <p class="field-error" role="alert" [id]="resource() + '-new-error'">Name is required.</p>
-        }
-      </div>
-      @if (hasCode) {
-        <div class="field field-code">
-          <label [for]="resource() + '-new-code'">Code</label>
+  <dialog
+    #addDialog
+    class="add-dialog"
+    [attr.aria-labelledby]="resource() + '-add-title'"
+    (close)="onAddDialogClose()"
+  >
+    <form (submit)="$event.preventDefault(); add()" novalidate>
+      <h3 [id]="resource() + '-add-title'">Add {{ singular().toLowerCase() }}</h3>
+
+      @if (error(); as message) {
+        <p class="alert" role="alert">{{ message }}</p>
+      }
+
+      <div class="add-fields">
+        <div class="field field-name">
+          <label [for]="resource() + '-new'">{{ singular() }} name</label>
           <input
-            [id]="resource() + '-new-code'"
-            class="code-input"
+            #addNameInput
+            [id]="resource() + '-new'"
             type="text"
-            maxlength="2"
+            maxlength="100"
             autocomplete="off"
-            autocapitalize="characters"
-            spellcheck="false"
-            [formControl]="codeControl"
-            (input)="onCodeInput()"
-            [attr.aria-invalid]="showCodeError || !!codeServerError()"
-            [attr.aria-describedby]="
-              showCodeError || codeServerError() ? resource() + '-new-code-error' : null
-            "
+            [formControl]="addControl"
+            [attr.aria-invalid]="addControl.touched && addControl.invalid"
+            [attr.aria-describedby]="addControl.touched && addControl.invalid ? resource() + '-new-error' : null"
           />
-          @if (showCodeError) {
-            <p class="field-error" role="alert" [id]="resource() + '-new-code-error'">
-              Enter 1 or 2 English letters.
-            </p>
-          } @else if (codeServerError(); as message) {
-            <p class="field-error" role="alert" [id]="resource() + '-new-code-error'">{{ message }}</p>
+          @if (addControl.touched && addControl.invalid) {
+            <p class="field-error" role="alert" [id]="resource() + '-new-error'">Name is required.</p>
           }
         </div>
-      }
-    </div>
-    <button class="btn" type="submit" [disabled]="busy()">Add {{ singular().toLowerCase() }}</button>
-  </form>
+        @if (hasCode) {
+          <div class="field field-code">
+            <label [for]="resource() + '-new-code'">Code</label>
+            <input
+              [id]="resource() + '-new-code'"
+              class="code-input"
+              type="text"
+              maxlength="2"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              [formControl]="codeControl"
+              (input)="onCodeInput()"
+              [attr.aria-invalid]="showCodeError || !!codeServerError()"
+              [attr.aria-describedby]="
+                showCodeError || codeServerError() ? resource() + '-new-code-error' : null
+              "
+            />
+            @if (showCodeError) {
+              <p class="field-error" role="alert" [id]="resource() + '-new-code-error'">
+                Enter 1 or 2 English letters.
+              </p>
+            } @else if (codeServerError(); as message) {
+              <p class="field-error" role="alert" [id]="resource() + '-new-code-error'">{{ message }}</p>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="dialog-actions">
+        <button class="btn btn-quiet btn-sm" type="button" (click)="closeAdd()">Cancel</button>
+        <button class="btn btn-sm" type="submit" [disabled]="busy()">Add</button>
+      </div>
+    </form>
+  </dialog>
 </section>
