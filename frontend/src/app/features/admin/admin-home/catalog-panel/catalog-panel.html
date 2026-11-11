@@ -4,7 +4,7 @@
     <button class="btn btn-sm" type="button" (click)="openAdd()">Add {{ singular().toLowerCase() }}</button>
   </div>
 
-  @if (addOpen() ? null : error(); as message) {
+  @if (dialogOpen() ? null : error(); as message) {
     <p class="alert" role="alert">{{ message }}</p>
   }
 
@@ -19,63 +19,33 @@
     <ul class="items">
       @for (item of items(); track item.id) {
         <li class="item">
-          @if (editingId() === item.id) {
-            <form class="edit-form" (submit)="$event.preventDefault(); saveEdit(item)">
-              <div class="field">
-                <label [for]="resource() + '-rename-' + item.id">New name for {{ item.name }}</label>
-                <input
-                  [id]="resource() + '-rename-' + item.id"
-                  type="text"
-                  maxlength="100"
-                  autocomplete="off"
-                  [formControl]="renameControl"
-                  [attr.aria-invalid]="renameControl.touched && renameControl.invalid"
-                  [attr.aria-describedby]="
-                    renameControl.touched && renameControl.invalid ? resource() + '-rename-error-' + item.id : null
-                  "
-                />
-                @if (renameControl.touched && renameControl.invalid) {
-                  <p class="field-error" role="alert" [id]="resource() + '-rename-error-' + item.id">
-                    Name is required.
-                  </p>
-                }
-              </div>
-              <div class="actions">
-                <button class="btn btn-sm" type="submit" [disabled]="busy()">Save</button>
-                <button class="btn btn-quiet btn-sm" type="button" [disabled]="busy()" (click)="cancelEdit()">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          } @else {
-            @if (hasCode && item.code) {
-              <span class="code-tile" [attr.aria-label]="'Code ' + item.code">{{ item.code }}</span>
-            }
-            <span class="name">{{ item.name }}</span>
-            <span class="status" [class.inactive]="!item.active">
-              {{ item.active ? 'Active' : 'Inactive' }}
-            </span>
-            <div class="actions">
-              <button
-                class="btn btn-quiet btn-sm"
-                type="button"
-                [disabled]="busy()"
-                [attr.aria-label]="'Rename ' + item.name"
-                (click)="startEdit(item)"
-              >
-                Rename
-              </button>
-              <button
-                class="btn btn-quiet btn-sm"
-                type="button"
-                [disabled]="busy()"
-                [attr.aria-label]="(item.active ? 'Deactivate ' : 'Activate ') + item.name"
-                (click)="toggle(item)"
-              >
-                {{ item.active ? 'Deactivate' : 'Activate' }}
-              </button>
-            </div>
+          @if (hasCode && item.code) {
+            <span class="code-tile" [attr.aria-label]="'Code ' + item.code">{{ item.code }}</span>
           }
+          <span class="name">{{ item.name }}</span>
+          <span class="status" [class.inactive]="!item.active">
+            {{ item.active ? 'Active' : 'Inactive' }}
+          </span>
+          <div class="actions">
+            <button
+              class="btn btn-quiet btn-sm"
+              type="button"
+              [disabled]="busy()"
+              [attr.aria-label]="'Rename ' + item.name"
+              (click)="openRename(item)"
+            >
+              Rename
+            </button>
+            <button
+              class="btn btn-quiet btn-sm"
+              type="button"
+              [disabled]="busy()"
+              [attr.aria-label]="(item.active ? 'Deactivate ' : 'Activate ') + item.name"
+              (click)="toggle(item)"
+            >
+              {{ item.active ? 'Deactivate' : 'Activate' }}
+            </button>
+          </div>
         </li>
       }
     </ul>
@@ -83,14 +53,15 @@
 
   <app-catalog-form-dialog
     [idPrefix]="resource()"
-    [heading]="'Add ' + singular().toLowerCase()"
+    [heading]="(dialogMode() === 'rename' ? 'Rename ' : 'Add ') + singular().toLowerCase()"
     [nameLabel]="singular() + ' name'"
-    [showCode]="hasCode"
+    [showCode]="hasCode && dialogMode() === 'add'"
+    [submitLabel]="dialogMode() === 'rename' ? 'Save' : 'Add'"
     [busy]="busy()"
     [error]="error()"
     [codeServerError]="codeServerError()"
-    (submitted)="add($event)"
+    (submitted)="onSubmitted($event)"
     (codeEdited)="codeServerError.set(null)"
-    (closed)="onAddClosed()"
+    (closed)="onDialogClosed()"
   />
 </section>
