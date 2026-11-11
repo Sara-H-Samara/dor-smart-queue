@@ -15,6 +15,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const isApiCall = request.url.startsWith(`${environment.apiUrl}/api/`);
   const isPublic = PUBLIC_PATHS.some((path) => request.url.endsWith(path));
 
+  // Add the Bearer token only to our own API calls, never to login or register.
   if (!token || !isApiCall || isPublic) {
     return next(request);
   }
@@ -23,6 +24,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     request.clone({ setHeaders: { Authorization: `Bearer ${token}` } }),
   ).pipe(
     catchError((error: unknown) => {
+      // 401 means the token is rejected or expired, so sign out and go to login.
       if (error instanceof HttpErrorResponse && error.status === 401) {
         authService.logout();
         router.navigate(['/login']);

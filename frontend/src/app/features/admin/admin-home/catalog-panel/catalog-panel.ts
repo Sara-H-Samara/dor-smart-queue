@@ -114,6 +114,7 @@ export class CatalogPanel implements OnInit {
     }
     const body = err.error as { message?: unknown } | string | null;
     const message = typeof body === 'string' ? body : body?.message;
+    // Matches the server message text, so it breaks if that wording changes.
     return typeof message === 'string' && /\bcode\b/i.test(message) && /already used/i.test(message)
       ? message
       : null;

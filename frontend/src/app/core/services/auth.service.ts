@@ -57,6 +57,7 @@ export class AuthService {
     this.session.set(session);
   }
 
+  /** Reads the saved session; also clears the stored data if it is corrupt. */
   private loadStoredSession(): Session | null {
     let raw: string | null;
     try {

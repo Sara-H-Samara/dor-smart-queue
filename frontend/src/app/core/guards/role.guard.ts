@@ -15,5 +15,6 @@ export const roleGuard =
     if (!currentRole) {
       return router.createUrlTree(['/login']);
     }
+    // A user with the wrong role is sent to their own home page instead of an error.
     return currentRole === requiredRole ? true : router.createUrlTree([HOME_PATH_BY_ROLE[currentRole]]);
   };
