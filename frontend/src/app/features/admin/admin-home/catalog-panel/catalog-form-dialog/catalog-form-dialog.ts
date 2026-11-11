@@ -20,7 +20,7 @@ export class CatalogFormDialog {
   readonly nameLabel = input.required<string>();
   readonly submitLabel = input('Add');
   readonly showCode = input(false);
-  readonly busy = input(false);
+  readonly isSaving = input(false);
   readonly error = input<string | null>(null);
   readonly codeServerError = input<string | null>(null);
 
@@ -29,7 +29,7 @@ export class CatalogFormDialog {
   /** The user typed in the code field (the parent clears its server error). */
   readonly codeEdited = output<void>();
 
-  private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly dialogElement = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly nameInput = viewChild.required<ElementRef<HTMLInputElement>>('nameInput');
 
   protected readonly nameControl = new FormControl('', {
@@ -51,14 +51,14 @@ export class CatalogFormDialog {
     if (initialName !== undefined) {
       this.nameControl.setValue(initialName);
     }
-    this.dialog().nativeElement.showModal();
-    const input = this.nameInput().nativeElement;
-    input.focus();
-    input.select();
+    this.dialogElement().nativeElement.showModal();
+    const nameField = this.nameInput().nativeElement;
+    nameField.focus();
+    nameField.select();
   }
 
   close(): void {
-    this.dialog().nativeElement.close();
+    this.dialogElement().nativeElement.close();
     this.reset();
   }
 

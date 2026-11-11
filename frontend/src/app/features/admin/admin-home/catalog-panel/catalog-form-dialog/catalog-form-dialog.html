@@ -59,7 +59,7 @@
 
     <div class="dialog-actions">
       <button class="btn btn-quiet btn-sm" type="button" (click)="close()">Cancel</button>
-      <button class="btn btn-sm" type="submit" [disabled]="busy()">{{ submitLabel() }}</button>
+      <button class="btn btn-sm" type="submit" [disabled]="isSaving()">{{ submitLabel() }}</button>
     </div>
   </form>
 </dialog>
