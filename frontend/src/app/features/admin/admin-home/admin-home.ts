@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
-import { CatalogPanel } from '../catalog-panel/catalog-panel';
+import { CatalogPanel } from './catalog-panel/catalog-panel';
 
 @Component({
   selector: 'app-admin-home',
