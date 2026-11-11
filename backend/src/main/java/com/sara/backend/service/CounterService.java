@@ -16,10 +16,10 @@ import java.util.List;
 public class CounterService {
 
     @Autowired
-    private CounterRepository repository;
+    private CounterRepository counterRepository;
 
     public List<CounterResponse> list() {
-        return repository.findAllByOrderByNameAsc().stream().map(CounterResponse::from).toList();
+        return counterRepository.findAllByOrderByNameAsc().stream().map(CounterResponse::from).toList();
     }
 
     public CounterResponse create(NameRequest request) {
@@ -27,37 +27,37 @@ public class CounterService {
         if (name.isEmpty() || name.length() > 100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must be 1 to 100 characters.");
         }
-        if (repository.existsByNameIgnoreCase(name)) {
+        if (counterRepository.existsByNameIgnoreCase(name)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Counter name already exists.");
         }
 
-        Counter entity = new Counter();
-        entity.setName(name);
-        return CounterResponse.from(repository.save(entity));
+        Counter counter = new Counter();
+        counter.setName(name);
+        return CounterResponse.from(counterRepository.save(counter));
     }
 
     public CounterResponse rename(Long id, NameRequest request) {
-        Counter entity = find(id);
+        Counter counter = findOrThrow(id);
         String name = request.name().trim();
         if (name.isEmpty() || name.length() > 100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must be 1 to 100 characters.");
         }
-        if (repository.existsByNameIgnoreCaseAndIdNot(name, id)) {
+        if (counterRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Counter name already exists.");
         }
 
-        entity.setName(name);
-        return CounterResponse.from(repository.save(entity));
+        counter.setName(name);
+        return CounterResponse.from(counterRepository.save(counter));
     }
 
-    public CounterResponse setActive(Long id, ActiveRequest request) {
-        Counter entity = find(id);
-        entity.setActive(request.active());
-        return CounterResponse.from(repository.save(entity));
+    public CounterResponse updateActive(Long id, ActiveRequest request) {
+        Counter counter = findOrThrow(id);
+        counter.setActive(request.active());
+        return CounterResponse.from(counterRepository.save(counter));
     }
 
-    private Counter find(Long id) {
-        return repository.findById(id)
+    private Counter findOrThrow(Long id) {
+        return counterRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Counter not found."));
     }
 }
