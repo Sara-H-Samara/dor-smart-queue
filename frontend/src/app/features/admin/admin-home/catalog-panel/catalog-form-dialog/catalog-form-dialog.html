@@ -1,0 +1,65 @@
+<dialog
+  #dialog
+  class="add-dialog"
+  [attr.aria-labelledby]="idPrefix() + '-add-title'"
+  (close)="onDialogClose()"
+>
+  <form (submit)="$event.preventDefault(); submit()" novalidate>
+    <h3 [id]="idPrefix() + '-add-title'">{{ heading() }}</h3>
+
+    @if (error(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+
+    <div class="add-fields">
+      <div class="field field-name">
+        <label [for]="idPrefix() + '-new'">{{ nameLabel() }}</label>
+        <input
+          #nameInput
+          [id]="idPrefix() + '-new'"
+          type="text"
+          maxlength="100"
+          autocomplete="off"
+          [formControl]="addControl"
+          [attr.aria-invalid]="addControl.touched && addControl.invalid"
+          [attr.aria-describedby]="addControl.touched && addControl.invalid ? idPrefix() + '-new-error' : null"
+        />
+        @if (addControl.touched && addControl.invalid) {
+          <p class="field-error" role="alert" [id]="idPrefix() + '-new-error'">Name is required.</p>
+        }
+      </div>
+      @if (showCode()) {
+        <div class="field field-code">
+          <label [for]="idPrefix() + '-new-code'">Code</label>
+          <input
+            [id]="idPrefix() + '-new-code'"
+            class="code-input"
+            type="text"
+            maxlength="2"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            [formControl]="codeControl"
+            (input)="onCodeInput()"
+            [attr.aria-invalid]="showCodeError || !!codeServerError()"
+            [attr.aria-describedby]="
+              showCodeError || codeServerError() ? idPrefix() + '-new-code-error' : null
+            "
+          />
+          @if (showCodeError) {
+            <p class="field-error" role="alert" [id]="idPrefix() + '-new-code-error'">
+              Enter 1 or 2 English letters.
+            </p>
+          } @else if (codeServerError(); as message) {
+            <p class="field-error" role="alert" [id]="idPrefix() + '-new-code-error'">{{ message }}</p>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="dialog-actions">
+      <button class="btn btn-quiet btn-sm" type="button" (click)="close()">Cancel</button>
+      <button class="btn btn-sm" type="submit" [disabled]="busy()">Add</button>
+    </div>
+  </form>
+</dialog>

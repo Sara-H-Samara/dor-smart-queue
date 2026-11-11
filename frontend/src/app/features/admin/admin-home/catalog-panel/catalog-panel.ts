@@ -1,14 +1,15 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, input, OnInit, signal } from '@angular/core';
+import { Component, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 
 import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.model';
 import { CatalogService } from '../../../../core/services/catalog.service';
+import { CatalogFormDialog, CatalogFormValue } from './catalog-form-dialog/catalog-form-dialog';
 
 @Component({
   selector: 'app-catalog-panel',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CatalogFormDialog],
   templateUrl: './catalog-panel.html',
   styleUrl: './catalog-panel.scss',
 })
@@ -16,7 +17,7 @@ export class CatalogPanel implements OnInit {
   private readonly catalog = inject(CatalogService);
 
   readonly resource = input.required<CatalogResource>();
-  readonly title = input.required<string>();
+  readonly heading = input.required<string>();
   readonly singular = input.required<string>();
 
   protected readonly items = signal<CatalogItem[]>([]);
@@ -24,63 +25,44 @@ export class CatalogPanel implements OnInit {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly editingId = signal<number | null>(null);
+  protected readonly addOpen = signal(false);
 
-  protected readonly addControl = new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.maxLength(100)],
-  });
+  private readonly addDialog = viewChild.required(CatalogFormDialog);
+
   protected readonly renameControl = new FormControl('', {
     nonNullable: true,
     validators: [Validators.required, Validators.maxLength(100)],
   });
 
-  protected readonly codeControl = new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.pattern(/^[A-Za-z]{1,2}$/)],
-  });
   protected readonly codeServerError = signal<string | null>(null);
-  protected readonly submitted = signal(false);
 
   protected get hasCode(): boolean {
     return this.resource() === 'services';
-  }
-
-  protected get showCodeError(): boolean {
-    return this.codeControl.invalid && (this.codeControl.touched || this.submitted());
   }
 
   ngOnInit(): void {
     this.reload();
   }
 
-  protected onCodeInput(): void {
-    const cleaned = this.codeControl.value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 2);
-    if (cleaned !== this.codeControl.value) {
-      this.codeControl.setValue(cleaned);
-    }
-    this.codeServerError.set(null);
+  protected openAdd(): void {
+    this.error.set(null);
+    this.addOpen.set(true);
+    this.addDialog().open();
   }
 
-  protected add(): void {
-    const name = this.addControl.value.trim();
-    if (this.hasCode) {
-      this.submitted.set(true);
-    }
-    if (!name) {
-      this.addControl.markAsTouched();
-    }
-    if (!name || (this.hasCode && this.codeControl.invalid)) {
-      return;
-    }
-    const request = this.hasCode
-      ? this.catalog.create(this.resource(), name, this.codeControl.value.toUpperCase())
-      : this.catalog.create(this.resource(), name);
+  /** Runs when the dialog closes by any route, including the Esc key. */
+  protected onAddClosed(): void {
+    this.addOpen.set(false);
     this.codeServerError.set(null);
-    this.run(request, () => {
-      this.addControl.reset('');
-      this.codeControl.reset('');
-      this.submitted.set(false);
-    });
+    this.error.set(null);
+  }
+
+  protected add(value: CatalogFormValue): void {
+    const request = this.hasCode
+      ? this.catalog.create(this.resource(), value.name, value.code ?? '')
+      : this.catalog.create(this.resource(), value.name);
+    this.codeServerError.set(null);
+    this.run(request, () => this.addDialog().close());
   }
 
   protected startEdit(item: CatalogItem): void {
