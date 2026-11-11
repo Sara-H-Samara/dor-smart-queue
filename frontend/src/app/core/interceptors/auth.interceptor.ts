@@ -6,17 +6,17 @@ import { catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../services/auth.service';
 
-const PUBLIC_PATHS = ['/api/auth/login', '/api/auth/register'];
+const ENDPOINTS_WITHOUT_TOKEN = ['/api/auth/login', '/api/auth/register'];
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
   const token = authService.getToken();
-  const isApiCall = request.url.startsWith(`${environment.apiUrl}/api/`);
-  const isPublic = PUBLIC_PATHS.some((path) => request.url.endsWith(path));
+  const isOurApiRequest = request.url.startsWith(`${environment.apiUrl}/api/`);
+  const isTokenFreeEndpoint = ENDPOINTS_WITHOUT_TOKEN.some((path) => request.url.endsWith(path));
 
   // Add the Bearer token only to our own API calls, never to login or register.
-  if (!token || !isApiCall || isPublic) {
+  if (!token || !isOurApiRequest || isTokenFreeEndpoint) {
     return next(request);
   }
 

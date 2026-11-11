@@ -2,10 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { LoginRequest, LoginResponse, RegisterRequest, Role, User } from '../models/auth.model';
+import { LoginRequest, LoginResponse, RegisterRequest, Role, RegisteredUser } from '../models/auth.model';
 
-const STORAGE_KEY = 'dor_auth';
-const ROLES: readonly Role[] = ['STUDENT', 'STAFF', 'ADMIN'];
+const SESSION_STORAGE_KEY = 'dor_auth';
+const VALID_ROLES: readonly Role[] = ['STUDENT', 'STAFF', 'ADMIN'];
 
 interface Session {
   token: string;
@@ -27,11 +27,11 @@ export class AuthService {
   login(request: LoginRequest): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${this.apiUrl}/login`, request)
-      .pipe(tap((response) => this.saveSession(response)));
+      .pipe(tap((response) => this.storeAndActivateSession(response)));
   }
 
-  register(request: RegisterRequest): Observable<User> {
-    return this.http.post<User>(`${this.apiUrl}/register`, request);
+  register(request: RegisterRequest): Observable<RegisteredUser> {
+    return this.http.post<RegisteredUser>(`${this.apiUrl}/register`, request);
   }
 
   logout(): void {
@@ -43,14 +43,14 @@ export class AuthService {
     return this.session()?.token ?? null;
   }
 
-  private saveSession(response: LoginResponse): void {
+  private storeAndActivateSession(response: LoginResponse): void {
     const session: Session = {
       token: response.token,
       fullName: response.fullName,
       role: response.role,
     };
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
     } catch {
       // Storage is blocked: the session still works in memory until reload.
     }
@@ -61,7 +61,7 @@ export class AuthService {
   private loadStoredSession(): Session | null {
     let raw: string | null;
     try {
-      raw = localStorage.getItem(STORAGE_KEY);
+      raw = localStorage.getItem(SESSION_STORAGE_KEY);
     } catch {
       return null;
     }
@@ -70,15 +70,15 @@ export class AuthService {
     }
 
     try {
-      const data: unknown = JSON.parse(raw);
-      if (typeof data === 'object' && data !== null) {
-        const { token, fullName, role } = data as Record<string, unknown>;
+      const parsedJson: unknown = JSON.parse(raw);
+      if (typeof parsedJson === 'object' && parsedJson !== null) {
+        const { token, fullName, role } = parsedJson as Record<string, unknown>;
         if (
           typeof token === 'string' &&
           token.length > 0 &&
           typeof fullName === 'string' &&
           typeof role === 'string' &&
-          (ROLES as readonly string[]).includes(role)
+          (VALID_ROLES as readonly string[]).includes(role)
         ) {
           return { token, fullName, role: role as Role };
         }
@@ -92,7 +92,7 @@ export class AuthService {
 
   private removeStoredSession(): void {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SESSION_STORAGE_KEY);
     } catch {
       // Ignore: storage is blocked.
     }
