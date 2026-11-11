@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ROLE_HOME } from '../../../core/role-routes';
+import { HOME_PATH_BY_ROLE } from '../../../core/role-routes';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -17,7 +17,7 @@ export class Login {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  protected readonly loading = signal(false);
+  protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal('');
   protected readonly justRegistered = this.route.snapshot.queryParamMap.get('registered') === '1';
 
@@ -26,19 +26,19 @@ export class Login {
     password: ['', Validators.required],
   });
 
-  protected submit(): void {
+  protected signIn(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.loading.set(true);
+    this.isSubmitting.set(true);
     this.errorMessage.set('');
 
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: (response) => this.router.navigateByUrl(ROLE_HOME[response.role]),
+      next: (response) => this.router.navigateByUrl(HOME_PATH_BY_ROLE[response.role]),
       error: (error: HttpErrorResponse) => {
-        this.loading.set(false);
+        this.isSubmitting.set(false);
         this.errorMessage.set(
           error.status === 401
             ? 'Email or password is incorrect.'

@@ -84,8 +84,8 @@
             </div>
 
             <div class="ticket-stub">
-              <button class="btn" type="submit" [disabled]="loading()">
-                {{ loading() ? 'Creating account...' : 'Create account' }}
+              <button class="btn" type="submit" [disabled]="isSubmitting()">
+                {{ isSubmitting() ? 'Creating account...' : 'Create account' }}
               </button>
             </div>
           </article>

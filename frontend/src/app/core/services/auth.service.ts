@@ -18,7 +18,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/api/auth`;
 
-  private readonly session = signal<Session | null>(this.readSession());
+  private readonly session = signal<Session | null>(this.loadStoredSession());
 
   readonly isLoggedIn = computed(() => this.session() !== null);
   readonly role = computed(() => this.session()?.role ?? null);
@@ -35,7 +35,7 @@ export class AuthService {
   }
 
   logout(): void {
-    this.clearStorage();
+    this.removeStoredSession();
     this.session.set(null);
   }
 
@@ -57,7 +57,7 @@ export class AuthService {
     this.session.set(session);
   }
 
-  private readSession(): Session | null {
+  private loadStoredSession(): Session | null {
     let raw: string | null;
     try {
       raw = localStorage.getItem(STORAGE_KEY);
@@ -85,11 +85,11 @@ export class AuthService {
     } catch {
       // Invalid JSON falls through to clearing the storage.
     }
-    this.clearStorage();
+    this.removeStoredSession();
     return null;
   }
 
-  private clearStorage(): void {
+  private removeStoredSession(): void {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {

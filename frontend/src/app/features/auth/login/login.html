@@ -11,7 +11,7 @@
 
     <div class="side">
       <div class="ticket-shadow">
-        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <form [formGroup]="form" (ngSubmit)="signIn()" novalidate>
           <article class="ticket">
             <div class="ticket-body">
               <span class="service-name">Student Affairs office</span>
@@ -68,8 +68,8 @@
             </div>
 
             <div class="ticket-stub">
-              <button class="btn" type="submit" [disabled]="loading()">
-                {{ loading() ? 'Signing in...' : 'Sign in' }}
+              <button class="btn" type="submit" [disabled]="isSubmitting()">
+                {{ isSubmitting() ? 'Signing in...' : 'Sign in' }}
               </button>
             </div>
           </article>

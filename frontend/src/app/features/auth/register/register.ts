@@ -3,7 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
-import { ROLE_HOME } from '../../../core/role-routes';
+import { HOME_PATH_BY_ROLE } from '../../../core/role-routes';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -17,7 +17,7 @@ export class Register {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly loading = signal(false);
+  protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal('');
 
   protected readonly form = this.fb.nonNullable.group({
@@ -32,7 +32,7 @@ export class Register {
       return;
     }
 
-    this.loading.set(true);
+    this.isSubmitting.set(true);
     this.errorMessage.set('');
 
     const { fullName, email, password } = this.form.getRawValue();
@@ -40,13 +40,13 @@ export class Register {
     this.auth.register({ fullName, email, password }).subscribe({
       next: () => {
         this.auth.login({ email, password }).subscribe({
-          next: (response) => this.router.navigateByUrl(ROLE_HOME[response.role]),
+          next: (response) => this.router.navigateByUrl(HOME_PATH_BY_ROLE[response.role]),
           error: () =>
             this.router.navigate(['/login'], { queryParams: { registered: 1 } }),
         });
       },
       error: (error: HttpErrorResponse) => {
-        this.loading.set(false);
+        this.isSubmitting.set(false);
         this.errorMessage.set(
           error.status === 409
             ? 'This email is already registered.'
