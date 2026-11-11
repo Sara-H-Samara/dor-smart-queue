@@ -3,8 +3,8 @@ import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 
-import { CatalogItem, CatalogResource } from '../../../core/models/catalog.model';
-import { CatalogService } from '../../../core/services/catalog.service';
+import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.model';
+import { CatalogService } from '../../../../core/services/catalog.service';
 
 @Component({
   selector: 'app-catalog-panel',
