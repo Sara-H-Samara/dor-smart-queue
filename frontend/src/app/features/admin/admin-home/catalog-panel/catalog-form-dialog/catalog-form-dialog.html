@@ -1,38 +1,38 @@
 <dialog
   #dialog
-  class="add-dialog"
-  [attr.aria-labelledby]="idPrefix() + '-add-title'"
+  class="catalog-dialog"
+  [attr.aria-labelledby]="idPrefix() + '-title'"
   (close)="onDialogClose()"
 >
   <form (submit)="$event.preventDefault(); submit()" novalidate>
-    <h3 [id]="idPrefix() + '-add-title'">{{ heading() }}</h3>
+    <h3 [id]="idPrefix() + '-title'">{{ heading() }}</h3>
 
     @if (error(); as message) {
       <p class="alert" role="alert">{{ message }}</p>
     }
 
-    <div class="add-fields">
+    <div class="dialog-fields">
       <div class="field field-name">
-        <label [for]="idPrefix() + '-new'">{{ nameLabel() }}</label>
+        <label [for]="idPrefix() + '-name'">{{ nameLabel() }}</label>
         <input
           #nameInput
-          [id]="idPrefix() + '-new'"
+          [id]="idPrefix() + '-name'"
           type="text"
           maxlength="100"
           autocomplete="off"
           [formControl]="nameControl"
           [attr.aria-invalid]="nameControl.touched && nameControl.invalid"
-          [attr.aria-describedby]="nameControl.touched && nameControl.invalid ? idPrefix() + '-new-error' : null"
+          [attr.aria-describedby]="nameControl.touched && nameControl.invalid ? idPrefix() + '-name-error' : null"
         />
         @if (nameControl.touched && nameControl.invalid) {
-          <p class="field-error" role="alert" [id]="idPrefix() + '-new-error'">Name is required.</p>
+          <p class="field-error" role="alert" [id]="idPrefix() + '-name-error'">Name is required.</p>
         }
       </div>
       @if (showCode()) {
         <div class="field field-code">
-          <label [for]="idPrefix() + '-new-code'">Code</label>
+          <label [for]="idPrefix() + '-code'">Code</label>
           <input
-            [id]="idPrefix() + '-new-code'"
+            [id]="idPrefix() + '-code'"
             class="code-input"
             type="text"
             maxlength="2"
@@ -43,15 +43,15 @@
             (input)="onCodeInput()"
             [attr.aria-invalid]="showCodeError || !!codeServerError()"
             [attr.aria-describedby]="
-              showCodeError || codeServerError() ? idPrefix() + '-new-code-error' : null
+              showCodeError || codeServerError() ? idPrefix() + '-code-error' : null
             "
           />
           @if (showCodeError) {
-            <p class="field-error" role="alert" [id]="idPrefix() + '-new-code-error'">
+            <p class="field-error" role="alert" [id]="idPrefix() + '-code-error'">
               Enter 1 or 2 English letters.
             </p>
           } @else if (codeServerError(); as message) {
-            <p class="field-error" role="alert" [id]="idPrefix() + '-new-code-error'">{{ message }}</p>
+            <p class="field-error" role="alert" [id]="idPrefix() + '-code-error'">{{ message }}</p>
           }
         </div>
       }

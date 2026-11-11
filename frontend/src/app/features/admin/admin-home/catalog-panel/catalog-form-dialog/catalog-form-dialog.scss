@@ -1,5 +1,5 @@
-/* Add dialog: native <dialog>, styled with the shared tokens. */
-.add-dialog {
+/* Catalog dialog (add and rename): native <dialog>, styled with the shared tokens. */
+.catalog-dialog {
   box-sizing: border-box;
   width: calc(100% - var(--space-5) * 2);
   max-width: 28rem;
@@ -21,7 +21,7 @@
     margin-bottom: var(--space-4);
   }
 
-  .add-fields {
+  .dialog-fields {
     display: flex;
     gap: var(--space-3);
     align-items: flex-start;

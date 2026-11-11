@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, input, OnInit, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.model';
@@ -17,7 +17,7 @@ export class CatalogPanel implements OnInit {
 
   readonly resource = input.required<CatalogResource>();
   readonly heading = input.required<string>();
-  readonly singular = input.required<string>();
+  readonly itemLabel = input.required<string>();
 
   protected readonly items = signal<CatalogItem[]>([]);
   protected readonly loading = signal(false);
@@ -27,13 +27,11 @@ export class CatalogPanel implements OnInit {
   protected readonly dialogMode = signal<'add' | 'rename'>('add');
   private readonly renamingItem = signal<CatalogItem | null>(null);
 
-  private readonly addDialog = viewChild.required(CatalogFormDialog);
+  private readonly dialog = viewChild.required(CatalogFormDialog);
 
   protected readonly codeServerError = signal<string | null>(null);
 
-  protected get hasCode(): boolean {
-    return this.resource() === 'services';
-  }
+  protected readonly hasCode = computed(() => this.resource() === 'services');
 
   ngOnInit(): void {
     this.reload();
@@ -43,7 +41,7 @@ export class CatalogPanel implements OnInit {
     this.error.set(null);
     this.dialogMode.set('add');
     this.dialogOpen.set(true);
-    this.addDialog().open();
+    this.dialog().open();
   }
 
   protected openRename(item: CatalogItem): void {
@@ -51,7 +49,7 @@ export class CatalogPanel implements OnInit {
     this.dialogMode.set('rename');
     this.renamingItem.set(item);
     this.dialogOpen.set(true);
-    this.addDialog().open(item.name);
+    this.dialog().open(item.name);
   }
 
   /** Runs when the dialog closes by any route, including the Esc key. */
@@ -73,15 +71,15 @@ export class CatalogPanel implements OnInit {
   }
 
   private add(value: CatalogFormValue): void {
-    const request = this.hasCode
+    const request = this.hasCode()
       ? this.catalog.create(this.resource(), value.name, value.code ?? '')
       : this.catalog.create(this.resource(), value.name);
     this.codeServerError.set(null);
-    this.run(request, () => this.addDialog().close());
+    this.run(request, () => this.dialog().close());
   }
 
   private rename(item: CatalogItem, name: string): void {
-    this.run(this.catalog.rename(this.resource(), item.id, name), () => this.addDialog().close());
+    this.run(this.catalog.rename(this.resource(), item.id, name), () => this.dialog().close());
   }
 
   protected toggle(item: CatalogItem): void {
@@ -111,7 +109,7 @@ export class CatalogPanel implements OnInit {
 
   /** The server's message when a 409 is about the code rather than the name. */
   private duplicateCodeMessage(err: unknown): string | null {
-    if (!this.hasCode || !(err instanceof HttpErrorResponse) || err.status !== 409) {
+    if (!this.hasCode() || !(err instanceof HttpErrorResponse) || err.status !== 409) {
       return null;
     }
     const body = err.error as { message?: unknown } | string | null;

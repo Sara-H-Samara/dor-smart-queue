@@ -1,7 +1,7 @@
 <section class="panel" [attr.aria-labelledby]="resource() + '-heading'">
   <div class="panel-head">
     <h2 [id]="resource() + '-heading'">{{ heading() }}</h2>
-    <button class="btn btn-sm" type="button" (click)="openAdd()">Add {{ singular().toLowerCase() }}</button>
+    <button class="btn btn-sm" type="button" (click)="openAdd()">Add {{ itemLabel().toLowerCase() }}</button>
   </div>
 
   @if (dialogOpen() ? null : error(); as message) {
@@ -13,13 +13,13 @@
   } @else if (items().length === 0) {
     <div class="empty">
       <p class="empty-title">No {{ heading().toLowerCase() }} yet</p>
-      <p class="empty-text">Use the Add button to create your first {{ singular().toLowerCase() }}.</p>
+      <p class="empty-text">Use the Add button to create your first {{ itemLabel().toLowerCase() }}.</p>
     </div>
   } @else {
     <ul class="items">
       @for (item of items(); track item.id) {
         <li class="item">
-          @if (hasCode && item.code) {
+          @if (hasCode() && item.code) {
             <span class="code-tile" [attr.aria-label]="'Code ' + item.code">{{ item.code }}</span>
           }
           <span class="name">{{ item.name }}</span>
@@ -53,9 +53,9 @@
 
   <app-catalog-form-dialog
     [idPrefix]="resource()"
-    [heading]="(dialogMode() === 'rename' ? 'Rename ' : 'Add ') + singular().toLowerCase()"
-    [nameLabel]="singular() + ' name'"
-    [showCode]="hasCode && dialogMode() === 'add'"
+    [heading]="(dialogMode() === 'rename' ? 'Rename ' : 'Add ') + itemLabel().toLowerCase()"
+    [nameLabel]="itemLabel() + ' name'"
+    [showCode]="hasCode() && dialogMode() === 'add'"
     [submitLabel]="dialogMode() === 'rename' ? 'Save' : 'Add'"
     [busy]="busy()"
     [error]="error()"

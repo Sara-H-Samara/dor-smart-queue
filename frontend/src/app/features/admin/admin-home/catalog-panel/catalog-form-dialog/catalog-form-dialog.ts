@@ -40,10 +40,10 @@ export class CatalogFormDialog {
     nonNullable: true,
     validators: [Validators.required, Validators.pattern(/^[A-Za-z]{1,2}$/)],
   });
-  protected readonly attempted = signal(false);
+  protected readonly submitAttempted = signal(false);
 
   protected get showCodeError(): boolean {
-    return this.codeControl.invalid && (this.codeControl.touched || this.attempted());
+    return this.codeControl.invalid && (this.codeControl.touched || this.submitAttempted());
   }
 
   /** Opens the dialog; an initial name pre-fills the field and is selected. */
@@ -79,7 +79,7 @@ export class CatalogFormDialog {
   protected submit(): void {
     const name = this.nameControl.value.trim();
     if (this.showCode()) {
-      this.attempted.set(true);
+      this.submitAttempted.set(true);
     }
     if (!name) {
       this.nameControl.markAsTouched();
@@ -95,6 +95,6 @@ export class CatalogFormDialog {
   private reset(): void {
     this.nameControl.reset('');
     this.codeControl.reset('');
-    this.attempted.set(false);
+    this.submitAttempted.set(false);
   }
 }
