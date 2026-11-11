@@ -6,7 +6,7 @@
   min-height: 100dvh;
 }
 
-.brand {
+.app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -23,7 +23,7 @@
   letter-spacing: -0.04em;
 }
 
-.wordmark .o {
+.wordmark .wordmark-o {
   display: inline-block;
   width: 0.5em;
   height: 0.5em;
@@ -52,7 +52,7 @@
 }
 
 @media (min-width: 48rem) {
-  .brand {
+  .app-header {
     padding: 0 var(--space-5) 0 var(--space-6);
   }
 

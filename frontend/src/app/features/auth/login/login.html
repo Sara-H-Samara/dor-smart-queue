@@ -1,6 +1,6 @@
 <div class="auth-screen">
-  <header class="brand">
-    <span class="wordmark" role="img" aria-label="Dor">D<i class="o"></i>r</span>
+  <header class="app-header">
+    <span class="wordmark" role="img" aria-label="Dor">D<i class="wordmark-o"></i>r</span>
   </header>
 
   <main class="auth-main">
@@ -10,11 +10,11 @@
     </div>
 
     <div class="side">
-      <div class="tk-wrap">
+      <div class="ticket-shadow">
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <article class="ticket">
-            <div class="t-main">
-              <span class="svc">Student Affairs office</span>
+            <div class="ticket-body">
+              <span class="service-name">Student Affairs office</span>
               <h1>Sign in</h1>
               <p class="lede">Use the account you created for the office.</p>
 
@@ -25,8 +25,8 @@
               @let email = form.controls.email;
               @let password = form.controls.password;
 
-              <div class="group">
-                <div class="row">
+              <div class="field-group">
+                <div class="field-row">
                   <label for="email">Email</label>
                   <input
                     id="email"
@@ -45,7 +45,7 @@
                   </p>
                 }
 
-                <div class="row">
+                <div class="field-row">
                   <label for="password">Password</label>
                   <input
                     id="password"
@@ -67,7 +67,7 @@
               }
             </div>
 
-            <div class="t-stub">
+            <div class="ticket-stub">
               <button class="btn" type="submit" [disabled]="loading()">
                 {{ loading() ? 'Signing in...' : 'Sign in' }}
               </button>
@@ -76,7 +76,7 @@
         </form>
       </div>
 
-      <p class="foot">New to Dor?</p>
+      <p class="switch-prompt">New to Dor?</p>
       <a class="btn-text" routerLink="/register">Create an account</a>
     </div>
   </main>
