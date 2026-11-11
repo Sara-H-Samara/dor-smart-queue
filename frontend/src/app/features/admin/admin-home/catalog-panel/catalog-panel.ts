@@ -1,6 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, input, OnInit, signal, viewChild } from '@angular/core';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 
 import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.model';
@@ -9,7 +8,7 @@ import { CatalogFormDialog, CatalogFormValue } from './catalog-form-dialog/catal
 
 @Component({
   selector: 'app-catalog-panel',
-  imports: [ReactiveFormsModule, CatalogFormDialog],
+  imports: [CatalogFormDialog],
   templateUrl: './catalog-panel.html',
   styleUrl: './catalog-panel.scss',
 })
@@ -24,15 +23,11 @@ export class CatalogPanel implements OnInit {
   protected readonly loading = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly editingId = signal<number | null>(null);
-  protected readonly addOpen = signal(false);
+  protected readonly dialogOpen = signal(false);
+  protected readonly dialogMode = signal<'add' | 'rename'>('add');
+  private readonly renamingItem = signal<CatalogItem | null>(null);
 
   private readonly addDialog = viewChild.required(CatalogFormDialog);
-
-  protected readonly renameControl = new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.maxLength(100)],
-  });
 
   protected readonly codeServerError = signal<string | null>(null);
 
@@ -46,18 +41,38 @@ export class CatalogPanel implements OnInit {
 
   protected openAdd(): void {
     this.error.set(null);
-    this.addOpen.set(true);
+    this.dialogMode.set('add');
+    this.dialogOpen.set(true);
     this.addDialog().open();
   }
 
+  protected openRename(item: CatalogItem): void {
+    this.error.set(null);
+    this.dialogMode.set('rename');
+    this.renamingItem.set(item);
+    this.dialogOpen.set(true);
+    this.addDialog().open(item.name);
+  }
+
   /** Runs when the dialog closes by any route, including the Esc key. */
-  protected onAddClosed(): void {
-    this.addOpen.set(false);
+  protected onDialogClosed(): void {
+    this.dialogOpen.set(false);
+    this.dialogMode.set('add');
+    this.renamingItem.set(null);
     this.codeServerError.set(null);
     this.error.set(null);
   }
 
-  protected add(value: CatalogFormValue): void {
+  protected onSubmitted(value: CatalogFormValue): void {
+    const item = this.renamingItem();
+    if (this.dialogMode() === 'rename' && item) {
+      this.rename(item, value.name);
+    } else {
+      this.add(value);
+    }
+  }
+
+  private add(value: CatalogFormValue): void {
     const request = this.hasCode
       ? this.catalog.create(this.resource(), value.name, value.code ?? '')
       : this.catalog.create(this.resource(), value.name);
@@ -65,23 +80,8 @@ export class CatalogPanel implements OnInit {
     this.run(request, () => this.addDialog().close());
   }
 
-  protected startEdit(item: CatalogItem): void {
-    this.error.set(null);
-    this.renameControl.setValue(item.name);
-    this.editingId.set(item.id);
-  }
-
-  protected cancelEdit(): void {
-    this.editingId.set(null);
-  }
-
-  protected saveEdit(item: CatalogItem): void {
-    const name = this.renameControl.value.trim();
-    if (!name) {
-      this.renameControl.markAsTouched();
-      return;
-    }
-    this.run(this.catalog.rename(this.resource(), item.id, name), () => this.editingId.set(null));
+  private rename(item: CatalogItem, name: string): void {
+    this.run(this.catalog.rename(this.resource(), item.id, name), () => this.addDialog().close());
   }
 
   protected toggle(item: CatalogItem): void {

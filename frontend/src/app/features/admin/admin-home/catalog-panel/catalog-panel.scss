@@ -83,21 +83,6 @@ h2 {
   margin-left: calc(var(--space-3) * -1);
 }
 
-.edit-form {
-  flex: 1 1 100%;
-  padding-bottom: var(--space-3);
-
-  .field {
-    margin-bottom: var(--space-3);
-  }
-
-  .actions {
-    align-items: center;
-    margin-left: 0;
-    gap: var(--space-3);
-  }
-}
-
 .empty {
   margin: 0 0 var(--space-5);
   padding: var(--space-5) var(--space-4);

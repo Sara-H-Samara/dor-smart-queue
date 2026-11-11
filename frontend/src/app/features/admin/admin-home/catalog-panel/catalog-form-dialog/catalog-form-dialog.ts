@@ -6,7 +6,7 @@ export interface CatalogFormValue {
   code?: string;
 }
 
-/** Modal form for adding a catalog item. The parent owns the API calls. */
+/** Modal form for adding or renaming a catalog item. The parent owns the API calls. */
 @Component({
   selector: 'app-catalog-form-dialog',
   imports: [ReactiveFormsModule],
@@ -18,6 +18,7 @@ export class CatalogFormDialog {
   readonly idPrefix = input.required<string>();
   readonly heading = input.required<string>();
   readonly nameLabel = input.required<string>();
+  readonly submitLabel = input('Add');
   readonly showCode = input(false);
   readonly busy = input(false);
   readonly error = input<string | null>(null);
@@ -31,7 +32,7 @@ export class CatalogFormDialog {
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly nameInput = viewChild.required<ElementRef<HTMLInputElement>>('nameInput');
 
-  protected readonly addControl = new FormControl('', {
+  protected readonly nameControl = new FormControl('', {
     nonNullable: true,
     validators: [Validators.required, Validators.maxLength(100)],
   });
@@ -45,9 +46,15 @@ export class CatalogFormDialog {
     return this.codeControl.invalid && (this.codeControl.touched || this.attempted());
   }
 
-  open(): void {
+  /** Opens the dialog; an initial name pre-fills the field and is selected. */
+  open(initialName?: string): void {
+    if (initialName !== undefined) {
+      this.nameControl.setValue(initialName);
+    }
     this.dialog().nativeElement.showModal();
-    this.nameInput().nativeElement.focus();
+    const input = this.nameInput().nativeElement;
+    input.focus();
+    input.select();
   }
 
   close(): void {
@@ -70,12 +77,12 @@ export class CatalogFormDialog {
   }
 
   protected submit(): void {
-    const name = this.addControl.value.trim();
+    const name = this.nameControl.value.trim();
     if (this.showCode()) {
       this.attempted.set(true);
     }
     if (!name) {
-      this.addControl.markAsTouched();
+      this.nameControl.markAsTouched();
     }
     if (!name || (this.showCode() && this.codeControl.invalid)) {
       return;
@@ -86,7 +93,7 @@ export class CatalogFormDialog {
   }
 
   private reset(): void {
-    this.addControl.reset('');
+    this.nameControl.reset('');
     this.codeControl.reset('');
     this.attempted.set(false);
   }

@@ -20,11 +20,11 @@
           type="text"
           maxlength="100"
           autocomplete="off"
-          [formControl]="addControl"
-          [attr.aria-invalid]="addControl.touched && addControl.invalid"
-          [attr.aria-describedby]="addControl.touched && addControl.invalid ? idPrefix() + '-new-error' : null"
+          [formControl]="nameControl"
+          [attr.aria-invalid]="nameControl.touched && nameControl.invalid"
+          [attr.aria-describedby]="nameControl.touched && nameControl.invalid ? idPrefix() + '-new-error' : null"
         />
-        @if (addControl.touched && addControl.invalid) {
+        @if (nameControl.touched && nameControl.invalid) {
           <p class="field-error" role="alert" [id]="idPrefix() + '-new-error'">Name is required.</p>
         }
       </div>
@@ -59,7 +59,7 @@
 
     <div class="dialog-actions">
       <button class="btn btn-quiet btn-sm" type="button" (click)="close()">Cancel</button>
-      <button class="btn btn-sm" type="submit" [disabled]="busy()">Add</button>
+      <button class="btn btn-sm" type="submit" [disabled]="busy()">{{ submitLabel() }}</button>
     </div>
   </form>
 </dialog>
