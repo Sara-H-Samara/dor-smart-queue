@@ -16,26 +16,26 @@ import java.util.List;
 public class CounterController {
 
     @Autowired
-    private CounterService service;
+    private CounterService counterService;
 
     @GetMapping
     public List<CounterResponse> list() {
-        return service.list();
+        return counterService.list();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CounterResponse create(@Valid @RequestBody NameRequest request) {
-        return service.create(request);
+        return counterService.create(request);
     }
 
     @PutMapping("/{id}")
     public CounterResponse rename(@PathVariable Long id, @Valid @RequestBody NameRequest request) {
-        return service.rename(id, request);
+        return counterService.rename(id, request);
     }
 
     @PatchMapping("/{id}/active")
     public CounterResponse setActive(@PathVariable Long id, @Valid @RequestBody ActiveRequest request) {
-        return service.setActive(id, request);
+        return counterService.updateActive(id, request);
     }
 }

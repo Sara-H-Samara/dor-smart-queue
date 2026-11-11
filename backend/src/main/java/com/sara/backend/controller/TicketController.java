@@ -20,11 +20,13 @@ public class TicketController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TicketResponse take(Authentication authentication, @Valid @RequestBody TakeTicketRequest request) {
-        return ticketService.takeTicket(authentication.getName(), request);
+        String email = authentication.getName();
+        return ticketService.takeTicket(email, request);
     }
 
     @GetMapping("/me")
-    public MyTicketResponse me(Authentication authentication) {
-        return ticketService.getMyTicket(authentication.getName());
+    public MyTicketResponse getMyActiveTicket(Authentication authentication) {
+        String email = authentication.getName();
+        return ticketService.getActiveTicket(email);
     }
 }

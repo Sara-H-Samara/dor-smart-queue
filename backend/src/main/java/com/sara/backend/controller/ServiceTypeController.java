@@ -17,26 +17,26 @@ import java.util.List;
 public class ServiceTypeController {
 
     @Autowired
-    private ServiceTypeService service;
+    private ServiceTypeService serviceTypeService;
 
     @GetMapping
     public List<ServiceTypeResponse> list() {
-        return service.list();
+        return serviceTypeService.list();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ServiceTypeResponse create(@Valid @RequestBody ServiceTypeCreateRequest request) {
-        return service.create(request);
+        return serviceTypeService.create(request);
     }
 
     @PutMapping("/{id}")
     public ServiceTypeResponse rename(@PathVariable Long id, @Valid @RequestBody NameRequest request) {
-        return service.rename(id, request);
+        return serviceTypeService.rename(id, request);
     }
 
     @PatchMapping("/{id}/active")
     public ServiceTypeResponse setActive(@PathVariable Long id, @Valid @RequestBody ActiveRequest request) {
-        return service.setActive(id, request);
+        return serviceTypeService.updateActive(id, request);
     }
 }

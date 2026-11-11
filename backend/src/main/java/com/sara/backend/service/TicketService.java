@@ -26,6 +26,9 @@ public class TicketService {
     // Release 1 uses a fixed estimate; Release 2 will use real service times.
     private static final int ESTIMATED_MINUTES_PER_PERSON = 5;
 
+    // WAITING and CALLED = the ticket is still active.
+    private static final List<TicketStatus> ACTIVE_STATUSES = List.of(TicketStatus.WAITING, TicketStatus.CALLED);
+
     @Autowired
     private TicketRepository ticketRepository;
 
@@ -46,8 +49,7 @@ public class TicketService {
         User student = userRepository.findByIdForUpdate(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."));
 
-        if (ticketRepository.existsByStudentIdAndStatusIn(
-                student.getId(), List.of(TicketStatus.WAITING, TicketStatus.CALLED))) {
+        if (ticketRepository.existsByStudentIdAndStatusIn(student.getId(), ACTIVE_STATUSES)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You already have an active ticket.");
         }
 
@@ -58,12 +60,12 @@ public class TicketService {
         }
 
         LocalDate today = LocalDate.now();
-        Integer max = ticketRepository.findMaxNumber(serviceId, today);
+        Integer lastNumberToday = ticketRepository.findMaxNumber(serviceId, today);
 
         Ticket ticket = new Ticket();
         ticket.setStudent(student);
         ticket.setServiceType(serviceType);
-        ticket.setNumber((max == null ? 0 : max) + 1);
+        ticket.setNumber((lastNumberToday == null ? 0 : lastNumberToday) + 1);
         ticket.setTicketDate(today);
         ticket.setStatus(TicketStatus.WAITING);
 
@@ -75,13 +77,12 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true)
-    public MyTicketResponse getMyTicket(String email) {
+    public MyTicketResponse getActiveTicket(String email) {
         Long studentId = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."))
                 .getId();
 
-        Ticket ticket = ticketRepository.findFirstByStudentIdAndStatusIn(
-                        studentId, List.of(TicketStatus.WAITING, TicketStatus.CALLED))
+        Ticket ticket = ticketRepository.findFirstByStudentIdAndStatusIn(studentId, ACTIVE_STATUSES)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
 
         if (ticket.getStatus() == TicketStatus.CALLED) {

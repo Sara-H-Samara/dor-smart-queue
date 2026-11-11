@@ -18,10 +18,10 @@ import java.util.List;
 public class ServiceTypeService {
 
     @Autowired
-    private ServiceTypeRepository repository;
+    private ServiceTypeRepository serviceTypeRepository;
 
     public List<ServiceTypeResponse> list() {
-        return repository.findAllByOrderByNameAsc().stream().map(ServiceTypeResponse::from).toList();
+        return serviceTypeRepository.findAllByOrderByNameAsc().stream().map(ServiceTypeResponse::from).toList();
     }
 
     public ServiceTypeResponse create(ServiceTypeCreateRequest request) {
@@ -29,46 +29,46 @@ public class ServiceTypeService {
         if (name.isEmpty() || name.length() > 100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must be 1 to 100 characters.");
         }
-        if (repository.existsByNameIgnoreCase(name)) {
+        if (serviceTypeRepository.existsByNameIgnoreCase(name)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Service name already exists.");
         }
         String code = request.code().trim().toUpperCase();
-        if (repository.existsByCodeIgnoreCase(code)) {
+        if (serviceTypeRepository.existsByCodeIgnoreCase(code)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This code is already used by another service.");
         }
 
-        ServiceType entity = new ServiceType();
-        entity.setName(name);
-        entity.setCode(code);
+        ServiceType serviceType = new ServiceType();
+        serviceType.setName(name);
+        serviceType.setCode(code);
         try {
-            return ServiceTypeResponse.from(repository.save(entity));
+            return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Service name or code already exists.");
         }
     }
 
     public ServiceTypeResponse rename(Long id, NameRequest request) {
-        ServiceType entity = find(id);
+        ServiceType serviceType = findOrThrow(id);
         String name = request.name().trim();
         if (name.isEmpty() || name.length() > 100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must be 1 to 100 characters.");
         }
-        if (repository.existsByNameIgnoreCaseAndIdNot(name, id)) {
+        if (serviceTypeRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Service name already exists.");
         }
 
-        entity.setName(name);
-        return ServiceTypeResponse.from(repository.save(entity));
+        serviceType.setName(name);
+        return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
     }
 
-    public ServiceTypeResponse setActive(Long id, ActiveRequest request) {
-        ServiceType entity = find(id);
-        entity.setActive(request.active());
-        return ServiceTypeResponse.from(repository.save(entity));
+    public ServiceTypeResponse updateActive(Long id, ActiveRequest request) {
+        ServiceType serviceType = findOrThrow(id);
+        serviceType.setActive(request.active());
+        return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
     }
 
-    private ServiceType find(Long id) {
-        return repository.findById(id)
+    private ServiceType findOrThrow(Long id) {
+        return serviceTypeRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found."));
     }
 }
