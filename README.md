@@ -9,9 +9,15 @@ Paper queue numbers give students no information about their place in line
 and no way to leave the office while they wait.
 
 ## Features
-- Student: take a ticket, follow position and estimated wait, leave the queue
+**Available now**
+- Register and log in, with student, staff, and admin roles
+- Admin: manage services and counters
+- Student: take a ticket and see position and estimated wait (API only, UI coming)
+
+**Planned**
+- Student: screen for tickets, leave the queue
 - Staff: call next student, mark as done or no-show
-- Admin: manage services, counters, and users
+- Admin: manage users
 - Waiting-room screen: who is served now and who is next
 
 *Live updates, early alerts, and statistics arrive in Release 2.*
@@ -21,15 +27,16 @@ and no way to leave the office while they wait.
 |---|---|
 | Frontend | Angular |
 | Backend | Java 21, Spring Boot, Spring Security (JWT) |
-| Database | PostgreSQL, Flyway migrations |
-| Infrastructure | Docker Compose, GitHub Actions |
+| Database | PostgreSQL |
+
+Planned: Flyway migrations, Docker Compose, GitHub Actions.
 
 ## Project structure
-- `backend/`: Spring Boot server (controller, service, repository layers)
+- `backend/`: Spring Boot server (controller, service, repository, entity, dto, security, config)
 - `frontend/`: Angular interface
 
 ## How to run
-Coming in Release 1.
+In progress - setup instructions will be added soon.
 
 ## License
 MIT
