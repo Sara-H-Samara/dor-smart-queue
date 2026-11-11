@@ -1,6 +1,6 @@
-<section class="panel" [attr.aria-labelledby]="resource() + '-heading'">
+<section class="panel" [attr.aria-labelledby]="catalogResource() + '-heading'">
   <div class="panel-head">
-    <h2 [id]="resource() + '-heading'">{{ heading() }}</h2>
+    <h2 [id]="catalogResource() + '-heading'">{{ heading() }}</h2>
     <button class="btn btn-sm" type="button" (click)="openAdd()">Add {{ itemLabel().toLowerCase() }}</button>
   </div>
 
@@ -52,15 +52,15 @@
   }
 
   <app-catalog-form-dialog
-    [idPrefix]="resource()"
+    [idPrefix]="catalogResource()"
     [heading]="(dialogMode() === 'rename' ? 'Rename ' : 'Add ') + itemLabel().toLowerCase()"
     [nameLabel]="itemLabel() + ' name'"
-    [showCode]="supportsCode() && dialogMode() === 'add'"
+    [showCodeField]="supportsCode() && dialogMode() === 'add'"
     [submitLabel]="dialogMode() === 'rename' ? 'Save' : 'Add'"
     [isSaving]="isSaving()"
-    [error]="error()"
-    [codeServerError]="codeServerError()"
-    (submitted)="onSubmitted($event)"
+    [errorMessage]="error()"
+    [codeConflictMessage]="codeServerError()"
+    (submitted)="onFormSubmitted($event)"
     (codeEdited)="codeServerError.set(null)"
     (closed)="onDialogClosed()"
   />

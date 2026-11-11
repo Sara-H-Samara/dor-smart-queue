@@ -13,9 +13,9 @@ import { CatalogFormDialog, CatalogFormValue } from './catalog-form-dialog/catal
   styleUrl: './catalog-panel.scss',
 })
 export class CatalogPanel implements OnInit {
-  private readonly catalog = inject(CatalogService);
+  private readonly catalogService = inject(CatalogService);
 
-  readonly resource = input.required<CatalogResource>();
+  readonly catalogResource = input.required<CatalogResource>();
   readonly heading = input.required<string>();
   readonly itemLabel = input.required<string>();
 
@@ -31,10 +31,10 @@ export class CatalogPanel implements OnInit {
 
   protected readonly codeServerError = signal<string | null>(null);
 
-  protected readonly supportsCode = computed(() => this.resource() === 'services');
+  protected readonly supportsCode = computed(() => this.catalogResource() === 'services');
 
   ngOnInit(): void {
-    this.reload();
+    this.reloadItems();
   }
 
   protected openAdd(): void {
@@ -61,29 +61,29 @@ export class CatalogPanel implements OnInit {
     this.error.set(null);
   }
 
-  protected onSubmitted(value: CatalogFormValue): void {
+  protected onFormSubmitted(formValue: CatalogFormValue): void {
     const item = this.renamingItem();
     if (this.dialogMode() === 'rename' && item) {
-      this.renameItem(item, value.name);
+      this.renameItem(item, formValue.name);
     } else {
-      this.createItem(value);
+      this.createItem(formValue);
     }
   }
 
   private createItem(value: CatalogFormValue): void {
-    const request = this.supportsCode()
-      ? this.catalog.create(this.resource(), value.name, value.code ?? '')
-      : this.catalog.create(this.resource(), value.name);
+    const createCall$ = this.supportsCode()
+      ? this.catalogService.create(this.catalogResource(), value.name, value.code ?? '')
+      : this.catalogService.create(this.catalogResource(), value.name);
     this.codeServerError.set(null);
-    this.sendAndReload(request, () => this.formDialog().close());
+    this.sendAndReload(createCall$, () => this.formDialog().closeAndReset());
   }
 
   private renameItem(item: CatalogItem, name: string): void {
-    this.sendAndReload(this.catalog.rename(this.resource(), item.id, name), () => this.formDialog().close());
+    this.sendAndReload(this.catalogService.rename(this.catalogResource(), item.id, name), () => this.formDialog().closeAndReset());
   }
 
   protected toggleItemActive(item: CatalogItem): void {
-    this.sendAndReload(this.catalog.setActive(this.resource(), item.id, !item.active));
+    this.sendAndReload(this.catalogService.setActive(this.catalogResource(), item.id, !item.active));
   }
 
   private sendAndReload(request: Observable<unknown>, onSuccess?: () => void): void {
@@ -93,7 +93,7 @@ export class CatalogPanel implements OnInit {
       next: () => {
         onSuccess?.();
         this.isSaving.set(false);
-        this.reload();
+        this.reloadItems();
       },
       error: (err: unknown) => {
         this.isSaving.set(false);
@@ -101,7 +101,7 @@ export class CatalogPanel implements OnInit {
         if (duplicateCode) {
           this.codeServerError.set(duplicateCode);
         } else {
-          this.error.set(this.messageFor(err));
+          this.error.set(this.errorMessageForStatus(err));
         }
       },
     });
@@ -120,21 +120,21 @@ export class CatalogPanel implements OnInit {
       : null;
   }
 
-  private reload(): void {
+  private reloadItems(): void {
     this.isLoadingList.set(true);
-    this.catalog.list(this.resource()).subscribe({
+    this.catalogService.listItems(this.catalogResource()).subscribe({
       next: (items) => {
         this.items.set(items);
         this.isLoadingList.set(false);
       },
       error: (err: unknown) => {
         this.isLoadingList.set(false);
-        this.error.set(this.messageFor(err));
+        this.error.set(this.errorMessageForStatus(err));
       },
     });
   }
 
-  private messageFor(err: unknown): string {
+  private errorMessageForStatus(err: unknown): string {
     const status = err instanceof HttpErrorResponse ? err.status : 0;
     switch (status) {
       case 409:

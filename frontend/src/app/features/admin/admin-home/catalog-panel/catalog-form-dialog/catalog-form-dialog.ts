@@ -19,10 +19,10 @@ export class CatalogFormDialog {
   readonly heading = input.required<string>();
   readonly nameLabel = input.required<string>();
   readonly submitLabel = input('Add');
-  readonly showCode = input(false);
+  readonly showCodeField = input(false);
   readonly isSaving = input(false);
-  readonly error = input<string | null>(null);
-  readonly codeServerError = input<string | null>(null);
+  readonly errorMessage = input<string | null>(null);
+  readonly codeConflictMessage = input<string | null>(null);
 
   readonly submitted = output<CatalogFormValue>();
   readonly closed = output<void>();
@@ -42,7 +42,7 @@ export class CatalogFormDialog {
   });
   protected readonly submitAttempted = signal(false);
 
-  protected get showCodeError(): boolean {
+  protected get shouldShowCodeError(): boolean {
     return this.codeControl.invalid && (this.codeControl.touched || this.submitAttempted());
   }
 
@@ -57,7 +57,7 @@ export class CatalogFormDialog {
     nameField.select();
   }
 
-  close(): void {
+  closeAndReset(): void {
     this.dialogElement().nativeElement.close();
     this.reset();
   }
@@ -68,7 +68,7 @@ export class CatalogFormDialog {
     this.closed.emit();
   }
 
-  protected onCodeInput(): void {
+  protected normalizeCodeInput(): void {
     const cleaned = this.codeControl.value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 2);
     if (cleaned !== this.codeControl.value) {
       this.codeControl.setValue(cleaned);
@@ -76,19 +76,19 @@ export class CatalogFormDialog {
     this.codeEdited.emit();
   }
 
-  protected submit(): void {
+  protected validateAndEmit(): void {
     const name = this.nameControl.value.trim();
-    if (this.showCode()) {
+    if (this.showCodeField()) {
       this.submitAttempted.set(true);
     }
     if (!name) {
       this.nameControl.markAsTouched();
     }
-    if (!name || (this.showCode() && this.codeControl.invalid)) {
+    if (!name || (this.showCodeField() && this.codeControl.invalid)) {
       return;
     }
     this.submitted.emit(
-      this.showCode() ? { name, code: this.codeControl.value.toUpperCase() } : { name },
+      this.showCodeField() ? { name, code: this.codeControl.value.toUpperCase() } : { name },
     );
   }
 

@@ -4,10 +4,10 @@
   [attr.aria-labelledby]="idPrefix() + '-title'"
   (close)="onDialogClose()"
 >
-  <form (submit)="$event.preventDefault(); submit()" novalidate>
+  <form (submit)="$event.preventDefault(); validateAndEmit()" novalidate>
     <h3 [id]="idPrefix() + '-title'">{{ heading() }}</h3>
 
-    @if (error(); as message) {
+    @if (errorMessage(); as message) {
       <p class="alert" role="alert">{{ message }}</p>
     }
 
@@ -28,7 +28,7 @@
           <p class="field-error" role="alert" [id]="idPrefix() + '-name-error'">Name is required.</p>
         }
       </div>
-      @if (showCode()) {
+      @if (showCodeField()) {
         <div class="field field-code">
           <label [for]="idPrefix() + '-code'">Code</label>
           <input
@@ -40,17 +40,17 @@
             autocapitalize="characters"
             spellcheck="false"
             [formControl]="codeControl"
-            (input)="onCodeInput()"
-            [attr.aria-invalid]="showCodeError || !!codeServerError()"
+            (input)="normalizeCodeInput()"
+            [attr.aria-invalid]="shouldShowCodeError || !!codeConflictMessage()"
             [attr.aria-describedby]="
-              showCodeError || codeServerError() ? idPrefix() + '-code-error' : null
+              shouldShowCodeError || codeConflictMessage() ? idPrefix() + '-code-error' : null
             "
           />
-          @if (showCodeError) {
+          @if (shouldShowCodeError) {
             <p class="field-error" role="alert" [id]="idPrefix() + '-code-error'">
               Enter 1 or 2 English letters.
             </p>
-          } @else if (codeServerError(); as message) {
+          } @else if (codeConflictMessage(); as message) {
             <p class="field-error" role="alert" [id]="idPrefix() + '-code-error'">{{ message }}</p>
           }
         </div>
@@ -58,7 +58,7 @@
     </div>
 
     <div class="dialog-actions">
-      <button class="btn btn-quiet btn-sm" type="button" (click)="close()">Cancel</button>
+      <button class="btn btn-quiet btn-sm" type="button" (click)="closeAndReset()">Cancel</button>
       <button class="btn btn-sm" type="submit" [disabled]="isSaving()">{{ submitLabel() }}</button>
     </div>
   </form>

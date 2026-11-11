@@ -8,24 +8,24 @@ import { CatalogItem, CatalogResource } from '../models/catalog.model';
 export class CatalogService {
   private readonly http = inject(HttpClient);
 
-  list(resource: CatalogResource): Observable<CatalogItem[]> {
-    return this.http.get<CatalogItem[]>(this.url(resource));
+  listItems(resource: CatalogResource): Observable<CatalogItem[]> {
+    return this.http.get<CatalogItem[]>(this.adminUrlFor(resource));
   }
 
   create(resource: CatalogResource, name: string, code?: string): Observable<CatalogItem> {
     const body = resource === 'services' && code !== undefined ? { name, code } : { name };
-    return this.http.post<CatalogItem>(this.url(resource), body);
+    return this.http.post<CatalogItem>(this.adminUrlFor(resource), body);
   }
 
   rename(resource: CatalogResource, id: number, name: string): Observable<CatalogItem> {
-    return this.http.put<CatalogItem>(`${this.url(resource)}/${id}`, { name });
+    return this.http.put<CatalogItem>(`${this.adminUrlFor(resource)}/${id}`, { name });
   }
 
   setActive(resource: CatalogResource, id: number, active: boolean): Observable<CatalogItem> {
-    return this.http.patch<CatalogItem>(`${this.url(resource)}/${id}/active`, { active });
+    return this.http.patch<CatalogItem>(`${this.adminUrlFor(resource)}/${id}/active`, { active });
   }
 
-  private url(resource: CatalogResource): string {
+  private adminUrlFor(resource: CatalogResource): string {
     return `${environment.apiUrl}/api/admin/${resource}`;
   }
 }
