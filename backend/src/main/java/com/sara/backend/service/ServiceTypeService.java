@@ -26,7 +26,7 @@ public class ServiceTypeService {
 
     public ServiceTypeResponse create(ServiceTypeCreateRequest request) {
         String name = request.name().trim();
-        if (name.isEmpty() || name.length() > 100) {
+        if (name.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must be 1 to 100 characters.");
         }
         if (serviceTypeRepository.existsByNameIgnoreCase(name)) {
@@ -50,7 +50,7 @@ public class ServiceTypeService {
     public ServiceTypeResponse rename(Long id, NameRequest request) {
         ServiceType serviceType = findOrThrow(id);
         String name = request.name().trim();
-        if (name.isEmpty() || name.length() > 100) {
+        if (name.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must be 1 to 100 characters.");
         }
         if (serviceTypeRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
