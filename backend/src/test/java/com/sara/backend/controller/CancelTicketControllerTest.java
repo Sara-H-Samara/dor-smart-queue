@@ -1,5 +1,6 @@
 package com.sara.backend.controller;
 
+import com.jayway.jsonpath.JsonPath;
 import com.sara.backend.config.DataSeeder;
 import com.sara.backend.entity.ServiceType;
 import com.sara.backend.entity.Ticket;
@@ -55,7 +56,7 @@ class CancelTicketControllerTest {
     private TicketTestHelper testHelper;
 
     @BeforeEach
-    void deleteAllTestData() {
+    void resetDatabaseWithSeededAdmin() {
         ticketRepository.deleteAll();
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
@@ -88,17 +89,25 @@ class CancelTicketControllerTest {
     }
 
     @Test
-    void cancelTicket_thenTakeTicket_returnsCreated() throws Exception {
+    void cancelTicket_thenTakeTicket_returnsNextNumber() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         String token = testHelper.registerStudentAndLogin("a@example.com");
-        testHelper.createTicketForRegisteredStudent("a@example.com", registration, 1, TicketStatus.WAITING);
+        Ticket cancelledTicket = testHelper.createTicketForRegisteredStudent(
+                "a@example.com", registration, 1, TicketStatus.WAITING);
         cancelMyTicket(token).andExpect(status().isNoContent());
 
-        mockMvc.perform(post(TICKETS_URL)
+        String newTicketResponse = mockMvc.perform(post(TICKETS_URL)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"serviceId\":%d}".formatted(registration.getId())))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Number newTicketId = JsonPath.read(newTicketResponse, "$.id");
+        Ticket newTicket = ticketRepository.findById(newTicketId.longValue()).orElseThrow();
+        assertEquals(cancelledTicket.getNumber() + 1, newTicket.getNumber());
+        assertEquals(TicketStatus.CANCELLED,
+                ticketRepository.findById(cancelledTicket.getId()).orElseThrow().getStatus());
     }
 
     @Test
