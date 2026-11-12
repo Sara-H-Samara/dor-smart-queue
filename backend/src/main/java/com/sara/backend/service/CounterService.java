@@ -24,7 +24,7 @@ public class CounterService {
 
     public CounterResponse create(NameRequest request) {
         String name = request.name().trim();
-        if (name.isEmpty() || name.length() > 100) {
+        if (name.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must be 1 to 100 characters.");
         }
         if (counterRepository.existsByNameIgnoreCase(name)) {
@@ -39,7 +39,7 @@ public class CounterService {
     public CounterResponse rename(Long id, NameRequest request) {
         Counter counter = findOrThrow(id);
         String name = request.name().trim();
-        if (name.isEmpty() || name.length() > 100) {
+        if (name.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must be 1 to 100 characters.");
         }
         if (counterRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
