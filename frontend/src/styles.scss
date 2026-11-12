@@ -62,14 +62,14 @@
   --color-danger: #b3261e;
 
   /* ---- Color: ticket states (light), text on tint ---- */
-  --state-waiting-bg: #ffefc7;
-  --state-waiting-fg: #6f3e00;
-  --state-called-bg: #d6f2dd;
-  --state-called-fg: #0d5527;
-  --state-served-bg: #e4e5ea;
-  --state-served-fg: #34383f;
-  --state-noshow-bg: #ffe0dc;
-  --state-noshow-fg: #8f1a14;
+  --color-state-waiting-bg: #ffefc7;
+  --color-state-waiting-fg: #6f3e00;
+  --color-state-called-bg: #d6f2dd;
+  --color-state-called-fg: #0d5527;
+  --color-state-served-bg: #e4e5ea;
+  --color-state-served-fg: #34383f;
+  --color-state-noshow-bg: #ffe0dc;
+  --color-state-noshow-fg: #8f1a14;
 
   /* ---- Elevation ---- */
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.05);
@@ -77,7 +77,7 @@
 
   /* ---- Motion ---- */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --duration: 0.18s;
+  --duration-base: 0.18s;
 
   /* ---- Old names kept as aliases (do not remove while screens use them) ---- */
   --font: var(--font-family);
@@ -108,14 +108,14 @@
     --color-link: #8eb1ff;
     --color-danger: #ff8f88;
 
-    --state-waiting-bg: #3b2b05;
-    --state-waiting-fg: #ffd27d;
-    --state-called-bg: #123d22;
-    --state-called-fg: #86e6a3;
-    --state-served-bg: #2b2e36;
-    --state-served-fg: #cdd1da;
-    --state-noshow-bg: #471a1a;
-    --state-noshow-fg: #ffa5a0;
+    --color-state-waiting-bg: #3b2b05;
+    --color-state-waiting-fg: #ffd27d;
+    --color-state-called-bg: #123d22;
+    --color-state-called-fg: #86e6a3;
+    --color-state-served-bg: #2b2e36;
+    --color-state-served-fg: #cdd1da;
+    --color-state-noshow-bg: #471a1a;
+    --color-state-noshow-fg: #ffa5a0;
 
     --shadow-soft: none;
   }
@@ -279,8 +279,8 @@ textarea {
   border-radius: var(--radius-pill);
   cursor: pointer;
   transition:
-    background var(--duration) var(--ease-out),
-    transform var(--duration) var(--ease-out);
+    background var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
 
   &:hover:not(:disabled) {
     background: var(--color-brand-hover);
@@ -330,20 +330,6 @@ textarea {
 
   @media (pointer: coarse) {
     min-height: 2.75rem;
-  }
-}
-
-/* ---- Links ---- */
-
-.switch {
-  margin: var(--space-5) 0 0;
-  text-align: center;
-  font-size: var(--fs-small);
-  color: var(--color-text-muted);
-
-  a {
-    color: var(--color-link);
-    text-decoration: none;
   }
 }
 

@@ -4,8 +4,8 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 export const authGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
+  const authService = inject(AuthService);
   const router = inject(Router);
   // Not signed in: redirect to /login.
-  return auth.isLoggedIn() ? true : router.createUrlTree(['/login']);
+  return authService.isLoggedIn() ? true : router.createUrlTree(['/login']);
 };

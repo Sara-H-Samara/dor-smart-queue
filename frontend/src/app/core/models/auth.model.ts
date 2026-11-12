@@ -17,7 +17,7 @@ export interface LoginResponse {
   role: Role;
 }
 
-export interface User {
+export interface RegisteredUser {
   id: number;
   fullName: string;
   email: string;

@@ -8,10 +8,10 @@ import { AuthService } from '../services/auth.service';
 export const roleGuard =
   (requiredRole: Role): CanActivateFn =>
   () => {
-    const auth = inject(AuthService);
+    const authService = inject(AuthService);
     const router = inject(Router);
 
-    const currentRole = auth.role();
+    const currentRole = authService.role();
     if (!currentRole) {
       return router.createUrlTree(['/login']);
     }

@@ -57,8 +57,8 @@ h2 {
   padding: var(--space-1) var(--space-3);
   font-size: var(--fs-small);
   font-weight: var(--fw-bold);
-  color: var(--state-called-fg);
-  background: var(--state-called-bg);
+  color: var(--color-state-called-fg);
+  background: var(--color-state-called-bg);
   border-radius: var(--radius-pill);
 
   &::before {
@@ -70,8 +70,8 @@ h2 {
   }
 
   &.inactive {
-    color: var(--state-served-fg);
-    background: var(--state-served-bg);
+    color: var(--color-state-served-fg);
+    background: var(--color-state-served-bg);
   }
 }
 

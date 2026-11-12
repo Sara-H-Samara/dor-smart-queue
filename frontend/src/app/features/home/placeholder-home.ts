@@ -8,14 +8,14 @@ import { AuthService } from '../../core/services/auth.service';
   templateUrl: './placeholder-home.html',
 })
 export class PlaceholderHome {
-  private readonly auth = inject(AuthService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly title: string = inject(ActivatedRoute).snapshot.data['title'];
-  protected readonly fullName = this.auth.fullName;
+  protected readonly routeTitle: string = inject(ActivatedRoute).snapshot.data['title'];
+  protected readonly fullName = this.authService.fullName;
 
-  protected logout(): void {
-    this.auth.logout();
+  protected signOut(): void {
+    this.authService.logout();
     this.router.navigateByUrl('/login');
   }
 }

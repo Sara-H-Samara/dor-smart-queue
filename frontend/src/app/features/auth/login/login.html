@@ -11,19 +11,19 @@
 
     <div class="side">
       <div class="ticket-shadow">
-        <form [formGroup]="form" (ngSubmit)="signIn()" novalidate>
+        <form [formGroup]="loginForm" (ngSubmit)="signIn()" novalidate>
           <article class="ticket">
             <div class="ticket-body">
               <span class="service-name">Student Affairs office</span>
               <h1>Sign in</h1>
               <p class="lede">Use the account you created for the office.</p>
 
-              @if (justRegistered) {
+              @if (cameFromRegistration) {
                 <p class="notice" role="status">Account created. Please sign in.</p>
               }
 
-              @let email = form.controls.email;
-              @let password = form.controls.password;
+              @let email = loginForm.controls.email;
+              @let password = loginForm.controls.password;
 
               <div class="field-group">
                 <div class="field-row">

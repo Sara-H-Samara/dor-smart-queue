@@ -13,33 +13,33 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['../auth-ticket.scss'],
 })
 export class Register {
-  private readonly fb = inject(FormBuilder);
-  private readonly auth = inject(AuthService);
+  private readonly formBuilder = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal('');
 
-  protected readonly form = this.fb.nonNullable.group({
+  protected readonly registerForm = this.formBuilder.nonNullable.group({
     fullName: ['', [Validators.required, Validators.maxLength(100)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
     password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(72)]],
   });
 
   protected submit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
       return;
     }
 
     this.isSubmitting.set(true);
     this.errorMessage.set('');
 
-    const { fullName, email, password } = this.form.getRawValue();
+    const { fullName, email, password } = this.registerForm.getRawValue();
 
-    this.auth.register({ fullName, email, password }).subscribe({
+    this.authService.register({ fullName, email, password }).subscribe({
       next: () => {
-        this.auth.login({ email, password }).subscribe({
+        this.authService.login({ email, password }).subscribe({
           next: (response) => this.router.navigateByUrl(HOME_PATH_BY_ROLE[response.role]),
           error: () =>
             this.router.navigate(['/login'], { queryParams: { registered: 1 } }),

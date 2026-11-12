@@ -11,13 +11,13 @@ import { CatalogPanel } from './catalog-panel/catalog-panel';
   styleUrl: './admin-home.scss',
 })
 export class AdminHome {
-  private readonly auth = inject(AuthService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly fullName = this.auth.fullName;
+  protected readonly fullName = this.authService.fullName;
 
-  protected logout(): void {
-    this.auth.logout();
+  protected signOut(): void {
+    this.authService.logout();
     this.router.navigateByUrl('/login');
   }
 }
