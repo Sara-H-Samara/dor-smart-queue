@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/api/health", "/api/auth/register", "/api/auth/login",
                                 "/api/waiting-room", "/error").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

@@ -16,8 +16,10 @@ import java.util.Date;
 @Service
 public class JwtService {
 
+    public static final String ROLE_CLAIM = "role";
+
     @Value("${jwt.secret}")
-    private String secret;
+    private String base64Secret;
 
     @Value("${jwt.expiration-minutes}")
     private long expirationMinutes;
@@ -26,14 +28,14 @@ public class JwtService {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(user.getEmail())
-                .claim("role", user.getRole().name())
+                .claim(ROLE_CLAIM, user.getRole().name())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(expirationMinutes, ChronoUnit.MINUTES)))
                 .signWith(signingKey())
                 .compact();
     }
 
-    public Claims parseToken(String token) {
+    public Claims parseAndVerifyToken(String token) {
         return Jwts.parser()
                 .verifyWith(signingKey())
                 .build()
@@ -42,6 +44,6 @@ public class JwtService {
     }
 
     private SecretKey signingKey() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret));
     }
 }

@@ -19,25 +19,27 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final String BEARER_PREFIX = "Bearer ";
+
     @Autowired
     private JwtService jwtService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
+        String authorizationHeader = request.getHeader("Authorization");
 
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+        if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX)) {
+            String token = authorizationHeader.substring(BEARER_PREFIX.length());
             try {
-                Claims claims = jwtService.parseToken(token);
-                String role = claims.get("role", String.class);
+                Claims claims = jwtService.parseAndVerifyToken(token);
+                String role = claims.get(JwtService.ROLE_CLAIM, String.class);
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         claims.getSubject(), null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            } catch (JwtException | IllegalArgumentException e) {
+            } catch (JwtException | IllegalArgumentException invalidToken) {
                 SecurityContextHolder.clearContext();
             }
         }
