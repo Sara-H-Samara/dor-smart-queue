@@ -1,6 +1,6 @@
 package com.sara.backend.controller;
 
-import com.sara.backend.dto.request.ActiveRequest;
+import com.sara.backend.dto.request.SetActiveRequest;
 import com.sara.backend.dto.request.NameRequest;
 import com.sara.backend.dto.request.ServiceTypeCreateRequest;
 import com.sara.backend.dto.response.ServiceTypeResponse;
@@ -36,7 +36,7 @@ public class ServiceTypeController {
     }
 
     @PatchMapping("/{id}/active")
-    public ServiceTypeResponse setActive(@PathVariable Long id, @Valid @RequestBody ActiveRequest request) {
+    public ServiceTypeResponse setActive(@PathVariable Long id, @Valid @RequestBody SetActiveRequest request) {
         return serviceTypeService.updateActive(id, request);
     }
 }

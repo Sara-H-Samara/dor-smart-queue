@@ -1,6 +1,6 @@
 package com.sara.backend.service;
 
-import com.sara.backend.dto.request.ActiveRequest;
+import com.sara.backend.dto.request.SetActiveRequest;
 import com.sara.backend.dto.request.NameRequest;
 import com.sara.backend.dto.response.CounterResponse;
 import com.sara.backend.entity.Counter;
@@ -50,7 +50,7 @@ public class CounterService {
         return CounterResponse.from(counterRepository.save(counter));
     }
 
-    public CounterResponse updateActive(Long id, ActiveRequest request) {
+    public CounterResponse updateActive(Long id, SetActiveRequest request) {
         Counter counter = findOrThrow(id);
         counter.setActive(request.active());
         return CounterResponse.from(counterRepository.save(counter));

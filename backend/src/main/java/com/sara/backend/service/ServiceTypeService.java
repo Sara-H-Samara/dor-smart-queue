@@ -1,6 +1,6 @@
 package com.sara.backend.service;
 
-import com.sara.backend.dto.request.ActiveRequest;
+import com.sara.backend.dto.request.SetActiveRequest;
 import com.sara.backend.dto.request.NameRequest;
 import com.sara.backend.dto.request.ServiceTypeCreateRequest;
 import com.sara.backend.dto.response.ServiceTypeResponse;
@@ -61,7 +61,7 @@ public class ServiceTypeService {
         return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
     }
 
-    public ServiceTypeResponse updateActive(Long id, ActiveRequest request) {
+    public ServiceTypeResponse updateActive(Long id, SetActiveRequest request) {
         ServiceType serviceType = findOrThrow(id);
         serviceType.setActive(request.active());
         return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
