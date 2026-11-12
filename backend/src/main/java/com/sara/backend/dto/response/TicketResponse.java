@@ -17,10 +17,14 @@ public record TicketResponse(
     public static TicketResponse from(Ticket ticket) {
         return new TicketResponse(
                 ticket.getId(),
-                ticket.getServiceType().getCode() + "-" + String.format("%03d", ticket.getNumber()),
+                formatTicketCode(ticket),
                 ticket.getServiceType().getId(),
                 ticket.getServiceType().getName(),
                 ticket.getStatus(),
                 ticket.getCreatedAt());
+    }
+
+    public static String formatTicketCode(Ticket ticket) {
+        return ticket.getServiceType().getCode() + "-" + String.format("%03d", ticket.getNumber());
     }
 }

@@ -23,5 +23,5 @@ public interface ServiceTypeRepository extends JpaRepository<ServiceType, Long> 
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from ServiceType s where s.id = :id")
-    Optional<ServiceType> findByIdForUpdate(@Param("id") Long id);
+    Optional<ServiceType> findByIdWithWriteLock(@Param("id") Long id);
 }

@@ -1,7 +1,7 @@
 package com.sara.backend.service;
 
 import com.sara.backend.dto.request.TakeTicketRequest;
-import com.sara.backend.dto.response.MyTicketResponse;
+import com.sara.backend.dto.response.ActiveTicketResponse;
 import com.sara.backend.dto.response.TicketResponse;
 import com.sara.backend.entity.ServiceType;
 import com.sara.backend.entity.Ticket;
@@ -46,21 +46,21 @@ public class TicketService {
         Long studentId = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."))
                 .getId();
-        User student = userRepository.findByIdForUpdate(studentId)
+        User student = userRepository.findByIdWithWriteLock(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."));
 
         if (ticketRepository.existsByStudentIdAndStatusIn(student.getId(), ACTIVE_STATUSES)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You already have an active ticket.");
         }
 
-        ServiceType serviceType = serviceTypeRepository.findByIdForUpdate(serviceId)
+        ServiceType serviceType = serviceTypeRepository.findByIdWithWriteLock(serviceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found."));
         if (!serviceType.isActive()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This service is not available.");
         }
 
         LocalDate today = LocalDate.now();
-        Integer lastNumberToday = ticketRepository.findMaxNumber(serviceId, today);
+        Integer lastNumberToday = ticketRepository.findHighestNumberForDay(serviceId, today);
 
         Ticket ticket = new Ticket();
         ticket.setStudent(student);
@@ -77,7 +77,7 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true)
-    public MyTicketResponse getActiveTicket(String email) {
+    public ActiveTicketResponse getActiveTicket(String email) {
         Long studentId = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."))
                 .getId();
@@ -86,11 +86,11 @@ public class TicketService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
 
         if (ticket.getStatus() == TicketStatus.CALLED) {
-            return MyTicketResponse.called(ticket);
+            return ActiveTicketResponse.forCalledTicket(ticket);
         }
 
-        int peopleAhead = (int) ticketRepository.countByServiceTypeIdAndTicketDateAndStatusAndNumberLessThan(
-                ticket.getServiceType().getId(), ticket.getTicketDate(), TicketStatus.WAITING, ticket.getNumber());
-        return MyTicketResponse.waiting(ticket, peopleAhead, ESTIMATED_MINUTES_PER_PERSON);
+        int peopleAhead = (int) ticketRepository.countWaitingAhead(
+                ticket.getServiceType().getId(), ticket.getTicketDate(), ticket.getNumber());
+        return ActiveTicketResponse.forWaitingTicket(ticket, peopleAhead, ESTIMATED_MINUTES_PER_PERSON);
     }
 }
