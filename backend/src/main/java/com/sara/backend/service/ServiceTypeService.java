@@ -24,6 +24,10 @@ public class ServiceTypeService {
         return serviceTypeRepository.findAllByOrderByNameAsc().stream().map(ServiceTypeResponse::from).toList();
     }
 
+    public List<ServiceTypeResponse> listActive() {
+        return serviceTypeRepository.findByActiveTrueOrderByNameAsc().stream().map(ServiceTypeResponse::from).toList();
+    }
+
     public ServiceTypeResponse create(ServiceTypeCreateRequest request) {
         String name = request.name().trim();
         if (name.isEmpty()) {
