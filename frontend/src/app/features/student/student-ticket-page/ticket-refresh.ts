@@ -1,0 +1,1 @@
+export const TICKET_REFRESH_INTERVAL_MS = 5000;

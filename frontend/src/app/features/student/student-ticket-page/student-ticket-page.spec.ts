@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { ActiveService } from '../../../core/models/active-service.model';
 import { ActiveTicket, TakenTicket } from '../../../core/models/ticket.model';
@@ -9,6 +9,7 @@ import { StudentCatalogService } from '../../../core/services/student-catalog.se
 import { TicketService } from '../../../core/services/ticket.service';
 import { failingRequestWithStatus } from '../../../testing/http-failure';
 import { StudentTicketPage } from './student-ticket-page';
+import { TICKET_REFRESH_INTERVAL_MS } from './ticket-refresh';
 
 const waitingTicket: ActiveTicket = {
   ticketCode: 'A-001',
@@ -147,5 +148,140 @@ describe('StudentTicketPage', () => {
     fixture.detectChanges();
 
     expect(pageElement(fixture).querySelector('app-ticket-card')).not.toBeNull();
+  });
+
+  describe('automatic refresh', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    function advanceOneRefreshInterval(): void {
+      vi.advanceTimersByTime(TICKET_REFRESH_INTERVAL_MS);
+    }
+
+    it('refreshActiveTicket_afterInterval_updatesTicketWithoutLoadingState', () => {
+      fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
+      fetchMyActiveTicket.mockReturnValueOnce(of({ ...waitingTicket, status: 'CALLED' }));
+      const fixture = createPage();
+
+      advanceOneRefreshInterval();
+      fixture.detectChanges();
+
+      expect(pageElement(fixture).textContent).toContain('Your turn');
+      expect(pageElement(fixture).querySelector('[role="status"]')).toBeNull();
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(2);
+    });
+
+    it('refreshActiveTicket_whilePreviousRequestRuns_sendsNoNewRequest', () => {
+      fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
+      fetchMyActiveTicket.mockReturnValueOnce(new Subject<ActiveTicket>());
+      createPage();
+
+      advanceOneRefreshInterval();
+      advanceOneRefreshInterval();
+      advanceOneRefreshInterval();
+
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(2);
+    });
+
+    it('refreshActiveTicket_withoutTicket_sendsNoRequest', () => {
+      fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
+      listActiveServices.mockReturnValue(of([openService]));
+      createPage();
+
+      advanceOneRefreshInterval();
+
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
+    });
+
+    it('refreshActiveTicket_inFailedState_sendsNoRequest', () => {
+      fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(500));
+      createPage();
+
+      advanceOneRefreshInterval();
+
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
+    });
+
+    it('refreshActiveTicket_whenTicketIsGone_showsServiceList', () => {
+      fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
+      fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
+      listActiveServices.mockReturnValue(of([openService]));
+      const fixture = createPage();
+
+      advanceOneRefreshInterval();
+      fixture.detectChanges();
+
+      expect(pageElement(fixture).querySelector('app-service-tile-list')).not.toBeNull();
+      expect(pageElement(fixture).querySelector('app-ticket-card')).toBeNull();
+    });
+
+    it('refreshActiveTicket_whenTicketIsGone_showsLoadingUntilServicesArrive', () => {
+      const pendingServices = new Subject<ActiveService[]>();
+      fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
+      fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
+      listActiveServices.mockReturnValue(pendingServices);
+      const fixture = createPage();
+
+      advanceOneRefreshInterval();
+      fixture.detectChanges();
+      expect(pageElement(fixture).querySelector('[role="status"]')).not.toBeNull();
+
+      pendingServices.next([openService]);
+      fixture.detectChanges();
+
+      expect(pageElement(fixture).querySelector('[role="status"]')).toBeNull();
+      expect(pageElement(fixture).querySelector('app-service-tile-list')).not.toBeNull();
+    });
+
+    it('refreshActiveTicket_whenRequestFails_keepsTicketAndRetriesAtNextInterval', () => {
+      fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
+      fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(500));
+      fetchMyActiveTicket.mockReturnValueOnce(of({ ...waitingTicket, status: 'CALLED' }));
+      const fixture = createPage();
+
+      advanceOneRefreshInterval();
+      fixture.detectChanges();
+      expect(pageElement(fixture).querySelector('app-ticket-card')).not.toBeNull();
+      expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
+
+      advanceOneRefreshInterval();
+      fixture.detectChanges();
+
+      expect(pageElement(fixture).textContent).toContain('Your turn');
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(3);
+    });
+
+    it('refreshActiveTicket_afterLeaveQueue_ignoresLateAnswer', () => {
+      const lateRefreshAnswer = new Subject<ActiveTicket>();
+      fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
+      fetchMyActiveTicket.mockReturnValueOnce(lateRefreshAnswer);
+      fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
+      cancelMyActiveTicket.mockReturnValue(of(undefined));
+      listActiveServices.mockReturnValue(of([openService]));
+      const fixture = createPage();
+      advanceOneRefreshInterval();
+
+      buttonWithText(fixture, 'Leave queue')?.click();
+      lateRefreshAnswer.next(waitingTicket);
+      fixture.detectChanges();
+
+      expect(pageElement(fixture).querySelector('app-ticket-card')).toBeNull();
+      expect(pageElement(fixture).querySelector('app-service-tile-list')).not.toBeNull();
+    });
+
+    it('refreshActiveTicket_afterPageDestroyed_sendsNoRequest', () => {
+      fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
+      const fixture = createPage();
+
+      fixture.destroy();
+      advanceOneRefreshInterval();
+
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
+    });
   });
 });
