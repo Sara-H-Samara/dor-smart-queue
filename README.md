@@ -12,10 +12,11 @@ and no way to leave the office while they wait.
 **Available now**
 - Register and log in, with student, staff, and admin roles
 - Admin: manage services and counters
-- Student: take a ticket and see position and estimated wait (API only, UI coming)
+- Student: take a ticket and see position and estimated wait
+- Student: ticket screen
+- Student: leave the queue
 
 **Planned**
-- Student: screen for tickets, leave the queue
 - Staff: call next student, mark as done or no-show
 - Admin: manage users
 - Waiting-room screen: who is served now and who is next
