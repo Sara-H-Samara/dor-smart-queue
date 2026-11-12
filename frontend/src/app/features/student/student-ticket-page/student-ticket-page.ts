@@ -9,11 +9,7 @@ import { TicketService } from '../../../core/services/ticket.service';
 import { firstNameOf } from './first-name';
 import { ServiceTileList } from './service-tile-list/service-tile-list';
 import { TicketCard } from './ticket-card/ticket-card';
-import {
-  isNoActiveTicket,
-  isTicketAlreadyTaken,
-  messageForTicketFailure,
-} from './ticket-failure';
+import { isNoActiveTicket, isTicketAlreadyTaken, messageForTicketFailure } from './ticket-failure';
 
 type StudentScreenState = 'loading' | 'ticket' | 'noTicket' | 'failed';
 
@@ -65,7 +61,13 @@ export class StudentTicketPage {
     this.router.navigateByUrl('/login');
   }
 
+  protected retryAfterFailure(): void {
+    this.failureMessage.set(null);
+    this.loadMyActiveTicket();
+  }
+
   private loadMyActiveTicket(): void {
+    this.screenState.set('loading');
     this.ticketService.fetchMyActiveTicket().subscribe({
       next: (ticket) => {
         this.activeTicket.set(ticket);
@@ -102,8 +104,6 @@ export class StudentTicketPage {
   private showFailure(error: unknown): void {
     this.failureMessage.set(messageForTicketFailure(error));
     this.isSubmitting.set(false);
-    if (this.screenState() === 'loading') {
-      this.screenState.set('failed');
-    }
+    this.screenState.set('failed');
   }
 }

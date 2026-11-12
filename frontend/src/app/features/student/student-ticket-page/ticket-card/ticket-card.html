@@ -17,8 +17,12 @@
           <b>Your turn</b>
           <span>Please go to your counter now.</span>
         } @else {
-          <b>{{ peopleAheadText() }}</b>
-          <span>{{ estimatedWaitText() }}</span>
+          @if (peopleAheadText(); as peopleAheadLine) {
+            <b>{{ peopleAheadLine }}</b>
+          }
+          @if (estimatedWaitText(); as estimatedWaitLine) {
+            <span>{{ estimatedWaitLine }}</span>
+          }
         }
       </div>
     </div>

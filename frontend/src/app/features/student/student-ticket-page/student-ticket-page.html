@@ -11,10 +11,6 @@
     <h1>Your ticket</h1>
   </div>
 
-  @if (failureMessage(); as message) {
-    <p class="alert" role="alert">{{ message }}</p>
-  }
-
   @switch (screenState()) {
     @case ('loading') {
       <p class="notice" role="status">Loading…</p>
@@ -27,6 +23,10 @@
           (leaveQueueRequested)="leaveQueue()"
         />
       }
+    }
+    @case ('failed') {
+      <p class="alert" role="alert">{{ failureMessage() }}</p>
+      <button class="btn" type="button" (click)="retryAfterFailure()">Try again</button>
     }
     @case ('noTicket') {
       <app-service-tile-list
