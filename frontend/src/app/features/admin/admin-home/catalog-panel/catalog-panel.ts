@@ -1,9 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.model';
 import { CatalogService } from '../../../../core/services/catalog.service';
+import { errorMessageForStatus, findDuplicateCodeMessage } from './catalog-errors';
 import { CatalogFormDialog, CatalogFormValue } from './catalog-form-dialog/catalog-form-dialog';
 
 @Component({
@@ -29,7 +29,7 @@ export class CatalogPanel implements OnInit {
 
   private readonly formDialog = viewChild.required(CatalogFormDialog);
 
-  protected readonly codeServerError = signal<string | null>(null);
+  protected readonly codeConflictMessage = signal<string | null>(null);
 
   protected readonly supportsCode = computed(() => this.catalogResource() === 'services');
 
@@ -57,7 +57,7 @@ export class CatalogPanel implements OnInit {
     this.dialogOpen.set(false);
     this.dialogMode.set('add');
     this.renamingItem.set(null);
-    this.codeServerError.set(null);
+    this.codeConflictMessage.set(null);
     this.error.set(null);
   }
 
@@ -74,7 +74,7 @@ export class CatalogPanel implements OnInit {
     const createCall$ = this.supportsCode()
       ? this.catalogService.create(this.catalogResource(), value.name, value.code ?? '')
       : this.catalogService.create(this.catalogResource(), value.name);
-    this.codeServerError.set(null);
+    this.codeConflictMessage.set(null);
     this.sendAndReload(createCall$, () => this.formDialog().closeAndReset());
   }
 
@@ -97,27 +97,14 @@ export class CatalogPanel implements OnInit {
       },
       error: (err: unknown) => {
         this.isSaving.set(false);
-        const duplicateCode = this.duplicateCodeMessage(err);
+        const duplicateCode = findDuplicateCodeMessage(err, this.supportsCode());
         if (duplicateCode) {
-          this.codeServerError.set(duplicateCode);
+          this.codeConflictMessage.set(duplicateCode);
         } else {
-          this.error.set(this.errorMessageForStatus(err));
+          this.error.set(errorMessageForStatus(err));
         }
       },
     });
-  }
-
-  /** The server's message when a 409 is about the code rather than the name. */
-  private duplicateCodeMessage(err: unknown): string | null {
-    if (!this.supportsCode() || !(err instanceof HttpErrorResponse) || err.status !== 409) {
-      return null;
-    }
-    const body = err.error as { message?: unknown } | string | null;
-    const message = typeof body === 'string' ? body : body?.message;
-    // Matches the server message text, so it breaks if that wording changes.
-    return typeof message === 'string' && /\bcode\b/i.test(message) && /already used/i.test(message)
-      ? message
-      : null;
   }
 
   private reloadItems(): void {
@@ -129,22 +116,8 @@ export class CatalogPanel implements OnInit {
       },
       error: (err: unknown) => {
         this.isLoadingList.set(false);
-        this.error.set(this.errorMessageForStatus(err));
+        this.error.set(errorMessageForStatus(err));
       },
     });
-  }
-
-  private errorMessageForStatus(err: unknown): string {
-    const status = err instanceof HttpErrorResponse ? err.status : 0;
-    switch (status) {
-      case 409:
-        return 'This name already exists. Please choose a different name.';
-      case 404:
-        return 'This item was not found. It may have been removed; the list is refreshed.';
-      case 400:
-        return 'The name is not valid. Please enter a name of 1 to 100 characters.';
-      default:
-        return 'Something went wrong. Please try again.';
-    }
   }
 }

@@ -59,9 +59,9 @@
     [submitLabel]="dialogMode() === 'rename' ? 'Save' : 'Add'"
     [isSaving]="isSaving()"
     [errorMessage]="error()"
-    [codeConflictMessage]="codeServerError()"
+    [codeConflictMessage]="codeConflictMessage()"
     (submitted)="onFormSubmitted($event)"
-    (codeEdited)="codeServerError.set(null)"
+    (codeEdited)="codeConflictMessage.set(null)"
     (closed)="onDialogClosed()"
   />
 </section>
