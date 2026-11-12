@@ -45,7 +45,7 @@ class AuthControllerTest {
 
     // ---------- Helpers ----------
 
-    private void registerLayla() throws Exception {
+    private void registerStudent() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -80,8 +80,8 @@ class AuthControllerTest {
     }
 
     @Test
-    void register_storesEncryptedPassword() throws Exception {
-        registerLayla();
+    void register_storesPasswordHash() throws Exception {
+        registerStudent();
 
         User saved = userRepository.findByEmail("layla@example.com").orElseThrow();
         assertThat(saved.getPasswordHash()).isNotEqualTo("secret123");
@@ -90,7 +90,7 @@ class AuthControllerTest {
 
     @Test
     void register_withExistingEmail_returnsConflict() throws Exception {
-        registerLayla();
+        registerStudent();
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,7 +114,7 @@ class AuthControllerTest {
 
     @Test
     void login_withCorrectDetails_returnsToken() throws Exception {
-        registerLayla();
+        registerStudent();
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -128,7 +128,7 @@ class AuthControllerTest {
 
     @Test
     void login_withWrongPassword_returnsUnauthorized() throws Exception {
-        registerLayla();
+        registerStudent();
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -148,7 +148,7 @@ class AuthControllerTest {
 
     @Test
     void me_withValidToken_returnsCurrentUser() throws Exception {
-        registerLayla();
+        registerStudent();
         String token = loginAndGetToken("layla@example.com", "secret123");
 
         mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
@@ -158,7 +158,7 @@ class AuthControllerTest {
 
     @Test
     void me_withTamperedToken_returnsUnauthorized() throws Exception {
-        registerLayla();
+        registerStudent();
         String token = loginAndGetToken("layla@example.com", "secret123");
 
         mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token + "x"))
@@ -166,8 +166,8 @@ class AuthControllerTest {
     }
 
     @Test
-    void adminEndpoint_asStudent_returnsForbidden() throws Exception {
-        registerLayla();
+    void adminServicesEndpoint_asStudent_returnsForbidden() throws Exception {
+        registerStudent();
         String token = loginAndGetToken("layla@example.com", "secret123");
 
         mockMvc.perform(get("/api/admin/services").header("Authorization", "Bearer " + token))
@@ -175,7 +175,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void adminEndpoint_asAdmin_passesTheRoleCheck() throws Exception {
+    void adminServicesEndpoint_asAdmin_returnsOk() throws Exception {
         String token = loginAndGetToken("admin@dor.com", "admin12345");
 
         // The admin services endpoint exists now, so an admin gets 200 (not 401 and not 403).

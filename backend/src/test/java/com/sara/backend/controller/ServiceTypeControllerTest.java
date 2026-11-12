@@ -40,7 +40,7 @@ class ServiceTypeControllerTest {
     private DataSeeder dataSeeder;
 
     @BeforeEach
-    void reset() {
+    void deleteAllTestData() {
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();
@@ -61,7 +61,7 @@ class ServiceTypeControllerTest {
         return loginAndGetToken("admin@dor.com", "admin12345");
     }
 
-    private String studentToken() throws Exception {
+    private String registerStudentAndLogin() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -132,7 +132,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void admin_canToggleActive() throws Exception {
+    void admin_canDeactivateAndReactivate() throws Exception {
         String token = adminToken();
         long id = create(token, "Fees", "F");
 
@@ -154,8 +154,8 @@ class ServiceTypeControllerTest {
     // ---------- Access control ----------
 
     @Test
-    void student_getsForbidden() throws Exception {
-        String token = studentToken();
+    void student_onAnyAdminEndpoint_returnsForbidden() throws Exception {
+        String token = registerStudentAndLogin();
 
         mockMvc.perform(get(URL).header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden());
@@ -177,7 +177,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void withoutToken_getsUnauthorized() throws Exception {
+    void withoutToken_onAnyAdminEndpoint_returnsUnauthorized() throws Exception {
         mockMvc.perform(get(URL))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(post(URL)
@@ -221,7 +221,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void rename_toItsOwnCurrentName_works() throws Exception {
+    void rename_toSameName_returnsOk() throws Exception {
         String token = adminToken();
         long id = create(token, "Fees", "F");
 
@@ -296,7 +296,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void toggle_unknownId_returnsNotFound() throws Exception {
+    void setActive_unknownId_returnsNotFound() throws Exception {
         mockMvc.perform(patch(URL + "/999999/active")
                         .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -359,7 +359,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void create_withTwoLetterCode_works() throws Exception {
+    void create_withTwoLetterCode_returnsCreated() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)

@@ -64,7 +64,7 @@ class TicketControllerTest {
     private DataSeeder dataSeeder;
 
     @BeforeEach
-    void reset() {
+    void deleteAllTestData() {
         // Tickets first: they reference users and services.
         ticketRepository.deleteAll();
         serviceTypeRepository.deleteAll();
@@ -73,7 +73,7 @@ class TicketControllerTest {
     }
 
     @AfterEach
-    void cleanUp() {
+    void deleteAllTickets() {
         // Other test classes do not clear tickets, so leave none behind.
         ticketRepository.deleteAll();
     }
@@ -104,7 +104,7 @@ class TicketControllerTest {
         return loginAndGetToken("test-staff@example.com", "staff12345");
     }
 
-    private String studentToken(String email) throws Exception {
+    private String registerStudentAndLogin(String email) throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -136,10 +136,10 @@ class TicketControllerTest {
     // ---------- Taking tickets ----------
 
     @Test
-    void student_takesTicket_getsFirstCode() throws Exception {
+    void takeTicket_firstStudent_returnsCreatedWithFirstCode() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
 
-        take(studentToken("a@example.com"), registration.getId())
+        take(registerStudentAndLogin("a@example.com"), registration.getId())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.ticketCode").value("R-001"))
@@ -150,25 +150,25 @@ class TicketControllerTest {
     }
 
     @Test
-    void secondStudent_sameService_getsNextNumber() throws Exception {
+    void takeTicket_secondStudentSameService_returnsNextNumber() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
 
-        take(studentToken("a@example.com"), registration.getId())
+        take(registerStudentAndLogin("a@example.com"), registration.getId())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.ticketCode").value("R-001"));
-        take(studentToken("b@example.com"), registration.getId())
+        take(registerStudentAndLogin("b@example.com"), registration.getId())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.ticketCode").value("R-002"));
     }
 
     @Test
-    void differentService_startsAgainAtOne() throws Exception {
+    void takeTicket_differentService_restartsNumberingAtOne() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         ServiceType documents = createService("Documents", "D", true);
 
-        take(studentToken("a@example.com"), registration.getId())
+        take(registerStudentAndLogin("a@example.com"), registration.getId())
                 .andExpect(jsonPath("$.ticketCode").value("R-001"));
-        take(studentToken("b@example.com"), documents.getId())
+        take(registerStudentAndLogin("b@example.com"), documents.getId())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.ticketCode").value("D-001"));
     }
@@ -176,10 +176,10 @@ class TicketControllerTest {
     // ---------- One active ticket per student ----------
 
     @Test
-    void sameStudent_secondTicketWhileWaiting_returnsConflict() throws Exception {
+    void takeTicket_whileStudentHasWaitingTicket_returnsConflict() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         ServiceType documents = createService("Documents", "D", true);
-        String token = studentToken("a@example.com");
+        String token = registerStudentAndLogin("a@example.com");
 
         take(token, registration.getId()).andExpect(status().isCreated());
 
@@ -189,9 +189,9 @@ class TicketControllerTest {
     }
 
     @Test
-    void student_canTakeNewTicketAfterServedOrCancelled() throws Exception {
+    void takeTicket_afterServed_returnsCreated() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
-        String token = studentToken("a@example.com");
+        String token = registerStudentAndLogin("a@example.com");
 
         take(token, registration.getId()).andExpect(status().isCreated());
         Ticket first = ticketRepository.findAll().get(0);
@@ -201,38 +201,44 @@ class TicketControllerTest {
         take(token, registration.getId())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.ticketCode").value("R-002"));
+    }
 
-        Ticket second = ticketRepository.findAll().stream()
-                .filter(t -> t.getStatus() == TicketStatus.WAITING).findFirst().orElseThrow();
-        second.setStatus(TicketStatus.CANCELLED);
-        ticketRepository.save(second);
+    @Test
+    void takeTicket_afterCancelled_returnsCreated() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        String token = registerStudentAndLogin("a@example.com");
+
+        take(token, registration.getId()).andExpect(status().isCreated());
+        Ticket first = ticketRepository.findAll().get(0);
+        first.setStatus(TicketStatus.CANCELLED);
+        ticketRepository.save(first);
 
         take(token, registration.getId())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.ticketCode").value("R-003"));
+                .andExpect(jsonPath("$.ticketCode").value("R-002"));
     }
 
     // ---------- Service problems and validation ----------
 
     @Test
-    void inactiveService_returnsBadRequest() throws Exception {
+    void takeTicket_inactiveService_returnsBadRequest() throws Exception {
         ServiceType closed = createService("Closed", "C", false);
 
-        take(studentToken("a@example.com"), closed.getId())
+        take(registerStudentAndLogin("a@example.com"), closed.getId())
                 .andExpect(status().isBadRequest())
                 .andExpect(status().reason("This service is not available."));
     }
 
     @Test
-    void unknownService_returnsNotFound() throws Exception {
-        take(studentToken("a@example.com"), 999999L)
+    void takeTicket_unknownService_returnsNotFound() throws Exception {
+        take(registerStudentAndLogin("a@example.com"), 999999L)
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void missingServiceId_returnsBadRequest() throws Exception {
+    void takeTicket_missingServiceId_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
-                        .header("Authorization", "Bearer " + studentToken("a@example.com"))
+                        .header("Authorization", "Bearer " + registerStudentAndLogin("a@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -241,7 +247,7 @@ class TicketControllerTest {
     // ---------- Access control ----------
 
     @Test
-    void withoutToken_getsUnauthorized() throws Exception {
+    void takeTicket_withoutToken_returnsUnauthorized() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
 
         mockMvc.perform(post(URL)
@@ -251,7 +257,7 @@ class TicketControllerTest {
     }
 
     @Test
-    void staffAndAdmin_getForbidden() throws Exception {
+    void takeTicket_asStaffOrAdmin_returnsForbidden() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
 
         take(staffToken(), registration.getId()).andExpect(status().isForbidden());
@@ -261,12 +267,12 @@ class TicketControllerTest {
     // ---------- Concurrency ----------
 
     @Test
-    void concurrentStudents_getUniqueConsecutiveNumbers() throws Exception {
+    void takeTicket_concurrentStudents_returnsUniqueConsecutiveNumbers() throws Exception {
         int students = 5;
         ServiceType registration = createService("Registration", "R", true);
         List<String> tokens = new ArrayList<>();
         for (int i = 0; i < students; i++) {
-            tokens.add(studentToken("student" + i + "@example.com"));
+            tokens.add(registerStudentAndLogin("student" + i + "@example.com"));
         }
 
         CountDownLatch ready = new CountDownLatch(students);
