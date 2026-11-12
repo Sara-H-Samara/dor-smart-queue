@@ -11,16 +11,16 @@
 
     <div class="side">
       <div class="ticket-shadow">
-        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <form [formGroup]="registerForm" (ngSubmit)="submit()" novalidate>
           <article class="ticket">
             <div class="ticket-body">
               <span class="service-name">Student Affairs office</span>
               <h1>Create an account</h1>
               <p class="lede">It takes a minute. You will sign in with your email.</p>
 
-              @let fullName = form.controls.fullName;
-              @let email = form.controls.email;
-              @let password = form.controls.password;
+              @let fullName = registerForm.controls.fullName;
+              @let email = registerForm.controls.email;
+              @let password = registerForm.controls.password;
 
               <div class="field-group">
                 <div class="field-row">

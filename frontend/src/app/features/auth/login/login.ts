@@ -12,30 +12,30 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['../auth-ticket.scss'],
 })
 export class Login {
-  private readonly fb = inject(FormBuilder);
-  private readonly auth = inject(AuthService);
+  private readonly formBuilder = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
+  private readonly activatedRoute = inject(ActivatedRoute);
 
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal('');
-  protected readonly justRegistered = this.route.snapshot.queryParamMap.get('registered') === '1';
+  protected readonly cameFromRegistration = this.activatedRoute.snapshot.queryParamMap.get('registered') === '1';
 
-  protected readonly form = this.fb.nonNullable.group({
+  protected readonly loginForm = this.formBuilder.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
   });
 
   protected signIn(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
       return;
     }
 
     this.isSubmitting.set(true);
     this.errorMessage.set('');
 
-    this.auth.login(this.form.getRawValue()).subscribe({
+    this.authService.login(this.loginForm.getRawValue()).subscribe({
       next: (response) => this.router.navigateByUrl(HOME_PATH_BY_ROLE[response.role]),
       error: (error: HttpErrorResponse) => {
         this.isSubmitting.set(false);
