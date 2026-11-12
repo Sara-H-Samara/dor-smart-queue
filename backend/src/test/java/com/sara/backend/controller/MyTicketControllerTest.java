@@ -55,7 +55,7 @@ class MyTicketControllerTest {
     private DataSeeder dataSeeder;
 
     @BeforeEach
-    void reset() {
+    void deleteAllTestData() {
         ticketRepository.deleteAll();
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
@@ -63,7 +63,7 @@ class MyTicketControllerTest {
     }
 
     @AfterEach
-    void cleanUp() {
+    void deleteAllTickets() {
         // Other test classes do not clear tickets, so leave none behind.
         ticketRepository.deleteAll();
     }
@@ -89,7 +89,7 @@ class MyTicketControllerTest {
         return loginAndGetToken("test-staff@example.com", "staff12345");
     }
 
-    private String studentToken(String email) throws Exception {
+    private String registerStudentAndLogin(String email) throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -110,7 +110,7 @@ class MyTicketControllerTest {
     /** Registers a student and gives them a ticket directly through the repository. */
     private Ticket ticketFor(String email, ServiceType service, int number, LocalDate date, TicketStatus status)
             throws Exception {
-        studentToken(email);
+        registerStudentAndLogin(email);
         Ticket ticket = new Ticket();
         ticket.setStudent(userRepository.findByEmail(email).orElseThrow());
         ticket.setServiceType(service);
@@ -128,7 +128,7 @@ class MyTicketControllerTest {
 
     @Test
     void noActiveTicket_returnsNotFound() throws Exception {
-        studentToken("a@example.com");
+        registerStudentAndLogin("a@example.com");
 
         me("a@example.com")
                 .andExpect(status().isNotFound())
@@ -179,10 +179,22 @@ class MyTicketControllerTest {
     }
 
     @Test
-    void otherServiceAndEarlierDay_areNotCountedAhead() throws Exception {
+    void getActiveTicket_withTicketInOtherService_doesNotCountItAhead() throws Exception {
         ServiceType registration = createService("Registration", "R");
         ServiceType documents = createService("Documents", "D");
         ticketFor("other@example.com", documents, 1, LocalDate.now(), TicketStatus.WAITING);
+        ticketFor("a@example.com", registration, 2, LocalDate.now(), TicketStatus.WAITING);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.position").value(1))
+                .andExpect(jsonPath("$.peopleAhead").value(0))
+                .andExpect(jsonPath("$.estimatedWaitMinutes").value(5));
+    }
+
+    @Test
+    void getActiveTicket_withTicketFromEarlierDay_doesNotCountItAhead() throws Exception {
+        ServiceType registration = createService("Registration", "R");
         ticketFor("old@example.com", registration, 1, LocalDate.now().minusDays(1), TicketStatus.WAITING);
         ticketFor("a@example.com", registration, 2, LocalDate.now(), TicketStatus.WAITING);
 
