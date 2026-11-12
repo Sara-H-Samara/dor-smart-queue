@@ -29,4 +29,11 @@ public class TicketController {
         String email = authentication.getName();
         return ticketService.getActiveTicket(email);
     }
+
+    @PostMapping("/me/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelMyActiveTicket(Authentication authentication) {
+        String email = authentication.getName();
+        ticketService.cancelActiveTicket(email);
+    }
 }
