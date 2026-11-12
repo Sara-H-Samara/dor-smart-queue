@@ -1,0 +1,33 @@
+@use "../../../shared/styles/app-header";
+@use "../../../shared/styles/page-layout";
+
+:host {
+  display: block;
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh;
+
+  @include page-layout.phone-page-column;
+}
+
+.app-header {
+  justify-content: space-between;
+  padding-right: var(--space-2);
+}
+
+.student-main {
+  width: 100%;
+  max-width: 26.25rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+
+  @include page-layout.phone-centered-main;
+}
+
+.page-heading {
+  margin-bottom: var(--space-5);
+}
+
+.greeting {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text-muted);
+}

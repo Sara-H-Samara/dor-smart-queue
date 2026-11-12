@@ -1,0 +1,16 @@
+$phone-max-width: 40rem;
+
+@mixin phone-page-column {
+  @media (max-width: $phone-max-width) {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@mixin phone-centered-main {
+  @media (max-width: $phone-max-width) {
+    flex: 1;
+    display: grid;
+    align-content: center;
+  }
+}

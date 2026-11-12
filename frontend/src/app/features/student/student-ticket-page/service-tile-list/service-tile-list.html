@@ -1,0 +1,24 @@
+<section aria-labelledby="no-ticket-heading">
+  <h2 id="no-ticket-heading">You have no ticket</h2>
+  <p class="lede">Choose a service to take one.</p>
+
+  @if (services().length === 0) {
+    <p class="notice" role="status">No services are open right now.</p>
+  } @else {
+    <ul class="tiles">
+      @for (service of services(); track service.id) {
+        <li>
+          <button
+            class="service-tile"
+            type="button"
+            [disabled]="isTakingTicket()"
+            (click)="serviceChosen.emit(service)"
+          >
+            <span class="code-tile" aria-hidden="true">{{ service.code }}</span>
+            <span class="service-name">{{ service.name }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

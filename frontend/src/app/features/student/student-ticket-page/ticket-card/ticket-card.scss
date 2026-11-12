@@ -1,0 +1,93 @@
+@use "../../../../shared/styles/ticket-card";
+
+:host {
+  display: block;
+}
+
+.ticket-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.service-name {
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+}
+
+.state-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0 var(--space-3);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+  color: var(--color-state-waiting-fg);
+  background: var(--color-state-waiting-bg);
+  border-radius: var(--radius-pill);
+}
+
+.ticket-code {
+  margin: var(--space-5) 0 var(--space-4);
+  font-size: min(var(--fs-ticket-number), 22vw);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.ticket-status {
+  b {
+    display: block;
+    font-size: var(--fs-title);
+    line-height: 1.25;
+  }
+
+  span {
+    display: block;
+    margin-top: var(--space-1);
+    color: var(--color-text-muted);
+  }
+}
+
+.ticket-stub {
+  justify-content: center;
+  text-align: center;
+
+  .btn {
+    width: 100%;
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--fs-small);
+    color: var(--color-text-muted);
+  }
+}
+
+.ticket-called {
+  .ticket-body {
+    color: var(--color-state-called-bg);
+    background: var(--color-state-called-fg);
+  }
+
+  .service-name,
+  .ticket-status span {
+    color: inherit;
+  }
+
+  .state-chip {
+    color: var(--color-state-called-fg);
+    background: var(--color-state-called-bg);
+  }
+}
+
+.ticket-note {
+  margin: var(--space-5) var(--space-1) 0;
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+  text-align: center;
+}

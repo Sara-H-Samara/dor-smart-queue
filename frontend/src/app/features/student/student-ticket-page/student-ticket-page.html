@@ -1,0 +1,39 @@
+<header class="app-header">
+  <span class="wordmark" role="img" aria-label="Dor">D<i class="wordmark-o"></i>r</span>
+  <button class="btn btn-quiet btn-sm" type="button" (click)="signOut()">Sign out</button>
+</header>
+
+<main class="student-main">
+  <div class="page-heading">
+    @if (studentFirstName()) {
+      <p class="greeting">Hi {{ studentFirstName() }}</p>
+    }
+    <h1>Your ticket</h1>
+  </div>
+
+  @switch (screenState()) {
+    @case ('loading') {
+      <p class="notice" role="status">Loading…</p>
+    }
+    @case ('ticket') {
+      @if (activeTicket(); as ticket) {
+        <app-ticket-card
+          [ticket]="ticket"
+          [isLeaving]="isSubmitting()"
+          (leaveQueueRequested)="leaveQueue()"
+        />
+      }
+    }
+    @case ('failed') {
+      <p class="alert" role="alert">{{ failureMessage() }}</p>
+      <button class="btn" type="button" (click)="retryAfterFailure()">Try again</button>
+    }
+    @case ('noTicket') {
+      <app-service-tile-list
+        [services]="activeServices()"
+        [isTakingTicket]="isSubmitting()"
+        (serviceChosen)="takeTicketForService($event)"
+      />
+    }
+  }
+</main>
