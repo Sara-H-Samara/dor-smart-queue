@@ -1,5 +1,16 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  exhaustMap,
+  filter,
+  ignoreElements,
+  interval,
+  tap,
+} from 'rxjs';
 
 import { ActiveService } from '../../../core/models/active-service.model';
 import { ActiveTicket } from '../../../core/models/ticket.model';
@@ -10,6 +21,7 @@ import { firstNameOf } from './first-name';
 import { ServiceTileList } from './service-tile-list/service-tile-list';
 import { TicketCard } from './ticket-card/ticket-card';
 import { isNoActiveTicket, isTicketAlreadyTaken, messageForTicketFailure } from './ticket-failure';
+import { TICKET_REFRESH_INTERVAL_MS } from './ticket-refresh';
 
 type StudentScreenState = 'loading' | 'ticket' | 'noTicket' | 'failed';
 
@@ -22,6 +34,7 @@ type StudentScreenState = 'loading' | 'ticket' | 'noTicket' | 'failed';
 export class StudentTicketPage {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly ticketService = inject(TicketService);
   private readonly studentCatalogService = inject(StudentCatalogService);
 
@@ -34,6 +47,7 @@ export class StudentTicketPage {
 
   constructor() {
     this.loadMyActiveTicket();
+    this.startAutoRefresh();
   }
 
   protected takeTicketForService(service: ActiveService): void {
@@ -76,13 +90,56 @@ export class StudentTicketPage {
       },
       error: (error: unknown) => {
         if (isNoActiveTicket(error)) {
-          this.activeTicket.set(null);
-          this.loadActiveServices();
+          this.showServiceListWithoutTicket();
         } else {
           this.showFailure(error);
         }
       },
     });
+  }
+
+  private startAutoRefresh(): void {
+    interval(TICKET_REFRESH_INTERVAL_MS)
+      .pipe(
+        filter(() => this.hasTicketToRefresh()),
+        exhaustMap(() => this.refreshActiveTicket()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private refreshActiveTicket(): Observable<void> {
+    return this.ticketService.fetchMyActiveTicket().pipe(
+      tap({
+        next: (ticket) => {
+          if (this.hasTicketToRefresh()) {
+            this.activeTicket.set(ticket);
+          }
+        },
+        error: (error: unknown) => {
+          if (this.hasTicketToRefresh() && isNoActiveTicket(error)) {
+            this.showServiceListWithoutTicket();
+          }
+        },
+      }),
+      catchError(() => EMPTY),
+      ignoreElements(),
+    );
+  }
+
+  private hasTicketToRefresh(): boolean {
+    const status = this.activeTicket()?.status;
+    return (
+      this.screenState() === 'ticket' &&
+      !this.isSubmitting() &&
+      (status === 'WAITING' || status === 'CALLED')
+    );
+  }
+
+  private showServiceListWithoutTicket(): void {
+    this.activeTicket.set(null);
+    this.screenState.set('loading');
+    this.loadActiveServices();
   }
 
   private loadActiveServices(): void {
