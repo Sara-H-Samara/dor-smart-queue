@@ -4,7 +4,12 @@
 </header>
 
 <main class="student-main">
-  <h1>Your ticket</h1>
+  <div class="page-heading">
+    @if (studentFirstName()) {
+      <p class="greeting">Hi {{ studentFirstName() }}</p>
+    }
+    <h1>Your ticket</h1>
+  </div>
 
   @if (failureMessage(); as message) {
     <p class="alert" role="alert">{{ message }}</p>

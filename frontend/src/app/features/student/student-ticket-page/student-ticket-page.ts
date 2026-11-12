@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ActiveService } from '../../../core/models/active-service.model';
@@ -6,6 +6,7 @@ import { ActiveTicket } from '../../../core/models/ticket.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { StudentCatalogService } from '../../../core/services/student-catalog.service';
 import { TicketService } from '../../../core/services/ticket.service';
+import { firstNameOf } from './first-name';
 import { ServiceTileList } from './service-tile-list/service-tile-list';
 import { TicketCard } from './ticket-card/ticket-card';
 import {
@@ -28,6 +29,7 @@ export class StudentTicketPage {
   private readonly ticketService = inject(TicketService);
   private readonly studentCatalogService = inject(StudentCatalogService);
 
+  protected readonly studentFirstName = computed(() => firstNameOf(this.authService.fullName()));
   protected readonly screenState = signal<StudentScreenState>('loading');
   protected readonly activeTicket = signal<ActiveTicket | null>(null);
   protected readonly activeServices = signal<ActiveService[]>([]);

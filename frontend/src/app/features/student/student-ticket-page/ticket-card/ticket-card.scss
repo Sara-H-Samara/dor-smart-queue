@@ -57,6 +57,10 @@
   justify-content: center;
   text-align: center;
 
+  .btn {
+    width: 100%;
+  }
+
   p {
     margin: 0;
     font-size: var(--fs-small);

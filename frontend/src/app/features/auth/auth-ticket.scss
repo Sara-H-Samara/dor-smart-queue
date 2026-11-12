@@ -2,6 +2,7 @@
 
 @use "../../shared/styles/app-header";
 @use "../../shared/styles/ticket-card";
+@use "../../shared/styles/page-layout";
 
 :host {
   display: block;
@@ -21,6 +22,8 @@
   max-width: 26.25rem;
   margin: 0 auto;
   padding: var(--space-5) var(--space-4) var(--space-7);
+
+  @include page-layout.phone-centered-main;
 }
 
 .hero {
