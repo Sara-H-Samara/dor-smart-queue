@@ -78,12 +78,7 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public ActiveTicketResponse getActiveTicket(String email) {
-        Long studentId = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."))
-                .getId();
-
-        Ticket ticket = ticketRepository.findFirstByStudentIdAndStatusIn(studentId, ACTIVE_STATUSES)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
+        Ticket ticket = findActiveTicketOrThrow(email);
 
         if (ticket.getStatus() == TicketStatus.CALLED) {
             return ActiveTicketResponse.forCalledTicket(ticket);
@@ -92,5 +87,26 @@ public class TicketService {
         int peopleAhead = (int) ticketRepository.countWaitingAhead(
                 ticket.getServiceType().getId(), ticket.getTicketDate(), ticket.getNumber());
         return ActiveTicketResponse.forWaitingTicket(ticket, peopleAhead, ESTIMATED_MINUTES_PER_PERSON);
+    }
+
+    @Transactional
+    public void cancelActiveTicket(String email) {
+        Ticket ticket = findActiveTicketOrThrow(email);
+
+        if (ticket.getStatus() == TicketStatus.CALLED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A called ticket cannot be cancelled.");
+        }
+
+        ticket.setStatus(TicketStatus.CANCELLED);
+        ticketRepository.save(ticket);
+    }
+
+    private Ticket findActiveTicketOrThrow(String email) {
+        Long studentId = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."))
+                .getId();
+
+        return ticketRepository.findFirstByStudentIdAndStatusIn(studentId, ACTIVE_STATUSES)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
     }
 }
