@@ -1,0 +1,23 @@
+@use "../../../shared/styles/app-header";
+
+:host {
+  display: block;
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh;
+}
+
+.app-header {
+  justify-content: space-between;
+  padding-right: var(--space-2);
+}
+
+.student-main {
+  width: 100%;
+  max-width: 26.25rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+
+  h1 {
+    margin-bottom: var(--space-5);
+  }
+}

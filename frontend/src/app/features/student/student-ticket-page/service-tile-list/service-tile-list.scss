@@ -1,0 +1,54 @@
+@use "../../../../shared/styles/code-tile";
+
+:host {
+  display: block;
+}
+
+.lede {
+  margin: var(--space-1) 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.tiles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.service-tile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  min-height: 3.5rem;
+  padding: var(--space-3) var(--space-4);
+  font: inherit;
+  color: var(--color-text);
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background var(--duration-base) var(--ease-out);
+
+  &:hover:not(:disabled) {
+    background: var(--color-bg);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.code-tile {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.service-name {
+  font-weight: var(--fw-bold);
+}

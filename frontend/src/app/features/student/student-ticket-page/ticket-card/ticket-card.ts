@@ -1,0 +1,29 @@
+import { Component, computed, input, output } from '@angular/core';
+
+import { ActiveTicket } from '../../../../core/models/ticket.model';
+
+@Component({
+  selector: 'app-ticket-card',
+  templateUrl: './ticket-card.html',
+  styleUrl: './ticket-card.scss',
+})
+export class TicketCard {
+  readonly ticket = input.required<ActiveTicket>();
+  readonly isLeaving = input(false);
+  readonly leaveQueueRequested = output<void>();
+
+  protected readonly isCalled = computed(() => this.ticket().status === 'CALLED');
+  protected readonly stateLabel = computed(() => (this.isCalled() ? 'Called' : 'Waiting'));
+
+  protected readonly peopleAheadText = computed(() => {
+    const peopleAhead = this.ticket().peopleAhead ?? 0;
+    if (peopleAhead === 0) {
+      return 'You are next';
+    }
+    return peopleAhead === 1 ? '1 person ahead of you' : `${peopleAhead} people ahead of you`;
+  });
+
+  protected readonly estimatedWaitText = computed(
+    () => `About ${this.ticket().estimatedWaitMinutes ?? 0} min (estimate)`,
+  );
+}

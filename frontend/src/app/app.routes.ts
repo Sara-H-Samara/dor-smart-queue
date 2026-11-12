@@ -18,8 +18,10 @@ export const routes: Routes = [
   {
     path: 'student',
     canActivate: [authGuard, roleGuard('STUDENT')],
-    data: { title: 'Student' },
-    loadComponent: placeholderHome,
+    loadComponent: () =>
+      import('./features/student/student-ticket-page/student-ticket-page').then(
+        (m) => m.StudentTicketPage,
+      ),
   },
   {
     path: 'staff',

@@ -1,0 +1,49 @@
+<div class="ticket-shadow">
+  <article
+    class="ticket"
+    [class.ticket-called]="isCalled()"
+    [attr.aria-label]="'Ticket ' + ticket().ticketCode"
+  >
+    <div class="ticket-body">
+      <div class="ticket-top">
+        <span class="service-name">{{ ticket().serviceName }}</span>
+        <span class="state-chip">{{ stateLabel() }}</span>
+      </div>
+
+      <div class="ticket-code">{{ ticket().ticketCode }}</div>
+
+      <div class="ticket-status">
+        @if (isCalled()) {
+          <b>Your turn</b>
+          <span>Please go to your counter now.</span>
+        } @else {
+          <b>{{ peopleAheadText() }}</b>
+          <span>{{ estimatedWaitText() }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="ticket-stub">
+      @if (isCalled()) {
+        <p>Show this number at your counter.</p>
+      } @else {
+        <button
+          class="btn btn-secondary"
+          type="button"
+          [disabled]="isLeaving()"
+          (click)="leaveQueueRequested.emit()"
+        >
+          Leave queue
+        </button>
+      }
+    </div>
+  </article>
+</div>
+
+<p class="ticket-note">
+  @if (isCalled()) {
+    Your place is held while you walk over.
+  } @else {
+    Estimates can change.
+  }
+</p>
