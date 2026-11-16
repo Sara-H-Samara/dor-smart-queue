@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { CalledStudent } from '../models/staff-desk.model';
+import { CalledStudent, WaitingList } from '../models/staff-desk.model';
 
 /** The server answers 204 when there is no student, which arrives here as null. */
 @Injectable({ providedIn: 'root' })
@@ -13,6 +13,10 @@ export class StaffDeskService {
 
   fetchCurrentStudent(counterId: number): Observable<CalledStudent | null> {
     return this.http.get<CalledStudent | null>(`${this.apiUrl}/counters/${counterId}/current`);
+  }
+
+  fetchWaitingList(counterId: number): Observable<WaitingList> {
+    return this.http.get<WaitingList>(`${this.apiUrl}/counters/${counterId}/waiting`);
   }
 
   callNextStudent(counterId: number): Observable<CalledStudent | null> {

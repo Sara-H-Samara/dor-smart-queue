@@ -1,0 +1,14 @@
+@if (tickets().length > 0) {
+  <h3 class="waiting-heading">Waiting</h3>
+  <ul class="waiting-list list-group">
+    @for (ticket of tickets(); track ticket.ticketCode) {
+      <li class="waiting-row list-row">
+        <span class="waiting-code">{{ ticket.ticketCode }}</span>
+        <span class="list-row-meta">
+          <span class="list-row-name">{{ serviceName() }}</span>
+        </span>
+        <span class="state-chip">Waiting</span>
+      </li>
+    }
+  </ul>
+}
