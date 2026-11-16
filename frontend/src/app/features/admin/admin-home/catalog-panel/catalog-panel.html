@@ -36,7 +36,6 @@
   <app-catalog-form-dialog
     [idPrefix]="catalogResource()"
     [heading]="(dialogMode() === 'rename' ? 'Rename ' : 'Add ') + itemLabel().toLowerCase()"
-    [nameLabel]="itemLabel() + ' name'"
     [showCodeField]="supportsCode() && dialogMode() === 'add'"
     [submitLabel]="dialogMode() === 'rename' ? 'Save' : 'Add'"
     [isSaving]="isSaving()"

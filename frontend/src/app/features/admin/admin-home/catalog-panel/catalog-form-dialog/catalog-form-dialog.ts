@@ -17,7 +17,6 @@ export class CatalogFormDialog {
   /** Prefix for the element ids (aria wiring), e.g. the resource name. */
   readonly idPrefix = input.required<string>();
   readonly heading = input.required<string>();
-  readonly nameLabel = input.required<string>();
   readonly submitLabel = input('Add');
   readonly showCodeField = input(false);
   readonly isSaving = input(false);

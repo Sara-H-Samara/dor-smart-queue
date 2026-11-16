@@ -74,6 +74,25 @@ describe('StudentTicketPage', () => {
     return buttons.find((button) => button.textContent?.trim() === text);
   }
 
+  it('loadMyActiveTicket_withoutTicket_showsSingleNoTicketHeading', () => {
+    fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
+    listActiveServices.mockReturnValue(of([openService]));
+
+    const fixture = createPage();
+
+    const headings = pageElement(fixture).querySelectorAll('h1, h2');
+    expect(headings).toHaveLength(1);
+    expect(headings[0].textContent?.trim()).toBe('You have no ticket');
+  });
+
+  it('loadMyActiveTicket_withTicket_showsYourTicketHeading', () => {
+    fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
+
+    const fixture = createPage();
+
+    expect(pageElement(fixture).querySelector('h1')?.textContent?.trim()).toBe('Your ticket');
+  });
+
   it('loadMyActiveTicket_whenRequestFails_showsFailedState', () => {
     fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(500));
 

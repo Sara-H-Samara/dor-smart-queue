@@ -40,6 +40,9 @@ export class StudentTicketPage {
 
   protected readonly studentFirstName = computed(() => firstNameOf(this.authService.fullName()));
   protected readonly screenState = signal<StudentScreenState>('loading');
+  protected readonly screenHeading = computed(() =>
+    this.screenState() === 'noTicket' ? 'You have no ticket' : 'Your ticket',
+  );
   protected readonly activeTicket = signal<ActiveTicket | null>(null);
   protected readonly activeServices = signal<ActiveService[]>([]);
   protected readonly isSubmitting = signal(false);
