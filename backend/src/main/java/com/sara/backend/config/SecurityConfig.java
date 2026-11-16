@@ -4,6 +4,7 @@ import com.sara.backend.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -40,6 +41,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/api/health", "/api/auth/register", "/api/auth/login", "/error").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/counters/*/call-next", "/api/tickets/*/done", "/api/tickets/*/no-show")
+                        .hasRole("STAFF")
                         .requestMatchers("/api/tickets/**").hasRole("STUDENT")
                         .requestMatchers("/api/services/**").hasRole("STUDENT")
                         .anyRequest().authenticated()

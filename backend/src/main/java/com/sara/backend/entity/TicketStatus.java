@@ -3,7 +3,15 @@ package com.sara.backend.entity;
 public enum TicketStatus {
     WAITING,
     CALLED,
-    SERVED,
+    DONE,
     NO_SHOW,
-    CANCELLED
+    CANCELLED;
+
+    public boolean canChangeTo(TicketStatus newStatus) {
+        return switch (this) {
+            case WAITING -> newStatus == CALLED || newStatus == CANCELLED;
+            case CALLED -> newStatus == DONE || newStatus == NO_SHOW;
+            case DONE, NO_SHOW, CANCELLED -> false;
+        };
+    }
 }

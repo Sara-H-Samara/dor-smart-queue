@@ -43,9 +43,7 @@ public class TicketService {
         Long serviceId = request.serviceId();
 
         // Lock order is always: student first, then service (avoids deadlocks).
-        Long studentId = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."))
-                .getId();
+        Long studentId = findStudentIdOrThrow(email);
         User student = userRepository.findByIdWithWriteLock(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."));
 
@@ -91,9 +89,13 @@ public class TicketService {
 
     @Transactional
     public void cancelActiveTicket(String email) {
-        Ticket ticket = findActiveTicketOrThrow(email);
+        Long studentId = findStudentIdOrThrow(email);
+        userRepository.findByIdWithWriteLock(studentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."));
+        Ticket ticket = ticketRepository.findActiveTicketOfStudentWithWriteLock(studentId, ACTIVE_STATUSES)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
 
-        if (ticket.getStatus() == TicketStatus.CALLED) {
+        if (!ticket.getStatus().canChangeTo(TicketStatus.CANCELLED)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A called ticket cannot be cancelled.");
         }
 
@@ -101,10 +103,14 @@ public class TicketService {
         ticketRepository.save(ticket);
     }
 
-    private Ticket findActiveTicketOrThrow(String email) {
-        Long studentId = userRepository.findByEmail(email)
+    private Long findStudentIdOrThrow(String email) {
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."))
                 .getId();
+    }
+
+    private Ticket findActiveTicketOrThrow(String email) {
+        Long studentId = findStudentIdOrThrow(email);
 
         return ticketRepository.findFirstByStudentIdAndStatusIn(studentId, ACTIVE_STATUSES)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));

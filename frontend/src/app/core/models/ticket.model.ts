@@ -1,4 +1,4 @@
-export type TicketStatus = 'WAITING' | 'CALLED' | 'SERVED' | 'NO_SHOW' | 'CANCELLED';
+export type TicketStatus = 'WAITING' | 'CALLED' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
 
 export interface ActiveTicket {
   ticketCode: string;

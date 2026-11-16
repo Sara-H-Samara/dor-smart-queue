@@ -200,7 +200,7 @@ class TicketControllerTest {
 
         take(token, registration.getId()).andExpect(status().isCreated());
         Ticket first = ticketRepository.findAll().get(0);
-        first.setStatus(TicketStatus.SERVED);
+        first.setStatus(TicketStatus.DONE);
         ticketRepository.save(first);
 
         take(token, registration.getId())

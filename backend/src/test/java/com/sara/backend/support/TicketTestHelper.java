@@ -14,8 +14,10 @@ import com.sara.backend.repository.UserRepository;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -111,5 +113,40 @@ public class TicketTestHelper {
         ticket.setTicketDate(LocalDate.now());
         ticket.setStatus(status);
         return ticketRepository.save(ticket);
+    }
+
+    public Ticket createCalledTicketForRegisteredStudent(
+            String email, ServiceType service, int number, Counter counter) {
+        Ticket ticket = new Ticket();
+        ticket.setStudent(userRepository.findByEmail(email).orElseThrow());
+        ticket.setServiceType(service);
+        ticket.setNumber(number);
+        ticket.setTicketDate(LocalDate.now());
+        ticket.setStatus(TicketStatus.CALLED);
+        ticket.setCounter(counter);
+        ticket.setCalledAt(LocalDateTime.now());
+        return ticketRepository.save(ticket);
+    }
+
+    public Ticket createTicketOnDateForRegisteredStudent(
+            String email, ServiceType service, int number, LocalDate ticketDate, TicketStatus status) {
+        Ticket ticket = createTicketForRegisteredStudent(email, service, number, status);
+        ticket.setTicketDate(ticketDate);
+        return ticketRepository.save(ticket);
+    }
+
+    public ResultActions callNext(String token, Long counterId) throws Exception {
+        return mockMvc.perform(post("/api/counters/{counterId}/call-next", counterId)
+                .header("Authorization", "Bearer " + token));
+    }
+
+    public ResultActions markDone(String token, Long ticketId) throws Exception {
+        return mockMvc.perform(post("/api/tickets/{ticketId}/done", ticketId)
+                .header("Authorization", "Bearer " + token));
+    }
+
+    public ResultActions markNoShow(String token, Long ticketId) throws Exception {
+        return mockMvc.perform(post("/api/tickets/{ticketId}/no-show", ticketId)
+                .header("Authorization", "Bearer " + token));
     }
 }

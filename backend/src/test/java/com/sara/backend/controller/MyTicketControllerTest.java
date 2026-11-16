@@ -211,9 +211,9 @@ class MyTicketControllerTest {
     }
 
     @Test
-    void servedTicket_isNotCountedAhead() throws Exception {
+    void doneTicket_isNotCountedAhead() throws Exception {
         ServiceType registration = createService("Registration", "R");
-        ticketFor("done@example.com", registration, 1, LocalDate.now(), TicketStatus.SERVED);
+        ticketFor("done@example.com", registration, 1, LocalDate.now(), TicketStatus.DONE);
         ticketFor("a@example.com", registration, 2, LocalDate.now(), TicketStatus.WAITING);
 
         me("a@example.com")
