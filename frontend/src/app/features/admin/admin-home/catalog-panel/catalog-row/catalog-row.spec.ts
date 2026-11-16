@@ -47,7 +47,7 @@ describe('CatalogRow', () => {
 
     fixture.detectChanges();
 
-    expect(rowElement.querySelector('.notched-code-tile .tile-glyph')).not.toBeNull();
+    expect(rowElement.querySelector('.notched-code-tile app-icon')).not.toBeNull();
     expect(rowElement.querySelector('.notched-code-tile')?.textContent?.trim()).toBe('');
   });
 

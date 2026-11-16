@@ -1,9 +1,11 @@
 import { Component, computed, input, output } from '@angular/core';
 
+import { AppIcon } from '../../../../shared/icon/app-icon';
 import { ActiveTicket } from '../../../../core/models/ticket.model';
 
 @Component({
   selector: 'app-ticket-card',
+  imports: [AppIcon],
   templateUrl: './ticket-card.html',
   styleUrl: './ticket-card.scss',
 })

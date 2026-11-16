@@ -18,10 +18,10 @@
           <span>Please go to your counter now.</span>
         } @else {
           @if (peopleAheadText(); as peopleAheadLine) {
-            <b>{{ peopleAheadLine }}</b>
+            <b><app-icon iconName="people" />{{ peopleAheadLine }}</b>
           }
           @if (estimatedWaitText(); as estimatedWaitLine) {
-            <span>{{ estimatedWaitLine }}</span>
+            <span><app-icon iconName="clock" />{{ estimatedWaitLine }}</span>
           }
         }
       </div>

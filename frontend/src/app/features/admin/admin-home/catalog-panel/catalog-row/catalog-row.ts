@@ -1,9 +1,11 @@
 import { Component, input, output } from '@angular/core';
 
+import { AppIcon } from '../../../../../shared/icon/app-icon';
 import { CatalogItem } from '../../../../../core/models/catalog.model';
 
 @Component({
   selector: 'app-catalog-row',
+  imports: [AppIcon],
   templateUrl: './catalog-row.html',
   styleUrl: './catalog-row.scss',
 })

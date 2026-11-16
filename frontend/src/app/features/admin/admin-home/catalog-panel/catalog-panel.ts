@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { AppIcon } from '../../../../shared/icon/app-icon';
 import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.model';
 import { CatalogService } from '../../../../core/services/catalog.service';
 import { errorMessageForStatus, findDuplicateCodeMessage } from './catalog-errors';
@@ -9,7 +10,7 @@ import { CatalogRow } from './catalog-row/catalog-row';
 
 @Component({
   selector: 'app-catalog-panel',
-  imports: [CatalogFormDialog, CatalogRow],
+  imports: [AppIcon, CatalogFormDialog, CatalogRow],
   templateUrl: './catalog-panel.html',
   styleUrl: './catalog-panel.scss',
 })
