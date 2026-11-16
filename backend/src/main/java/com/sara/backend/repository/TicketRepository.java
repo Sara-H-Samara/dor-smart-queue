@@ -42,6 +42,11 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findOldestWaitingTicketSkippingLocked(
             @Param("serviceId") Long serviceId, @Param("date") LocalDate date, Pageable pageable);
 
+    List<Ticket> findByServiceTypeIdAndTicketDateAndStatusOrderByNumberAsc(
+            Long serviceId, LocalDate ticketDate, TicketStatus status, Pageable pageable);
+
+    long countByServiceTypeIdAndTicketDateAndStatus(Long serviceId, LocalDate ticketDate, TicketStatus status);
+
     @Query("select max(t.number) from Ticket t where t.serviceType.id = :serviceId and t.ticketDate = :date")
     Integer findHighestNumberForDay(@Param("serviceId") Long serviceId, @Param("date") LocalDate date);
 

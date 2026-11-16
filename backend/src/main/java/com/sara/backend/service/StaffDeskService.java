@@ -1,6 +1,8 @@
 package com.sara.backend.service;
 
 import com.sara.backend.dto.response.CalledTicketResponse;
+import com.sara.backend.dto.response.WaitingListResponse;
+import com.sara.backend.dto.response.WaitingTicketResponse;
 import com.sara.backend.entity.Counter;
 import com.sara.backend.entity.Ticket;
 import com.sara.backend.entity.TicketStatus;
@@ -20,6 +22,8 @@ import java.util.Optional;
 
 @Service
 public class StaffDeskService {
+
+    private static final int WAITING_LIST_LIMIT = 20;
 
     @Autowired
     private CounterRepository counterRepository;
@@ -57,6 +61,23 @@ public class StaffDeskService {
         }
         return ticketRepository.findFirstByCounterIdAndStatusOrderByCalledAtDesc(counterId, TicketStatus.CALLED)
                 .map(CalledTicketResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public WaitingListResponse listWaitingTickets(Long counterId) {
+        Counter counter = counterRepository.findById(counterId).orElseThrow(this::counterNotFound);
+        Long serviceId = counter.getServiceType().getId();
+        LocalDate today = LocalDate.now();
+
+        long waitingCount = ticketRepository.countByServiceTypeIdAndTicketDateAndStatus(
+                serviceId, today, TicketStatus.WAITING);
+        List<WaitingTicketResponse> firstWaitingTickets = ticketRepository
+                .findByServiceTypeIdAndTicketDateAndStatusOrderByNumberAsc(
+                        serviceId, today, TicketStatus.WAITING, PageRequest.of(0, WAITING_LIST_LIMIT))
+                .stream()
+                .map(WaitingTicketResponse::from)
+                .toList();
+        return new WaitingListResponse(waitingCount, firstWaitingTickets);
     }
 
     @Transactional
