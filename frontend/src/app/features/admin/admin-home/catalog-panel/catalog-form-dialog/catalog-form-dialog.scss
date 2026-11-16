@@ -1,4 +1,4 @@
-/* Catalog dialog (add and rename): native <dialog>, styled with the shared tokens. */
+/* Catalog dialog (add and edit): native <dialog>, styled with the shared tokens. */
 .catalog-dialog {
   box-sizing: border-box;
   width: calc(100% - var(--space-5) * 2);
@@ -23,6 +23,7 @@
 
   .dialog-fields {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-3);
     align-items: flex-start;
   }
@@ -38,6 +39,11 @@
 
   .field-code {
     flex: 0 0 6rem;
+    min-width: 0;
+  }
+
+  .field-service {
+    flex: 1 1 100%;
     min-width: 0;
   }
 

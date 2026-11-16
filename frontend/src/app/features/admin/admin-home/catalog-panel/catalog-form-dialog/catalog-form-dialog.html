@@ -22,10 +22,14 @@
           autocomplete="off"
           [formControl]="nameControl"
           [attr.aria-invalid]="nameControl.touched && nameControl.invalid"
-          [attr.aria-describedby]="nameControl.touched && nameControl.invalid ? idPrefix() + '-name-error' : null"
+          [attr.aria-describedby]="
+            nameControl.touched && nameControl.invalid ? idPrefix() + '-name-error' : null
+          "
         />
         @if (nameControl.touched && nameControl.invalid) {
-          <p class="field-error" role="alert" [id]="idPrefix() + '-name-error'">Name is required.</p>
+          <p class="field-error" role="alert" [id]="idPrefix() + '-name-error'">
+            Name is required.
+          </p>
         }
       </div>
       @if (showCodeField()) {
@@ -52,6 +56,29 @@
             </p>
           } @else if (codeConflictMessage(); as message) {
             <p class="field-error" role="alert" [id]="idPrefix() + '-code-error'">{{ message }}</p>
+          }
+        </div>
+      }
+      @if (showServiceField()) {
+        <div class="field field-service">
+          <label [for]="idPrefix() + '-service'">Service</label>
+          <select
+            [id]="idPrefix() + '-service'"
+            [formControl]="serviceControl"
+            [attr.aria-invalid]="shouldShowServiceError"
+            [attr.aria-describedby]="shouldShowServiceError ? idPrefix() + '-service-error' : null"
+          >
+            <option [ngValue]="null" disabled>Choose a service</option>
+            @for (service of serviceOptions(); track service.id) {
+              <option [ngValue]="service.id">
+                {{ service.active ? service.name : service.name + ' (inactive)' }}
+              </option>
+            }
+          </select>
+          @if (shouldShowServiceError) {
+            <p class="field-error" role="alert" [id]="idPrefix() + '-service-error'">
+              Choose a service.
+            </p>
           }
         </div>
       }

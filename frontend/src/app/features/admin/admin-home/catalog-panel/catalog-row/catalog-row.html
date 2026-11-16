@@ -28,8 +28,8 @@
     class="row-icon-button"
     type="button"
     [disabled]="isBusy()"
-    [attr.aria-label]="'Rename ' + item().name"
-    (click)="renameRequested.emit()"
+    [attr.aria-label]="editVerb() + ' ' + item().name"
+    (click)="editRequested.emit()"
   >
     <app-icon iconName="pencil" />
   </button>
