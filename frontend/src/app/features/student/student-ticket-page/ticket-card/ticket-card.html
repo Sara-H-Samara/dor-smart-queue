@@ -44,10 +44,6 @@
   </article>
 </div>
 
-<p class="ticket-note">
-  @if (isCalled()) {
-    Your place is held while you walk over.
-  } @else {
-    Estimates can change.
-  }
-</p>
+@if (isCalled()) {
+  <p class="ticket-note">Your place is held while you walk over.</p>
+}

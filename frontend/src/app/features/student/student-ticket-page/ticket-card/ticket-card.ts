@@ -30,6 +30,6 @@ export class TicketCard {
 
   protected readonly estimatedWaitText = computed<string | null>(() => {
     const estimatedWaitMinutes = this.ticket().estimatedWaitMinutes;
-    return estimatedWaitMinutes === null ? null : `About ${estimatedWaitMinutes} min (estimate)`;
+    return estimatedWaitMinutes === null ? null : `About ${estimatedWaitMinutes} min`;
   });
 }
