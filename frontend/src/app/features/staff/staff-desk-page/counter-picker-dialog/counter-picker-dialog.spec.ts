@@ -107,9 +107,11 @@ describe('CounterPickerDialog', () => {
     expect(pickerElement.querySelector('.empty-state')).toBeNull();
   });
 
-  it('click_onCounter_emitsCounterIdAndClosesTheDialog', () => {
+  it('click_onCounter_emitsCounterIdAndClosesTheDialogWithoutEmittingClosed', () => {
     const counterChosen = vi.fn();
+    const closed = vi.fn();
     fixture.componentInstance.counterChosen.subscribe(counterChosen);
+    fixture.componentInstance.closed.subscribe(closed);
     fixture.componentRef.setInput('counters', [counterTwo, counterThree]);
     fixture.detectChanges();
     fixture.componentInstance.open();
@@ -117,7 +119,33 @@ describe('CounterPickerDialog', () => {
     counterButtons()[1].click();
 
     expect(counterChosen).toHaveBeenCalledWith(3);
+    expect(closed).not.toHaveBeenCalled();
     expect(isDialogOpen()).toBe(false);
+  });
+
+  it('dismiss_afterAnEarlierChoice_emitsClosed', () => {
+    const closed = vi.fn();
+    fixture.componentInstance.closed.subscribe(closed);
+    fixture.componentRef.setInput('counters', [counterTwo]);
+    fixture.detectChanges();
+    fixture.componentInstance.open();
+    counterButtons()[0].click();
+    fixture.componentInstance.open();
+
+    pickerElement.querySelector('dialog')!.dispatchEvent(new Event('close'));
+
+    expect(closed).toHaveBeenCalledTimes(1);
+  });
+
+  it('dismiss_withEscapeKey_emitsClosed', () => {
+    const closed = vi.fn();
+    fixture.componentInstance.closed.subscribe(closed);
+    fixture.detectChanges();
+    fixture.componentInstance.open();
+
+    pickerElement.querySelector('dialog')!.dispatchEvent(new Event('close'));
+
+    expect(closed).toHaveBeenCalledTimes(1);
   });
 
   it('click_onCancel_closesTheDialogWithoutChoosingACounter', () => {

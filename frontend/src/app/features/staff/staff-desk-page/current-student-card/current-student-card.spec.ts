@@ -56,16 +56,47 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelector('.ticket-status b')?.textContent?.trim()).toBe('Called');
   });
 
-  it('render_withoutStudent_showsEmptyStateAndNoButtons', () => {
+  it('render_withoutStudent_showsDefaultIdleLineOnQuietTicket', () => {
     fixture.componentRef.setInput('student', null);
 
     fixture.detectChanges();
 
-    expect(cardElement.querySelector('.empty-state-title')?.textContent?.trim()).toBe(
-      'No student called yet',
+    expect(cardElement.querySelector('.idle-ticket-message')?.textContent?.trim()).toBe(
+      'No student at your desk',
     );
+    expect(cardElement.querySelector('.idle-ticket app-icon')).not.toBeNull();
+    expect(cardElement.querySelector('.empty-state')).toBeNull();
     expect(cardElement.querySelector('article')).toBeNull();
+  });
+
+  it('render_withoutStudentAndWithNobodyWaitingMessage_showsThatMessageInsteadOfDefault', () => {
+    fixture.componentRef.setInput('student', null);
+    fixture.componentRef.setInput('nobodyWaitingMessage', 'Nobody is waiting for Registration');
+
+    fixture.detectChanges();
+
+    expect(cardElement.querySelectorAll('.idle-ticket-message').length).toBe(1);
+    expect(cardElement.querySelector('.idle-ticket-message')?.textContent?.trim()).toBe(
+      'Nobody is waiting for Registration',
+    );
+  });
+
+  it('render_withoutStudent_showsNoButtons', () => {
+    fixture.componentRef.setInput('student', null);
+
+    fixture.detectChanges();
+
     expect(cardElement.querySelectorAll('button').length).toBe(0);
+  });
+
+  it('render_withStudentAndNobodyWaitingMessage_showsTicketAndNoIdleLine', () => {
+    fixture.componentRef.setInput('student', calledStudent);
+    fixture.componentRef.setInput('nobodyWaitingMessage', 'Nobody is waiting for Registration');
+
+    fixture.detectChanges();
+
+    expect(cardElement.querySelector('.idle-ticket-message')).toBeNull();
+    expect(cardElement.querySelector('.ticket-code')?.textContent?.trim()).toBe('R-014');
   });
 
   it('click_onServed_emitsDoneRequested', () => {

@@ -48,20 +48,4 @@ describe('CallNextPanel', () => {
 
     expect(callNextRequested).toHaveBeenCalledTimes(1);
   });
-
-  it('render_withNotice_showsNoticeText', () => {
-    fixture.componentRef.setInput('notice', 'Nobody is waiting for Registration.');
-
-    fixture.detectChanges();
-
-    expect(panelElement.querySelector('.call-next-notice')?.textContent?.trim()).toBe(
-      'Nobody is waiting for Registration.',
-    );
-  });
-
-  it('render_withoutNotice_showsNoNoticeElement', () => {
-    fixture.detectChanges();
-
-    expect(panelElement.querySelector('.call-next-notice')).toBeNull();
-  });
 });

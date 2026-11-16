@@ -8,6 +8,5 @@ import { Component, input, output } from '@angular/core';
 export class CallNextPanel {
   readonly canCallNext = input.required<boolean>();
   readonly isCalling = input(false);
-  readonly notice = input<string | null>(null);
   readonly callNextRequested = output<void>();
 }

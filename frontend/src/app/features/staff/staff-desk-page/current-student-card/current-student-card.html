@@ -33,8 +33,13 @@
     </article>
   </div>
 } @else {
-  <div class="empty-state">
-    <p class="empty-state-title">No student called yet</p>
-    <p class="empty-state-text">Press Call next to call the next student in line.</p>
+  <div class="ticket-shadow">
+    <div class="ticket current-ticket idle-ticket">
+      <div class="ticket-body">
+        <app-icon iconName="desk" />
+        <p class="idle-ticket-message" role="status">{{ idleMessage() }}</p>
+      </div>
+      <div class="ticket-stub"></div>
+    </div>
   </div>
 }

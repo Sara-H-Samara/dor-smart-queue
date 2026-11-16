@@ -3,8 +3,6 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
-const placeholderHome = () => import('./features/home/placeholder-home').then((m) => m.PlaceholderHome);
-
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
   {
@@ -26,8 +24,8 @@ export const routes: Routes = [
   {
     path: 'staff',
     canActivate: [authGuard, roleGuard('STAFF')],
-    data: { title: 'Staff desk' },
-    loadComponent: placeholderHome,
+    loadComponent: () =>
+      import('./features/staff/staff-desk-page/staff-desk-page').then((m) => m.StaffDeskPage),
   },
   {
     path: 'admin',

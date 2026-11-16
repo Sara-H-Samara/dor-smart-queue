@@ -2,7 +2,7 @@
   #counterPickerElement
   class="counter-picker"
   aria-labelledby="counter-picker-title"
-  (close)="closed.emit()"
+  (close)="emitClosedUnlessCounterWasChosen()"
 >
   <h3 id="counter-picker-title">Choose a counter</h3>
 

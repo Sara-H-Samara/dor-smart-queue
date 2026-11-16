@@ -23,12 +23,23 @@ export class CounterPickerDialog {
     this.counterPickerElement().nativeElement.showModal();
   }
 
+  private counterWasChosen = false;
+
   protected chooseCounter(counter: AvailableCounter): void {
+    this.counterWasChosen = true;
     this.counterPickerElement().nativeElement.close();
     this.counterChosen.emit(counter.id);
   }
 
   protected closeWithoutChoosing(): void {
     this.counterPickerElement().nativeElement.close();
+  }
+
+  protected emitClosedUnlessCounterWasChosen(): void {
+    const wasDismissedWithoutChoice = !this.counterWasChosen;
+    this.counterWasChosen = false;
+    if (wasDismissedWithoutChoice) {
+      this.closed.emit();
+    }
   }
 }

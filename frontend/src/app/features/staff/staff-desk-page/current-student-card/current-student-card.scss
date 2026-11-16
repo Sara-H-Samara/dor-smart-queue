@@ -1,4 +1,3 @@
-@use '../../../../shared/styles/empty-state';
 @use '../../../../shared/styles/ticket-card';
 @use '../../../../shared/styles/ticket-content';
 
@@ -17,6 +16,31 @@
 .state-chip {
   color: var(--color-state-called-fg);
   background: var(--color-state-called-bg);
+}
+
+.idle-ticket {
+  .ticket-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: center;
+    min-height: 15.5rem;
+    text-align: center;
+    color: var(--color-state-served-fg);
+    background: var(--color-state-served-bg);
+  }
+
+  app-icon {
+    font-size: var(--fs-large-title);
+  }
+}
+
+.idle-ticket-message {
+  margin: 0;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  line-height: 1.25;
 }
 
 .ticket-stub {
