@@ -18,6 +18,7 @@ const waitingTicket: ActiveTicket = {
   position: 3,
   peopleAhead: 2,
   estimatedWaitMinutes: 10,
+  counterName: null,
 };
 
 const openService: ActiveService = { id: 1, name: 'Registration', code: 'R', active: true };

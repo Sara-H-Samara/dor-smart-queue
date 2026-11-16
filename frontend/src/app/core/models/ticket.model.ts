@@ -7,6 +7,7 @@ export interface ActiveTicket {
   position: number | null;
   peopleAhead: number | null;
   estimatedWaitMinutes: number | null;
+  counterName: string | null;
 }
 
 export interface TakenTicket {
