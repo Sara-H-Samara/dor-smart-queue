@@ -1,0 +1,16 @@
+<div class="segmented-control" role="radiogroup" [attr.aria-label]="groupLabel()">
+  @for (section of sections(); track section.value) {
+    <input
+      class="segmented-control-input"
+      type="radio"
+      [name]="groupName()"
+      [id]="groupName() + '-' + section.value"
+      [value]="section.value"
+      [checked]="selectedSection() === section.value"
+      (change)="selectedSection.set(section.value)"
+    />
+    <label class="segmented-control-label" [for]="groupName() + '-' + section.value">{{
+      section.label
+    }}</label>
+  }
+</div>

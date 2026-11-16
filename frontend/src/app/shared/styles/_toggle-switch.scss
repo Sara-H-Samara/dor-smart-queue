@@ -1,0 +1,74 @@
+.toggle-switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.75rem;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  input:disabled {
+    cursor: not-allowed;
+  }
+
+  &:has(input:disabled) {
+    opacity: 0.5;
+  }
+
+  &:has(input:focus-visible) .toggle-track {
+    outline: var(--focus-width) solid var(--color-link);
+    outline-offset: 3px;
+  }
+}
+
+.toggle-state {
+  min-width: 3.25rem;
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.toggle-track {
+  position: relative;
+  flex: 0 0 3.1875rem;
+  height: 1.9375rem;
+  background: var(--color-switch-off);
+  border-radius: var(--radius-pill);
+  transition: background 0.25s var(--ease-out);
+
+  &::after {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 1.6875rem;
+    height: 1.6875rem;
+    content: '';
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.28);
+    transition: transform 0.25s var(--ease-out);
+  }
+}
+
+.toggle-switch input:checked ~ .toggle-track {
+  background: var(--color-switch-on);
+
+  &::after {
+    transform: translateX(1.25rem);
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .toggle-switch {
+    gap: var(--space-2);
+  }
+}

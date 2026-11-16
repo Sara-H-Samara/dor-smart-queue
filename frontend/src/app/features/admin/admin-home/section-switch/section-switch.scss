@@ -1,0 +1,11 @@
+@use '../../../../shared/styles/segmented-control';
+
+:host {
+  display: block;
+}
+
+@media (min-width: 48rem) {
+  :host {
+    display: none;
+  }
+}

@@ -1,123 +1,21 @@
-/* Catalog panel (services or counters); tokens from src/styles.scss. */
+@use '../../../../shared/styles/empty-state';
+@use '../../../../shared/styles/list-group';
 
 :host {
   display: block;
 }
 
-.panel-head {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-4);
-
-  .btn {
-    width: auto;
-  }
-}
-
 h2 {
-  margin: 0;
+  margin: 0 0 var(--space-3);
   letter-spacing: -0.015em;
 }
 
-.items {
-  margin: 0 0 var(--space-5);
-  padding: 0;
-  list-style: none;
-  overflow: hidden;
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
-}
-
-.item {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-3);
-  align-items: center;
-  padding: var(--space-3) var(--space-4) var(--space-1);
-
-  & + .item {
-    border-top: 1px solid var(--color-separator);
-  }
-}
-
-.name {
-  flex: 1 1 8rem;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-/* Status: a dot plus text, so state never relies on color alone. */
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--fs-small);
-  font-weight: var(--fw-bold);
-  color: var(--color-state-called-fg);
-  background: var(--color-state-called-bg);
-  border-radius: var(--radius-pill);
-
-  &::before {
-    content: "";
-    width: 0.5rem;
-    height: 0.5rem;
-    background: currentColor;
-    border-radius: 50%;
+@media (max-width: 47.99rem) {
+  :host {
+    padding-top: var(--space-3);
   }
 
-  &.inactive {
-    color: var(--color-state-served-fg);
-    background: var(--color-state-served-bg);
+  h2 {
+    display: none;
   }
-}
-
-.actions {
-  display: flex;
-  flex: 1 1 100%;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-left: calc(var(--space-3) * -1);
-}
-
-.empty {
-  margin: 0 0 var(--space-5);
-  padding: var(--space-5) var(--space-4);
-  text-align: center;
-  border: 2px dashed var(--color-border-strong);
-  border-radius: var(--radius-lg);
-
-  p {
-    margin: 0;
-  }
-
-  .empty-title {
-    font-weight: var(--fw-bold);
-  }
-
-  .empty-text {
-    margin-top: var(--space-1);
-    font-size: var(--fs-small);
-    color: var(--color-text-muted);
-  }
-}
-
-/* Short code tile shown before a service name. */
-.code-tile {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.25rem;
-  padding: var(--space-1) var(--space-2);
-  font-size: var(--fs-small);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.04em;
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 2px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
 }

@@ -1,47 +1,24 @@
-/* Admin screen; tokens from src/styles.scss. Header matches the auth screens. */
+@use '../../../shared/styles/app-header';
+@use '../../../shared/styles/sticky-app-header';
 
 :host {
   display: block;
-  min-height: 100vh; /* fallback */
+  min-height: 100vh;
   min-height: 100dvh;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 3.5rem;
-  padding: 0 var(--space-2) 0 var(--space-5);
-  border-bottom: 1px solid var(--color-separator);
-  font-size: var(--fs-title);
-}
-
-.wordmark {
-  display: inline-flex;
-  align-items: baseline;
-  font-weight: var(--fw-bold);
-  letter-spacing: -0.04em;
-}
-
-.wordmark .wordmark-o {
-  display: inline-block;
-  width: 0.5em;
-  height: 0.5em;
-  margin: 0 0.04em 0 0.03em;
-  border: 0.14em solid var(--color-link);
-  border-radius: 50%;
 }
 
 .admin-main {
   width: 100%;
   max-width: 56rem;
   margin: 0 auto;
-  padding: var(--space-5) var(--space-4) var(--space-7);
+  padding: var(--space-5) 1.25rem var(--space-7);
 }
 
-.subtitle {
+.lede {
+  max-width: 46ch;
   margin: 0 0 var(--space-6);
-  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+  text-wrap: pretty;
 }
 
 .panels {
@@ -51,17 +28,21 @@
   align-items: start;
 }
 
-@media (min-width: 48rem) {
-  .app-header {
-    padding: 0 var(--space-5) 0 var(--space-6);
+@media (max-width: 47.99rem) {
+  .panel-hidden-on-phone {
+    display: none;
   }
+}
 
+@media (min-width: 48rem) {
   .admin-main {
+    max-width: calc(56rem + var(--space-6) * 2);
+    padding-inline: var(--space-6);
     padding-top: var(--space-6);
   }
 
   .panels {
-    gap: var(--space-6);
+    gap: 2.5rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

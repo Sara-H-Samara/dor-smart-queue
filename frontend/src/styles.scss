@@ -61,6 +61,14 @@
   --color-link: #1b45b8; /* links, quiet buttons, focus ring */
   --color-danger: #b3261e;
 
+  /* ---- Color: admin tiles, switch and segmented control (light) ---- */
+  --color-tile-bg: #e3eafb;
+  --color-tile-fg: #17399a;
+  --color-switch-on: #1d7a34;
+  --color-switch-off: #86868b;
+  --color-segment-track: #e8e6df;
+  --color-segment-active: #ffffff;
+
   /* ---- Color: ticket states (light), text on tint ---- */
   --color-state-waiting-bg: #ffefc7;
   --color-state-waiting-fg: #6f3e00;
@@ -107,6 +115,13 @@
     --color-on-brand: #ffffff;
     --color-link: #8eb1ff;
     --color-danger: #ff8f88;
+
+    --color-tile-bg: #1e2b52;
+    --color-tile-fg: #afc7ff;
+    --color-switch-on: #2fa84f;
+    --color-switch-off: #8e8e93;
+    --color-segment-track: #2c2c2e;
+    --color-segment-active: #636366;
 
     --color-state-waiting-bg: #3b2b05;
     --color-state-waiting-fg: #ffd27d;

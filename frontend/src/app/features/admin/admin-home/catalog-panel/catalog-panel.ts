@@ -5,10 +5,11 @@ import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.mo
 import { CatalogService } from '../../../../core/services/catalog.service';
 import { errorMessageForStatus, findDuplicateCodeMessage } from './catalog-errors';
 import { CatalogFormDialog, CatalogFormValue } from './catalog-form-dialog/catalog-form-dialog';
+import { CatalogRow } from './catalog-row/catalog-row';
 
 @Component({
   selector: 'app-catalog-panel',
-  imports: [CatalogFormDialog],
+  imports: [CatalogFormDialog, CatalogRow],
   templateUrl: './catalog-panel.html',
   styleUrl: './catalog-panel.scss',
 })
@@ -18,6 +19,7 @@ export class CatalogPanel implements OnInit {
   readonly catalogResource = input.required<CatalogResource>();
   readonly heading = input.required<string>();
   readonly itemLabel = input.required<string>();
+  readonly emptyText = input.required<string>();
 
   protected readonly items = signal<CatalogItem[]>([]);
   protected readonly isLoadingList = signal(false);
@@ -33,8 +35,22 @@ export class CatalogPanel implements OnInit {
 
   protected readonly supportsCode = computed(() => this.catalogResource() === 'services');
 
+  protected readonly itemCountText = computed(() => {
+    const count = this.items().length;
+    const label = count === 1 ? this.itemLabel() : this.heading();
+    return `${count} ${label.toLowerCase()}`;
+  });
+
   ngOnInit(): void {
     this.reloadItems();
+  }
+
+  protected tileTextFor(item: CatalogItem): string | null {
+    return this.supportsCode() ? (item.code ?? null) : null;
+  }
+
+  protected detailTextFor(item: CatalogItem): string | null {
+    return this.supportsCode() && item.code ? `Code ${item.code}` : null;
   }
 
   protected openAdd(): void {
@@ -79,11 +95,15 @@ export class CatalogPanel implements OnInit {
   }
 
   private renameItem(item: CatalogItem, name: string): void {
-    this.sendAndReload(this.catalogService.rename(this.catalogResource(), item.id, name), () => this.formDialog().closeAndReset());
+    this.sendAndReload(this.catalogService.rename(this.catalogResource(), item.id, name), () =>
+      this.formDialog().closeAndReset(),
+    );
   }
 
   protected toggleItemActive(item: CatalogItem): void {
-    this.sendAndReload(this.catalogService.setActive(this.catalogResource(), item.id, !item.active));
+    this.sendAndReload(
+      this.catalogService.setActive(this.catalogResource(), item.id, !item.active),
+    );
   }
 
   private sendAndReload(request: Observable<unknown>, onSuccess?: () => void): void {

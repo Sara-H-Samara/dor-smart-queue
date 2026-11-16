@@ -1,16 +1,38 @@
 <div class="admin-screen">
-  <header class="app-header">
+  <header class="app-header app-header-sticky">
     <span class="wordmark" role="img" aria-label="Dor">D<i class="wordmark-o"></i>r</span>
-    <button class="btn btn-quiet btn-sm" type="button" (click)="signOut()">Sign out</button>
+    <div class="header-actions">
+      <span class="header-user-label">Admin</span>
+      <button class="header-text-button" type="button" (click)="signOut()">Sign out</button>
+    </div>
   </header>
 
   <main class="admin-main">
     <h1>Admin</h1>
-    <p class="subtitle">Signed in as {{ fullName() }}.</p>
+    <p class="lede">Manage the services your office offers and the counters that serve them.</p>
+
+    <app-section-switch
+      [sections]="sectionOptions"
+      groupName="admin-section"
+      groupLabel="Section"
+      [(selectedSection)]="selectedSection"
+    />
 
     <div class="panels">
-      <app-catalog-panel catalogResource="services" heading="Services" itemLabel="Service" />
-      <app-catalog-panel catalogResource="counters" heading="Counters" itemLabel="Counter" />
+      <app-catalog-panel
+        [class.panel-hidden-on-phone]="selectedSection() !== 'services'"
+        catalogResource="services"
+        heading="Services"
+        itemLabel="Service"
+        emptyText="Add a service so students can start taking tickets."
+      />
+      <app-catalog-panel
+        [class.panel-hidden-on-phone]="selectedSection() !== 'counters'"
+        catalogResource="counters"
+        heading="Counters"
+        itemLabel="Counter"
+        emptyText="Add a counter so staff can start serving students."
+      />
     </div>
   </main>
 </div>

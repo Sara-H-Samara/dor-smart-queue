@@ -1,0 +1,19 @@
+.notched-code-tile {
+  display: grid;
+  flex: 0 0 2.875rem;
+  height: 2.875rem;
+  place-items: center;
+  font-size: 1.0625rem;
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-tile-fg);
+  background: var(--color-tile-bg);
+  border-radius: var(--radius-md);
+  -webkit-mask:
+    radial-gradient(circle 6px at 0 50%, #0000 97%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 6px at 100% 50%, #0000 97%, #000) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle 6px at 0 50%, #0000 97%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 6px at 100% 50%, #0000 97%, #000) right / 51% 100% no-repeat;
+}
