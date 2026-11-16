@@ -190,7 +190,7 @@ class TicketControllerTest {
 
         take(token, documents.getId())
                 .andExpect(status().isConflict())
-                .andExpect(status().reason("You already have an active ticket."));
+                .andExpect(jsonPath("$.message").value("You already have an active ticket."));
     }
 
     @Test
@@ -231,7 +231,7 @@ class TicketControllerTest {
 
         take(registerStudentAndLogin("a@example.com"), closed.getId())
                 .andExpect(status().isBadRequest())
-                .andExpect(status().reason("This service is not available."));
+                .andExpect(jsonPath("$.message").value("This service is not available."));
     }
 
     @Test
