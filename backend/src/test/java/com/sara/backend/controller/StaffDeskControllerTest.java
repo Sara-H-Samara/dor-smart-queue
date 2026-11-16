@@ -211,6 +211,99 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    void currentStudent_withCalledTicket_returnsCalledTicket() throws Exception {
+        Ticket called = calledTicketFor("a@example.com", 1);
+
+        testHelper.getCurrentStudent(staffToken, deskOne.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(called.getId()))
+                .andExpect(jsonPath("$.ticketCode").value("R-001"))
+                .andExpect(jsonPath("$.studentName").value("Student"))
+                .andExpect(jsonPath("$.status").value("CALLED"))
+                .andExpect(jsonPath("$.calledAt").isNotEmpty())
+                .andExpect(jsonPath("$.counterName").value("Desk 1"));
+    }
+
+    @Test
+    void currentStudent_withNoCalledTicket_returnsNoContent() throws Exception {
+        waitingTicketFor("a@example.com", 1);
+
+        testHelper.getCurrentStudent(staffToken, deskOne.getId()).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void currentStudent_withCalledTicketAtAnotherCounter_returnsNoContent() throws Exception {
+        calledTicketFor("a@example.com", 1);
+        Counter deskTwo = testHelper.createCounter("Desk 2", registration);
+
+        testHelper.getCurrentStudent(staffToken, deskTwo.getId()).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void currentStudent_afterMarkDone_returnsNoContent() throws Exception {
+        Ticket called = calledTicketFor("a@example.com", 1);
+        testHelper.markDone(staffToken, called.getId()).andExpect(status().isOk());
+
+        testHelper.getCurrentStudent(staffToken, deskOne.getId()).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void currentStudent_afterMarkNoShow_returnsNoContent() throws Exception {
+        Ticket called = calledTicketFor("a@example.com", 1);
+        testHelper.markNoShow(staffToken, called.getId()).andExpect(status().isOk());
+
+        testHelper.getCurrentStudent(staffToken, deskOne.getId()).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void currentStudent_withCalledTicketFromEarlierDay_returnsCalledTicket() throws Exception {
+        Ticket called = calledTicketFor("a@example.com", 1);
+        called.setTicketDate(LocalDate.now().minusDays(1));
+        ticketRepository.save(called);
+
+        testHelper.getCurrentStudent(staffToken, deskOne.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(called.getId()));
+    }
+
+    @Test
+    void currentStudent_withInactiveCounter_returnsCalledTicket() throws Exception {
+        Ticket called = calledTicketFor("a@example.com", 1);
+        deskOne.setActive(false);
+        counterRepository.save(deskOne);
+
+        testHelper.getCurrentStudent(staffToken, deskOne.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(called.getId()));
+    }
+
+    @Test
+    void currentStudent_withUnknownCounter_returnsNotFound() throws Exception {
+        testHelper.getCurrentStudent(staffToken, UNKNOWN_ID)
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Counter not found."));
+    }
+
+    @Test
+    void currentStudent_asStudent_returnsForbidden() throws Exception {
+        String studentToken = testHelper.registerStudentAndLogin("a@example.com");
+
+        testHelper.getCurrentStudent(studentToken, deskOne.getId()).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void currentStudent_asAdmin_returnsForbidden() throws Exception {
+        testHelper.getCurrentStudent(testHelper.loginAsAdmin(), deskOne.getId())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void currentStudent_withoutToken_returnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/counters/{counterId}/current", deskOne.getId()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void markDone_withCalledTicket_returnsDone() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
 

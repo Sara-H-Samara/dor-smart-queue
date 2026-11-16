@@ -44,6 +44,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/counters/*/call-next", "/api/tickets/*/done", "/api/tickets/*/no-show")
                         .hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/api/counters/*/current").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/api/counters").hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers("/api/tickets/**").hasRole("STUDENT")
                         .requestMatchers("/api/services/**").hasRole("STUDENT")
                         .anyRequest().authenticated()

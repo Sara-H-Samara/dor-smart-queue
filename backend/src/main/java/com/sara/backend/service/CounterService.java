@@ -2,6 +2,7 @@ package com.sara.backend.service;
 
 import com.sara.backend.dto.request.CounterRequest;
 import com.sara.backend.dto.request.SetActiveRequest;
+import com.sara.backend.dto.response.AvailableCounterResponse;
 import com.sara.backend.dto.response.CounterResponse;
 import com.sara.backend.entity.Counter;
 import com.sara.backend.entity.ServiceType;
@@ -25,6 +26,12 @@ public class CounterService {
 
     public List<CounterResponse> list() {
         return counterRepository.findAllByOrderByNameAsc().stream().map(CounterResponse::from).toList();
+    }
+
+    public List<AvailableCounterResponse> listAvailableCounters() {
+        return counterRepository.findByActiveTrueAndServiceTypeActiveTrueOrderByNameAsc().stream()
+                .map(AvailableCounterResponse::from)
+                .toList();
     }
 
     public CounterResponse create(CounterRequest request) {
