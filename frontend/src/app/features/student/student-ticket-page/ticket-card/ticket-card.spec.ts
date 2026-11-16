@@ -41,10 +41,9 @@ describe('TicketCard', () => {
     expect(cardElement.querySelector('.ticket-status')?.textContent).toContain('About 5 min');
     expect(cardElement.textContent).not.toContain('estimate');
     expect(cardElement.textContent).not.toContain('Estimates can change');
-    expect(cardElement.querySelector('.ticket-note')).toBeNull();
   });
 
-  it('render_withCalledTicket_showsPlaceHeldNote', () => {
+  it('render_withCalledTicket_showsYourTurnAndCounterLineOnly', () => {
     const calledTicket: ActiveTicket = {
       ticketCode: 'A-003',
       serviceName: 'Registration',
@@ -59,8 +58,11 @@ describe('TicketCard', () => {
     fixture.detectChanges();
 
     const cardElement = fixture.nativeElement as HTMLElement;
-    expect(cardElement.querySelector('.ticket-note')?.textContent?.trim()).toBe(
-      'Your place is held while you walk over.',
+    expect(cardElement.querySelector('.ticket-status')?.textContent?.trim()).toBe('Your turn');
+    expect(cardElement.querySelector('.ticket-stub')?.textContent?.trim()).toBe(
+      'Please go to your counter.',
     );
+    expect(cardElement.textContent).not.toContain('Show this number');
+    expect(cardElement.textContent).not.toContain('Your place is held');
   });
 });
