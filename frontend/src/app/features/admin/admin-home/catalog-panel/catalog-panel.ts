@@ -4,7 +4,13 @@ import { Observable } from 'rxjs';
 import { AppIcon } from '../../../../shared/icon/app-icon';
 import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.model';
 import { CatalogService } from '../../../../core/services/catalog.service';
-import { errorMessageForStatus, findDuplicateCodeMessage } from './catalog-errors';
+import {
+  counterErrorMessageForStatus,
+  errorMessageForStatus,
+  findDuplicateCodeMessage,
+  httpStatusOf,
+  noActiveServiceMessage,
+} from './catalog-errors';
 import { CatalogFormDialog, CatalogFormValue } from './catalog-form-dialog/catalog-form-dialog';
 import { CatalogRow } from './catalog-row/catalog-row';
 
@@ -27,14 +33,24 @@ export class CatalogPanel implements OnInit {
   protected readonly isSaving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly dialogOpen = signal(false);
-  protected readonly dialogMode = signal<'add' | 'rename'>('add');
-  private readonly renamingItem = signal<CatalogItem | null>(null);
+  protected readonly dialogMode = signal<'add' | 'edit'>('add');
+  private readonly editingItem = signal<CatalogItem | null>(null);
+  private readonly loadedServices = signal<CatalogItem[]>([]);
 
   private readonly formDialog = viewChild.required(CatalogFormDialog);
 
   protected readonly codeConflictMessage = signal<string | null>(null);
 
   protected readonly supportsCode = computed(() => this.catalogResource() === 'services');
+  protected readonly supportsService = computed(() => this.catalogResource() === 'counters');
+  protected readonly editVerb = computed(() => (this.supportsService() ? 'Edit' : 'Rename'));
+
+  protected readonly serviceOptions = computed(() => {
+    const currentServiceId = this.editingItem()?.serviceId;
+    return this.loadedServices().filter(
+      (service) => service.active || service.id === currentServiceId,
+    );
+  });
 
   protected readonly itemCountText = computed(() => {
     const count = this.items().length;
@@ -51,54 +67,80 @@ export class CatalogPanel implements OnInit {
   }
 
   protected detailTextFor(item: CatalogItem): string | null {
+    if (this.supportsService()) {
+      return item.serviceName ?? null;
+    }
     return this.supportsCode() && item.code ? `Code ${item.code}` : null;
   }
 
   protected openAdd(): void {
     this.error.set(null);
-    this.dialogMode.set('add');
-    this.dialogOpen.set(true);
-    this.formDialog().open();
+    this.loadServices(() => {
+      const activeServices = this.loadedServices().filter((service) => service.active);
+      if (this.supportsService() && activeServices.length === 0) {
+        this.error.set(noActiveServiceMessage);
+        return;
+      }
+      if (this.dialogOpen()) {
+        return;
+      }
+      this.dialogMode.set('add');
+      this.dialogOpen.set(true);
+      this.formDialog().open({
+        serviceId: activeServices.length === 1 ? activeServices[0].id : undefined,
+      });
+    });
   }
 
-  protected openRename(item: CatalogItem): void {
+  protected openEdit(item: CatalogItem): void {
     this.error.set(null);
-    this.dialogMode.set('rename');
-    this.renamingItem.set(item);
-    this.dialogOpen.set(true);
-    this.formDialog().open(item.name);
+    this.loadServices(() => {
+      if (this.dialogOpen()) {
+        return;
+      }
+      this.dialogMode.set('edit');
+      this.editingItem.set(item);
+      this.dialogOpen.set(true);
+      this.formDialog().open({ name: item.name, serviceId: item.serviceId });
+    });
   }
 
   /** Runs when the dialog closes by any route, including the Esc key. */
   protected onDialogClosed(): void {
     this.dialogOpen.set(false);
     this.dialogMode.set('add');
-    this.renamingItem.set(null);
+    this.editingItem.set(null);
     this.codeConflictMessage.set(null);
     this.error.set(null);
   }
 
   protected onFormSubmitted(formValue: CatalogFormValue): void {
-    const item = this.renamingItem();
-    if (this.dialogMode() === 'rename' && item) {
-      this.renameItem(item, formValue.name);
+    const item = this.editingItem();
+    if (this.dialogMode() === 'edit' && item) {
+      this.saveEditedItem(item, formValue);
     } else {
       this.createItem(formValue);
     }
   }
 
   private createItem(value: CatalogFormValue): void {
-    const createCall$ = this.supportsCode()
-      ? this.catalogService.create(this.catalogResource(), value.name, value.code ?? '')
-      : this.catalogService.create(this.catalogResource(), value.name);
     this.codeConflictMessage.set(null);
-    this.sendAndReload(createCall$, () => this.formDialog().closeAndReset());
+    this.sendAndReload(this.createRequestFor(value), () => this.formDialog().closeAndReset());
   }
 
-  private renameItem(item: CatalogItem, name: string): void {
-    this.sendAndReload(this.catalogService.rename(this.catalogResource(), item.id, name), () =>
-      this.formDialog().closeAndReset(),
-    );
+  private createRequestFor(value: CatalogFormValue): Observable<unknown> {
+    if (value.serviceId !== undefined) {
+      return this.catalogService.createCounter(value.name, value.serviceId);
+    }
+    return this.catalogService.create(this.catalogResource(), value.name, value.code ?? '');
+  }
+
+  private saveEditedItem(item: CatalogItem, value: CatalogFormValue): void {
+    const request =
+      value.serviceId !== undefined
+        ? this.catalogService.updateCounter(item.id, value.name, value.serviceId)
+        : this.catalogService.rename(this.catalogResource(), item.id, value.name);
+    this.sendAndReload(request, () => this.formDialog().closeAndReset());
   }
 
   protected toggleItemActive(item: CatalogItem): void {
@@ -122,9 +164,38 @@ export class CatalogPanel implements OnInit {
         if (duplicateCode) {
           this.codeConflictMessage.set(duplicateCode);
         } else {
-          this.error.set(errorMessageForStatus(err));
+          this.error.set(this.errorMessageFor(err));
+          this.refreshAfterRejection(err);
         }
       },
+    });
+  }
+
+  private errorMessageFor(err: unknown): string {
+    return this.supportsService() ? counterErrorMessageForStatus(err) : errorMessageForStatus(err);
+  }
+
+  private refreshAfterRejection(err: unknown): void {
+    const status = httpStatusOf(err);
+    if (status === 404) {
+      this.reloadItems();
+    }
+    if (this.supportsService() && (status === 404 || status === 400)) {
+      this.loadServices();
+    }
+  }
+
+  private loadServices(onLoaded?: () => void): void {
+    if (!this.supportsService()) {
+      onLoaded?.();
+      return;
+    }
+    this.catalogService.listItems('services').subscribe({
+      next: (services) => {
+        this.loadedServices.set(services);
+        onLoaded?.();
+      },
+      error: (err: unknown) => this.error.set(errorMessageForStatus(err)),
     });
   }
 

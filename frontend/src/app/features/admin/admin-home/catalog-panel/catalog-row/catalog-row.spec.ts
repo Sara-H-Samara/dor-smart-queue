@@ -23,9 +23,9 @@ describe('CatalogRow', () => {
     expect(emittedEvents.length).toBe(1);
   });
 
-  it('clickRename_withActiveItem_emitsRenameRequested', () => {
+  it('clickEdit_withActiveItem_emitsEditRequested', () => {
     const emittedEvents: unknown[] = [];
-    fixture.componentInstance.renameRequested.subscribe(() => emittedEvents.push(true));
+    fixture.componentInstance.editRequested.subscribe(() => emittedEvents.push(true));
     fixture.detectChanges();
 
     rowElement.querySelector<HTMLButtonElement>('.row-icon-button')?.click();
@@ -33,7 +33,7 @@ describe('CatalogRow', () => {
     expect(emittedEvents.length).toBe(1);
   });
 
-  it('render_whenBusy_disablesSwitchAndRename', () => {
+  it('render_whenBusy_disablesSwitchAndEditButton', () => {
     fixture.componentRef.setInput('isBusy', true);
 
     fixture.detectChanges();
@@ -51,7 +51,17 @@ describe('CatalogRow', () => {
     expect(rowElement.querySelector('.notched-code-tile')?.textContent?.trim()).toBe('');
   });
 
-  it('render_withItemName_labelsRenameButtonWithName', () => {
+  it('render_withItemName_labelsEditButtonWithName', () => {
+    fixture.detectChanges();
+
+    expect(rowElement.querySelector('.row-icon-button')?.getAttribute('aria-label')).toBe(
+      'Edit Registration',
+    );
+  });
+
+  it('render_withRenameVerb_labelsEditButtonWithRenameAndName', () => {
+    fixture.componentRef.setInput('editVerb', 'Rename');
+
     fixture.detectChanges();
 
     expect(rowElement.querySelector('.row-icon-button')?.getAttribute('aria-label')).toBe(

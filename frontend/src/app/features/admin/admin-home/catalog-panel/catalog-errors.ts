@@ -1,8 +1,25 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
+export const noActiveServiceMessage =
+  'Add or activate a service first. Every counter belongs to one service.';
+
+export function httpStatusOf(err: unknown): number {
+  return err instanceof HttpErrorResponse ? err.status : 0;
+}
+
+export function counterErrorMessageForStatus(err: unknown): string {
+  switch (httpStatusOf(err)) {
+    case 404:
+      return 'This counter or its service was not found. It may have been removed; the list is refreshed.';
+    case 400:
+      return 'Choose an active service and a name of 1 to 100 characters.';
+    default:
+      return errorMessageForStatus(err);
+  }
+}
+
 export function errorMessageForStatus(err: unknown): string {
-  const status = err instanceof HttpErrorResponse ? err.status : 0;
-  switch (status) {
+  switch (httpStatusOf(err)) {
     case 409:
       return 'This name already exists. Please choose a different name.';
     case 404:

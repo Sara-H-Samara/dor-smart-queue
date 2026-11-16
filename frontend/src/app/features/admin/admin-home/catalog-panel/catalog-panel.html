@@ -20,8 +20,9 @@
           [tileText]="tileTextFor(item)"
           [detailText]="detailTextFor(item)"
           [isBusy]="isSaving()"
+          [editVerb]="editVerb()"
           (activeChanged)="toggleItemActive(item)"
-          (renameRequested)="openRename(item)"
+          (editRequested)="openEdit(item)"
         />
       }
     </div>
@@ -35,9 +36,11 @@
 
   <app-catalog-form-dialog
     [idPrefix]="catalogResource()"
-    [heading]="(dialogMode() === 'rename' ? 'Rename ' : 'Add ') + itemLabel().toLowerCase()"
+    [heading]="(dialogMode() === 'edit' ? editVerb() : 'Add') + ' ' + itemLabel().toLowerCase()"
     [showCodeField]="supportsCode() && dialogMode() === 'add'"
-    [submitLabel]="dialogMode() === 'rename' ? 'Save' : 'Add'"
+    [showServiceField]="supportsService()"
+    [serviceOptions]="serviceOptions()"
+    [submitLabel]="dialogMode() === 'edit' ? 'Save' : 'Add'"
     [isSaving]="isSaving()"
     [errorMessage]="error()"
     [codeConflictMessage]="codeConflictMessage()"

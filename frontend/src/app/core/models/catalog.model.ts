@@ -4,6 +4,8 @@ export interface CatalogItem {
   /** Present on services only; counters have no code. */
   code?: string;
   active: boolean;
+  serviceId?: number;
+  serviceName?: string;
 }
 
 export type CatalogResource = 'services' | 'counters';

@@ -17,6 +17,14 @@ export class CatalogService {
     return this.http.post<CatalogItem>(this.adminUrlFor(resource), body);
   }
 
+  createCounter(name: string, serviceId: number): Observable<CatalogItem> {
+    return this.http.post<CatalogItem>(this.adminUrlFor('counters'), { name, serviceId });
+  }
+
+  updateCounter(id: number, name: string, serviceId: number): Observable<CatalogItem> {
+    return this.http.put<CatalogItem>(`${this.adminUrlFor('counters')}/${id}`, { name, serviceId });
+  }
+
   rename(resource: CatalogResource, id: number, name: string): Observable<CatalogItem> {
     return this.http.put<CatalogItem>(`${this.adminUrlFor(resource)}/${id}`, { name });
   }
