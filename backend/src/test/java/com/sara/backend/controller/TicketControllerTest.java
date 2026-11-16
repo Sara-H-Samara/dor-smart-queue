@@ -7,6 +7,7 @@ import com.sara.backend.entity.ServiceType;
 import com.sara.backend.entity.Ticket;
 import com.sara.backend.entity.TicketStatus;
 import com.sara.backend.entity.User;
+import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
 import com.sara.backend.repository.TicketRepository;
 import com.sara.backend.repository.UserRepository;
@@ -52,6 +53,9 @@ class TicketControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private CounterRepository counterRepository;
+
+    @Autowired
     private ServiceTypeRepository serviceTypeRepository;
 
     @Autowired
@@ -67,6 +71,7 @@ class TicketControllerTest {
     void deleteAllTestData() {
         // Tickets first: they reference users and services.
         ticketRepository.deleteAll();
+        counterRepository.deleteAll();
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();

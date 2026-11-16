@@ -2,6 +2,7 @@ package com.sara.backend.controller;
 
 import com.sara.backend.config.DataSeeder;
 import com.sara.backend.entity.ServiceType;
+import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
 import com.sara.backend.repository.TicketRepository;
 import com.sara.backend.repository.UserRepository;
@@ -34,6 +35,9 @@ class ListActiveServicesControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private CounterRepository counterRepository;
+
+    @Autowired
     private ServiceTypeRepository serviceTypeRepository;
 
     @Autowired
@@ -50,11 +54,12 @@ class ListActiveServicesControllerTest {
     @BeforeEach
     void resetDatabaseWithSeededAdmin() {
         ticketRepository.deleteAll();
+        counterRepository.deleteAll();
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();
         testHelper = new TicketTestHelper(
-                mockMvc, userRepository, serviceTypeRepository, ticketRepository, passwordEncoder);
+                mockMvc, userRepository, serviceTypeRepository, ticketRepository, counterRepository, passwordEncoder);
     }
 
     @AfterEach

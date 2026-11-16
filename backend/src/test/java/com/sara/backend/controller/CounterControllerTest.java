@@ -2,14 +2,19 @@ package com.sara.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import com.sara.backend.config.DataSeeder;
+import com.sara.backend.entity.ServiceType;
 import com.sara.backend.repository.CounterRepository;
+import com.sara.backend.repository.ServiceTypeRepository;
+import com.sara.backend.repository.TicketRepository;
 import com.sara.backend.repository.UserRepository;
+import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,100 +42,189 @@ class CounterControllerTest {
     private CounterRepository counterRepository;
 
     @Autowired
+    private ServiceTypeRepository serviceTypeRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
     private DataSeeder dataSeeder;
 
+    private TicketTestHelper testHelper;
+
+    private ServiceType activeService;
+
     @BeforeEach
-    void deleteAllTestData() {
+    void resetDatabaseWithSeededAdminAndActiveService() {
+        ticketRepository.deleteAll();
         counterRepository.deleteAll();
+        serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();
+        testHelper = new TicketTestHelper(
+                mockMvc, userRepository, serviceTypeRepository, ticketRepository, counterRepository, passwordEncoder);
+        activeService = testHelper.createActiveService("Registration", "R");
     }
 
-    // ---------- Helpers ----------
-
-    private String loginAndGetToken(String email, String password) throws Exception {
-        String body = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, password)))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        return JsonPath.read(body, "$.token");
+    private String counterJson(String name, Long serviceId) {
+        return "{\"name\":\"%s\",\"serviceId\":%s}".formatted(name, serviceId);
     }
 
-    private String adminToken() throws Exception {
-        return loginAndGetToken("admin@dor.com", "admin12345");
-    }
-
-    private String registerStudentAndLogin() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"fullName":"Layla Ahmad","email":"layla@example.com","password":"secret123"}
-                                """))
-                .andExpect(status().isCreated());
-        return loginAndGetToken("layla@example.com", "secret123");
-    }
-
-    private String json(String name) {
-        return "{\"name\":\"%s\"}".formatted(name);
-    }
-
-    /** Creates a record as admin and returns its id. */
-    private long create(String token, String name) throws Exception {
-        String body = mockMvc.perform(post(URL)
+    private long createCounterAsAdmin(String token, String name, Long serviceId) throws Exception {
+        String responseBody = mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(name)))
+                        .content(counterJson(name, serviceId)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
-        return ((Number) JsonPath.read(body, "$.id")).longValue();
+        return ((Number) JsonPath.read(responseBody, "$.id")).longValue();
     }
 
-    // ---------- Admin: list, create, rename, toggle ----------
-
     @Test
-    void admin_canListCounters() throws Exception {
-        String token = adminToken();
-        create(token, "Counter 1");
-        create(token, "Counter 2");
+    void listCounters_asAdmin_returnsCountersWithService() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        createCounterAsAdmin(token, "Counter 1", activeService.getId());
+        createCounterAsAdmin(token, "Counter 2", activeService.getId());
 
         mockMvc.perform(get(URL).header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].name").value("Counter 1"))
+                .andExpect(jsonPath("$[0].serviceId").value(activeService.getId()))
+                .andExpect(jsonPath("$[0].serviceName").value("Registration"))
                 .andExpect(jsonPath("$[1].name").value("Counter 2"));
     }
 
     @Test
-    void admin_canCreateCounter() throws Exception {
+    void createCounter_withActiveService_returnsCreatedWithServiceIdAndServiceName() throws Exception {
         mockMvc.perform(post(URL)
-                        .header("Authorization", "Bearer " + adminToken())
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Counter 1")))
+                        .content(counterJson("Counter 1", activeService.getId())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.name").value("Counter 1"))
-                .andExpect(jsonPath("$.active").value(true));
+                .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.serviceId").value(activeService.getId()))
+                .andExpect(jsonPath("$.serviceName").value("Registration"));
     }
 
     @Test
-    void admin_canRenameCounter() throws Exception {
-        String token = adminToken();
-        long id = create(token, "Counter 1");
+    void createCounter_withoutServiceId_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Counter 1\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createCounter_withUnknownServiceId_returnsNotFound() throws Exception {
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(counterJson("Counter 1", 999999L)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createCounter_withInactiveService_returnsBadRequest() throws Exception {
+        ServiceType inactiveService = testHelper.createInactiveService("Archive", "A");
+
+        mockMvc.perform(post(URL)
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(counterJson("Counter 1", inactiveService.getId())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateCounter_withNewName_returnsUpdatedName() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
 
         mockMvc.perform(put(URL + "/" + id)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Counter 3")))
+                        .content(counterJson("Counter 3", activeService.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id))
                 .andExpect(jsonPath("$.name").value("Counter 3"));
     }
 
     @Test
-    void admin_canDeactivateAndReactivate() throws Exception {
-        String token = adminToken();
-        long id = create(token, "Counter 1");
+    void updateCounter_withAnotherActiveService_returnsNewService() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
+        ServiceType otherService = testHelper.createActiveService("Fees", "F");
+
+        mockMvc.perform(put(URL + "/" + id)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(counterJson("Counter 1", otherService.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.serviceId").value(otherService.getId()))
+                .andExpect(jsonPath("$.serviceName").value("Fees"));
+    }
+
+    @Test
+    void updateCounter_withoutServiceId_returnsBadRequest() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
+
+        mockMvc.perform(put(URL + "/" + id)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Counter 1\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateCounter_withUnknownServiceId_returnsNotFound() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
+
+        mockMvc.perform(put(URL + "/" + id)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(counterJson("Counter 1", 999999L)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updateCounter_withDifferentInactiveService_returnsBadRequest() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
+        ServiceType inactiveService = testHelper.createInactiveService("Archive", "A");
+
+        mockMvc.perform(put(URL + "/" + id)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(counterJson("Counter 1", inactiveService.getId())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateCounter_keepingCurrentInactiveService_returnsOk() throws Exception {
+        ServiceType inactiveService = testHelper.createInactiveService("Archive", "A");
+        long id = testHelper.createCounter("Counter 1", inactiveService).getId();
+
+        mockMvc.perform(put(URL + "/" + id)
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(counterJson("Counter 2", inactiveService.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Counter 2"))
+                .andExpect(jsonPath("$.serviceId").value(inactiveService.getId()));
+    }
+
+    @Test
+    void setActive_withFalseThenTrue_returnsUpdatedActive() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
 
         mockMvc.perform(patch(URL + "/" + id + "/active")
                         .header("Authorization", "Bearer " + token)
@@ -147,23 +241,21 @@ class CounterControllerTest {
                 .andExpect(jsonPath("$.active").value(true));
     }
 
-    // ---------- Access control ----------
-
     @Test
-    void student_onAnyAdminEndpoint_returnsForbidden() throws Exception {
-        String token = registerStudentAndLogin();
+    void adminEndpoints_asStudent_returnForbidden() throws Exception {
+        String token = testHelper.registerStudentAndLogin("layla@example.com");
 
         mockMvc.perform(get(URL).header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden());
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Counter 1")))
+                        .content(counterJson("Counter 1", activeService.getId())))
                 .andExpect(status().isForbidden());
         mockMvc.perform(put(URL + "/1")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Counter 1")))
+                        .content(counterJson("Counter 1", activeService.getId())))
                 .andExpect(status().isForbidden());
         mockMvc.perform(patch(URL + "/1/active")
                         .header("Authorization", "Bearer " + token)
@@ -173,16 +265,16 @@ class CounterControllerTest {
     }
 
     @Test
-    void withoutToken_onAnyAdminEndpoint_returnsUnauthorized() throws Exception {
+    void adminEndpoints_withoutToken_returnUnauthorized() throws Exception {
         mockMvc.perform(get(URL))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(post(URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Counter 1")))
+                        .content(counterJson("Counter 1", activeService.getId())))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(put(URL + "/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Counter 1")))
+                        .content(counterJson("Counter 1", activeService.getId())))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(patch(URL + "/1/active")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -190,128 +282,120 @@ class CounterControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ---------- Duplicates ----------
-
     @Test
-    void create_withDuplicateName_returnsConflict() throws Exception {
-        String token = adminToken();
-        create(token, "Counter 1");
+    void createCounter_withDuplicateName_returnsConflict() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        createCounterAsAdmin(token, "Counter 1", activeService.getId());
 
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Counter 1")))
+                        .content(counterJson("Counter 1", activeService.getId())))
                 .andExpect(status().isConflict());
     }
 
     @Test
-    void create_withDuplicateNameInDifferentCase_returnsConflict() throws Exception {
-        String token = adminToken();
-        create(token, "Counter 1");
+    void createCounter_withDuplicateNameInDifferentCase_returnsConflict() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        createCounterAsAdmin(token, "Counter 1", activeService.getId());
 
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("counter 1")))
+                        .content(counterJson("counter 1", activeService.getId())))
                 .andExpect(status().isConflict());
     }
 
     @Test
-    void rename_toSameName_returnsOk() throws Exception {
-        String token = adminToken();
-        long id = create(token, "Counter 1");
+    void updateCounter_withSameName_returnsOk() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
 
         mockMvc.perform(put(URL + "/" + id)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Counter 1")))
+                        .content(counterJson("Counter 1", activeService.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Counter 1"));
     }
 
     @Test
-    void rename_toAnotherRecordsName_returnsConflict() throws Exception {
-        String token = adminToken();
-        create(token, "Counter 1");
-        long otherId = create(token, "Counter 2");
+    void updateCounter_withAnotherCountersName_returnsConflict() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        createCounterAsAdmin(token, "Counter 1", activeService.getId());
+        long otherId = createCounterAsAdmin(token, "Counter 2", activeService.getId());
 
         mockMvc.perform(put(URL + "/" + otherId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("counter 1")))
+                        .content(counterJson("counter 1", activeService.getId())))
                 .andExpect(status().isConflict());
     }
 
-    // ---------- Unknown id ----------
-
     @Test
-    void rename_unknownId_returnsNotFound() throws Exception {
+    void updateCounter_withUnknownId_returnsNotFound() throws Exception {
         mockMvc.perform(put(URL + "/999999")
-                        .header("Authorization", "Bearer " + adminToken())
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("Counter 1")))
+                        .content(counterJson("Counter 1", activeService.getId())))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void setActive_unknownId_returnsNotFound() throws Exception {
+    void setActive_withUnknownId_returnsNotFound() throws Exception {
         mockMvc.perform(patch(URL + "/999999/active")
-                        .header("Authorization", "Bearer " + adminToken())
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"active\":false}"))
                 .andExpect(status().isNotFound());
     }
 
-    // ---------- Validation ----------
-
     @Test
-    void create_withBlankName_returnsBadRequest() throws Exception {
+    void createCounter_withBlankName_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
-                        .header("Authorization", "Bearer " + adminToken())
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("   ")))
+                        .content(counterJson("   ", activeService.getId())))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void create_withTooLongName_returnsBadRequest() throws Exception {
+    void createCounter_withTooLongName_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
-                        .header("Authorization", "Bearer " + adminToken())
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("a".repeat(101))))
+                        .content(counterJson("a".repeat(101), activeService.getId())))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void rename_withBlankName_returnsBadRequest() throws Exception {
-        String token = adminToken();
-        long id = create(token, "Counter 1");
+    void updateCounter_withBlankName_returnsBadRequest() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
 
         mockMvc.perform(put(URL + "/" + id)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("   ")))
+                        .content(counterJson("   ", activeService.getId())))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void rename_withTooLongName_returnsBadRequest() throws Exception {
-        String token = adminToken();
-        long id = create(token, "Counter 1");
+    void updateCounter_withTooLongName_returnsBadRequest() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
 
         mockMvc.perform(put(URL + "/" + id)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("a".repeat(101))))
+                        .content(counterJson("a".repeat(101), activeService.getId())))
                 .andExpect(status().isBadRequest());
     }
 
-    // ---------- Deactivating keeps the row ----------
-
     @Test
-    void deactivate_keepsRecordInAdminList() throws Exception {
-        String token = adminToken();
-        long id = create(token, "Counter 1");
+    void setActive_withFalse_keepsCounterInAdminList() throws Exception {
+        String token = testHelper.loginAsAdmin();
+        long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
 
         mockMvc.perform(patch(URL + "/" + id + "/active")
                         .header("Authorization", "Bearer " + token)
