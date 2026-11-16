@@ -1,0 +1,45 @@
+<h2 class="current-student-heading">Current student</h2>
+
+@if (student(); as calledStudent) {
+  <div class="ticket-shadow">
+    <article class="ticket current-ticket" [attr.aria-label]="'Ticket ' + calledStudent.ticketCode">
+      <div class="ticket-body">
+        <div class="ticket-top">
+          <span class="service-name">{{ calledStudent.studentName }}</span>
+          <span class="state-chip">Called</span>
+        </div>
+
+        <div class="ticket-code">{{ calledStudent.ticketCode }}</div>
+
+        <div class="ticket-status">
+          <b>{{ calledToText() }}</b>
+          <span>Mark the outcome when they are done.</span>
+        </div>
+      </div>
+
+      <div class="ticket-stub">
+        <button class="btn btn-done" type="button" [disabled]="isSubmitting()" (click)="doneRequested.emit()">
+          Served
+        </button>
+        <button
+          class="btn btn-secondary btn-no-show"
+          type="button"
+          [disabled]="isSubmitting()"
+          (click)="noShowRequested.emit()"
+        >
+          No-show
+        </button>
+      </div>
+    </article>
+  </div>
+} @else {
+  <div class="ticket-shadow">
+    <div class="ticket current-ticket idle-ticket">
+      <div class="ticket-body">
+        <app-icon iconName="desk" />
+        <p class="idle-ticket-message" role="status">{{ idleMessage() }}</p>
+      </div>
+      <div class="ticket-stub"></div>
+    </div>
+  </div>
+}

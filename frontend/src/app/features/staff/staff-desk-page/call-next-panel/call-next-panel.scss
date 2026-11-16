@@ -1,0 +1,9 @@
+:host {
+  display: block;
+}
+
+.call-next-button {
+  min-height: 6.5rem; /* 104px, the biggest control on the desk */
+  font-size: var(--fs-large-title);
+  letter-spacing: -0.02em;
+}

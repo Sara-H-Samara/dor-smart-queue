@@ -1,0 +1,73 @@
+<header class="app-header app-header-sticky">
+  <span class="wordmark" role="img" aria-label="Dor">D<i class="wordmark-o"></i>r</span>
+  <div class="header-actions">
+    @if (chosenCounter(); as counter) {
+      <span class="counter-summary"><b>{{ counter.name }}</b> · {{ counter.serviceName }}</span>
+    }
+    <button class="header-text-button" type="button" (click)="changeCounter()">Change counter</button>
+    <button class="header-text-button" type="button" (click)="signOut()">Sign out</button>
+  </div>
+</header>
+
+<main class="staff-desk-main">
+  @if (actionFailureMessage(); as actionFailureText) {
+    <p class="alert" role="alert">{{ actionFailureText }}</p>
+  }
+  @if (counterNotice(); as counterNoticeText) {
+    <p class="notice" role="status">{{ counterNoticeText }}</p>
+  }
+
+  @switch (screenState()) {
+    @case ('loading') {
+      <p class="notice" role="status">Loading…</p>
+    }
+    @case ('failed') {
+      <p class="alert" role="alert">{{ failureMessage() }}</p>
+      <button class="btn retry-button" type="button" (click)="retryAfterFailure()">Try again</button>
+    }
+    @case ('noCounterChosen') {
+      <div class="desk-columns">
+        <section aria-label="Queue">
+          <app-call-next-panel [canCallNext]="false" />
+        </section>
+        <section aria-label="Counter" class="choose-counter">
+          <div class="empty-state">
+            <p class="empty-state-title">No counter chosen</p>
+            <p class="empty-state-text">Choose the counter you are working at to start calling students.</p>
+          </div>
+          <button class="btn choose-counter-button" type="button" (click)="changeCounter()">
+            Choose a counter
+          </button>
+        </section>
+      </div>
+    }
+    @case ('ready') {
+      <div class="desk-columns">
+        <section aria-label="Queue">
+          <app-call-next-panel
+            [canCallNext]="canCallNext()"
+            [isCalling]="isSubmitting()"
+            (callNextRequested)="callNextStudent()"
+          />
+        </section>
+        <section aria-label="Current student">
+          <app-current-student-card
+            [student]="currentStudent()"
+            [nobodyWaitingMessage]="nobodyWaitingMessage()"
+            [isSubmitting]="isSubmitting()"
+            (doneRequested)="markCurrentStudentDone()"
+            (noShowRequested)="markCurrentStudentNoShow()"
+          />
+        </section>
+      </div>
+    }
+  }
+</main>
+
+<app-counter-picker-dialog
+  [counters]="availableCounters()"
+  [chosenCounterId]="chosenCounterId()"
+  [isLoading]="isLoadingCounters()"
+  [failureMessage]="counterListFailureMessage()"
+  (counterChosen)="chooseCounter($event)"
+/>

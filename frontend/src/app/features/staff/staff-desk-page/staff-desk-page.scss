@@ -1,0 +1,61 @@
+@use '../../../shared/styles/app-header';
+@use '../../../shared/styles/empty-state';
+@use '../../../shared/styles/sticky-app-header';
+
+:host {
+  display: block;
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh;
+}
+
+.header-actions {
+  min-width: 0;
+}
+
+.counter-summary {
+  min-width: 0;
+  margin-right: var(--space-2);
+  overflow: hidden;
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  b {
+    color: var(--color-text);
+  }
+}
+
+.staff-desk-main {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+}
+
+.desk-columns {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.choose-counter-button {
+  margin-top: var(--space-4);
+}
+
+.retry-button {
+  width: auto;
+}
+
+@media (min-width: 48rem) {
+  .staff-desk-main {
+    padding-inline: var(--space-6);
+    padding-top: var(--space-6);
+  }
+
+  .desk-columns {
+    gap: 2.5rem;
+    grid-template-columns: minmax(0, 1fr) 26.25rem;
+  }
+}

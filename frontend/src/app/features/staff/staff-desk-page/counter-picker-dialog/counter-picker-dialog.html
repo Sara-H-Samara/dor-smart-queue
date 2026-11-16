@@ -1,0 +1,46 @@
+<dialog
+  #counterPickerElement
+  class="counter-picker"
+  aria-labelledby="counter-picker-title"
+  (close)="emitClosedUnlessCounterWasChosen()"
+>
+  <h3 id="counter-picker-title">Choose a counter</h3>
+
+  @if (failureMessage(); as failureText) {
+    <p class="alert" role="alert">{{ failureText }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="notice" role="status">Loading…</p>
+  } @else if (counters().length > 0) {
+    <ul class="counter-list list-group">
+      @for (counter of counters(); track counter.id) {
+        <li>
+          <button
+            class="counter-option list-row"
+            type="button"
+            [attr.aria-current]="counter.id === chosenCounterId() ? 'true' : null"
+            (click)="chooseCounter(counter)"
+          >
+            <span class="list-row-meta">
+              <span class="list-row-name">{{ counter.name }}</span>
+              <span class="list-row-detail">{{ counter.serviceName }}</span>
+            </span>
+            @if (counter.id === chosenCounterId()) {
+              <span class="counter-current-label">Current</span>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  } @else if (!failureMessage()) {
+    <div class="empty-state">
+      <p class="empty-state-title">No counters available</p>
+      <p class="empty-state-text">Ask an admin to add a counter for a service.</p>
+    </div>
+  }
+
+  <div class="dialog-actions">
+    <button class="btn btn-quiet btn-sm" type="button" (click)="closeWithoutChoosing()">Cancel</button>
+  </div>
+</dialog>
