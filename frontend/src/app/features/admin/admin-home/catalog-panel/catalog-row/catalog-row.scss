@@ -1,0 +1,29 @@
+@use '../../../../../shared/styles/list-group';
+@use '../../../../../shared/styles/notched-code-tile';
+@use '../../../../../shared/styles/toggle-switch';
+
+:host {
+  display: block;
+}
+
+.rename-link {
+  min-height: 2.75rem;
+  padding: 0 var(--space-2);
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--color-link);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+
+  &:hover:not(:disabled) {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

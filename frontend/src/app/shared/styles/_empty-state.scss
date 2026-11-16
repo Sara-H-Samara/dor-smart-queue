@@ -1,0 +1,19 @@
+.empty-state {
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.empty-state-title {
+  margin: 0 0 var(--space-1);
+  font-weight: var(--fw-bold);
+}
+
+.empty-state-text {
+  max-width: 30ch;
+  margin: 0 auto;
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+  text-wrap: balance;
+}

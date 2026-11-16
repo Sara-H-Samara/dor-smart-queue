@@ -1,0 +1,32 @@
+<div class="list-row">
+  @if (tileText(); as text) {
+    <span class="notched-code-tile" aria-hidden="true">{{ text }}</span>
+  }
+  <span class="list-row-meta">
+    <span class="list-row-name">{{ item().name }}</span>
+    @if (detailText(); as text) {
+      <span class="list-row-detail">{{ text }}</span>
+    }
+  </span>
+  <button
+    class="rename-link"
+    type="button"
+    [disabled]="isBusy()"
+    [attr.aria-label]="'Rename ' + item().name"
+    (click)="renameRequested.emit()"
+  >
+    Rename
+  </button>
+  <label class="toggle-switch">
+    <input
+      type="checkbox"
+      role="switch"
+      [checked]="item().active"
+      [disabled]="isBusy()"
+      [attr.aria-label]="item().name"
+      (change)="onSwitchChanged($event)"
+    />
+    <span class="toggle-state">{{ item().active ? 'Active' : 'Inactive' }}</span>
+    <span class="toggle-track"></span>
+  </label>
+</div>

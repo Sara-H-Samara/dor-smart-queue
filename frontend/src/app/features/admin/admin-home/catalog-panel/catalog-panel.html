@@ -1,7 +1,9 @@
 <section class="panel" [attr.aria-labelledby]="catalogResource() + '-heading'">
   <div class="panel-head">
     <h2 [id]="catalogResource() + '-heading'">{{ heading() }}</h2>
-    <button class="btn btn-sm" type="button" (click)="openAdd()">Add {{ itemLabel().toLowerCase() }}</button>
+    <button class="btn btn-sm" type="button" (click)="openAdd()">
+      Add {{ itemLabel().toLowerCase() }}
+    </button>
   </div>
 
   @if (dialogOpen() ? null : error(); as message) {
@@ -11,44 +13,24 @@
   @if (isLoadingList() && items().length === 0) {
     <p class="notice" role="status">Loading…</p>
   } @else if (items().length === 0) {
-    <div class="empty">
-      <p class="empty-title">No {{ heading().toLowerCase() }} yet</p>
-      <p class="empty-text">Use the Add button to create your first {{ itemLabel().toLowerCase() }}.</p>
+    <div class="empty-state">
+      <p class="empty-state-title">No {{ heading().toLowerCase() }} yet</p>
+      <p class="empty-state-text">{{ emptyText() }}</p>
     </div>
   } @else {
-    <ul class="items">
+    <div class="list-group">
       @for (item of items(); track item.id) {
-        <li class="item">
-          @if (supportsCode() && item.code) {
-            <span class="code-tile" [attr.aria-label]="'Code ' + item.code">{{ item.code }}</span>
-          }
-          <span class="name">{{ item.name }}</span>
-          <span class="status" [class.inactive]="!item.active">
-            {{ item.active ? 'Active' : 'Inactive' }}
-          </span>
-          <div class="actions">
-            <button
-              class="btn btn-quiet btn-sm"
-              type="button"
-              [disabled]="isSaving()"
-              [attr.aria-label]="'Rename ' + item.name"
-              (click)="openRename(item)"
-            >
-              Rename
-            </button>
-            <button
-              class="btn btn-quiet btn-sm"
-              type="button"
-              [disabled]="isSaving()"
-              [attr.aria-label]="(item.active ? 'Deactivate ' : 'Activate ') + item.name"
-              (click)="toggleItemActive(item)"
-            >
-              {{ item.active ? 'Deactivate' : 'Activate' }}
-            </button>
-          </div>
-        </li>
+        <app-catalog-row
+          [item]="item"
+          [tileText]="tileTextFor(item)"
+          [detailText]="detailTextFor(item)"
+          [isBusy]="isSaving()"
+          (activeChanged)="toggleItemActive(item)"
+          (renameRequested)="openRename(item)"
+        />
       }
-    </ul>
+    </div>
+    <p class="list-group-footer">{{ itemCountText() }}</p>
   }
 
   <app-catalog-form-dialog

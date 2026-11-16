@@ -14,8 +14,6 @@ export class AdminHome {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly fullName = this.authService.fullName;
-
   protected signOut(): void {
     this.authService.logout();
     this.router.navigateByUrl('/login');
