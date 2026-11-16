@@ -1,6 +1,7 @@
 package com.sara.backend.controller;
 
 import com.sara.backend.dto.response.CalledTicketResponse;
+import com.sara.backend.dto.response.WaitingListResponse;
 import com.sara.backend.service.StaffDeskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,11 @@ public class StaffDeskController {
         return staffDeskService.findCurrentStudent(counterId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/counters/{counterId}/waiting")
+    public WaitingListResponse waitingList(@PathVariable Long counterId) {
+        return staffDeskService.listWaitingTickets(counterId);
     }
 
     @PostMapping("/tickets/{ticketId}/done")

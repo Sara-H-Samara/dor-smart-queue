@@ -150,6 +150,11 @@ public class TicketTestHelper {
                 .header("Authorization", "Bearer " + token));
     }
 
+    public ResultActions getWaitingList(String token, Long counterId) throws Exception {
+        return mockMvc.perform(get("/api/counters/{counterId}/waiting", counterId)
+                .header("Authorization", "Bearer " + token));
+    }
+
     public ResultActions markDone(String token, Long ticketId) throws Exception {
         return mockMvc.perform(post("/api/tickets/{ticketId}/done", ticketId)
                 .header("Authorization", "Bearer " + token));
