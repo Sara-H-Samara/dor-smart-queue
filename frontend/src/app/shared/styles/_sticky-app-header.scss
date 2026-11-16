@@ -46,6 +46,7 @@
 
 @media (min-width: 48rem) {
   .app-header-sticky {
-    padding: 0 var(--space-5) 0 var(--space-6);
+    padding-right: max(var(--space-5), calc((100% - 56rem) / 2 - var(--space-3)));
+    padding-left: max(var(--space-6), calc((100% - 56rem) / 2));
   }
 }

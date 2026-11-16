@@ -1,10 +1,5 @@
 <section class="panel" [attr.aria-labelledby]="catalogResource() + '-heading'">
-  <div class="panel-head">
-    <h2 [id]="catalogResource() + '-heading'">{{ heading() }}</h2>
-    <button class="btn btn-sm" type="button" (click)="openAdd()">
-      Add {{ itemLabel().toLowerCase() }}
-    </button>
-  </div>
+  <h2 [id]="catalogResource() + '-heading'">{{ heading() }}</h2>
 
   @if (dialogOpen() ? null : error(); as message) {
     <p class="alert" role="alert">{{ message }}</p>
@@ -32,6 +27,10 @@
     </div>
     <p class="list-group-footer">{{ itemCountText() }}</p>
   }
+
+  <button class="list-add-row" type="button" (click)="openAdd()">
+    Add {{ itemLabel().toLowerCase() }}
+  </button>
 
   <app-catalog-form-dialog
     [idPrefix]="catalogResource()"

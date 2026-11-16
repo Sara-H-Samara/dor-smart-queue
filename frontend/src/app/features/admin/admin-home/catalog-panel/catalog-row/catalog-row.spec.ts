@@ -28,7 +28,7 @@ describe('CatalogRow', () => {
     fixture.componentInstance.renameRequested.subscribe(() => emittedEvents.push(true));
     fixture.detectChanges();
 
-    rowElement.querySelector<HTMLButtonElement>('.rename-link')?.click();
+    rowElement.querySelector<HTMLButtonElement>('.row-icon-button')?.click();
 
     expect(emittedEvents.length).toBe(1);
   });
@@ -39,15 +39,24 @@ describe('CatalogRow', () => {
     fixture.detectChanges();
 
     expect(rowElement.querySelector<HTMLInputElement>('input[role="switch"]')?.disabled).toBe(true);
-    expect(rowElement.querySelector<HTMLButtonElement>('.rename-link')?.disabled).toBe(true);
+    expect(rowElement.querySelector<HTMLButtonElement>('.row-icon-button')?.disabled).toBe(true);
   });
 
-  it('render_withNullTileText_showsNoTile', () => {
+  it('render_withNullTileText_showsDeskGlyphInsteadOfText', () => {
     fixture.componentRef.setInput('tileText', null);
 
     fixture.detectChanges();
 
-    expect(rowElement.querySelector('.notched-code-tile')).toBeNull();
+    expect(rowElement.querySelector('.notched-code-tile .tile-glyph')).not.toBeNull();
+    expect(rowElement.querySelector('.notched-code-tile')?.textContent?.trim()).toBe('');
+  });
+
+  it('render_withItemName_labelsRenameButtonWithName', () => {
+    fixture.detectChanges();
+
+    expect(rowElement.querySelector('.row-icon-button')?.getAttribute('aria-label')).toBe(
+      'Rename Registration',
+    );
   });
 
   it('render_withInactiveItem_showsInactiveAndUncheckedSwitch', () => {

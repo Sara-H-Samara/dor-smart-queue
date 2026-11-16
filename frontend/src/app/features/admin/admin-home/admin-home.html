@@ -11,14 +11,23 @@
     <h1>Admin</h1>
     <p class="lede">Manage the services your office offers and the counters that serve them.</p>
 
+    <app-section-switch
+      [sections]="sectionOptions"
+      groupName="admin-section"
+      groupLabel="Section"
+      [(selectedSection)]="selectedSection"
+    />
+
     <div class="panels">
       <app-catalog-panel
+        [class.panel-hidden-on-phone]="selectedSection() !== 'services'"
         catalogResource="services"
         heading="Services"
         itemLabel="Service"
         emptyText="Add a service so students can start taking tickets."
       />
       <app-catalog-panel
+        [class.panel-hidden-on-phone]="selectedSection() !== 'counters'"
         catalogResource="counters"
         heading="Counters"
         itemLabel="Counter"

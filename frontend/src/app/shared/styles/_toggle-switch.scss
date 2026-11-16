@@ -31,7 +31,7 @@
 }
 
 .toggle-state {
-  min-width: 3.9rem;
+  min-width: 3.25rem;
   font-size: var(--fs-small);
   color: var(--color-text-muted);
   text-align: right;
@@ -64,5 +64,11 @@
 
   &::after {
     transform: translateX(1.25rem);
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .toggle-switch {
+    gap: var(--space-2);
   }
 }
