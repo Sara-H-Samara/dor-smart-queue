@@ -9,7 +9,8 @@ public record ActiveTicketResponse(
         TicketStatus status,
         Integer position,
         Integer peopleAhead,
-        Integer estimatedWaitMinutes
+        Integer estimatedWaitMinutes,
+        String counterName
 ) {
 
     /** Builds the response for a WAITING ticket. */
@@ -21,7 +22,8 @@ public record ActiveTicketResponse(
                 ticket.getStatus(),
                 position,
                 peopleAhead,
-                position * minutesPerPerson);
+                position * minutesPerPerson,
+                null);
     }
 
     /** Builds the response for a CALLED ticket: no queue information applies. */
@@ -32,6 +34,7 @@ public record ActiveTicketResponse(
                 ticket.getStatus(),
                 null,
                 null,
-                null);
+                null,
+                ticket.getCounter() == null ? null : ticket.getCounter().getName());
     }
 }

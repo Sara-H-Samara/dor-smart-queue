@@ -29,6 +29,13 @@ public class Ticket {
     @Column(name = "ticket_date", nullable = false)
     private LocalDate ticketDate;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "counter_id")
+    private Counter counter;
+
+    @Column(name = "called_at")
+    private LocalDateTime calledAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TicketStatus status = TicketStatus.WAITING;
@@ -57,6 +64,12 @@ public class Ticket {
 
     public TicketStatus getStatus() { return status; }
     public void setStatus(TicketStatus status) { this.status = status; }
+
+    public Counter getCounter() { return counter; }
+    public void setCounter(Counter counter) { this.counter = counter; }
+
+    public LocalDateTime getCalledAt() { return calledAt; }
+    public void setCalledAt(LocalDateTime calledAt) { this.calledAt = calledAt; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
