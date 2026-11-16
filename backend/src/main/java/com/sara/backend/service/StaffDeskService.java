@@ -30,7 +30,7 @@ public class StaffDeskService {
     @Transactional
     public Optional<CalledTicketResponse> callNextStudent(Long counterId) {
         Counter counter = counterRepository.findByIdWithWriteLock(counterId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Counter not found."));
+                .orElseThrow(this::counterNotFound);
         rejectUnavailableCounter(counter);
 
         if (ticketRepository.existsByCounterIdAndStatus(counterId, TicketStatus.CALLED)) {
@@ -48,6 +48,15 @@ public class StaffDeskService {
         ticket.setCounter(counter);
         ticket.setCalledAt(LocalDateTime.now());
         return Optional.of(CalledTicketResponse.from(ticketRepository.save(ticket)));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<CalledTicketResponse> findCurrentStudent(Long counterId) {
+        if (!counterRepository.existsById(counterId)) {
+            throw counterNotFound();
+        }
+        return ticketRepository.findFirstByCounterIdAndStatusOrderByCalledAtDesc(counterId, TicketStatus.CALLED)
+                .map(CalledTicketResponse::from);
     }
 
     @Transactional
@@ -70,6 +79,10 @@ public class StaffDeskService {
         }
         ticket.setStatus(newStatus);
         return CalledTicketResponse.from(ticketRepository.save(ticket));
+    }
+
+    private ResponseStatusException counterNotFound() {
+        return new ResponseStatusException(HttpStatus.NOT_FOUND, "Counter not found.");
     }
 
     private void rejectUnavailableCounter(Counter counter) {

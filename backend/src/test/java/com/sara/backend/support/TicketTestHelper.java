@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -137,6 +138,15 @@ public class TicketTestHelper {
 
     public ResultActions callNext(String token, Long counterId) throws Exception {
         return mockMvc.perform(post("/api/counters/{counterId}/call-next", counterId)
+                .header("Authorization", "Bearer " + token));
+    }
+
+    public ResultActions listCounters(String token) throws Exception {
+        return mockMvc.perform(get("/api/counters").header("Authorization", "Bearer " + token));
+    }
+
+    public ResultActions getCurrentStudent(String token, Long counterId) throws Exception {
+        return mockMvc.perform(get("/api/counters/{counterId}/current", counterId)
                 .header("Authorization", "Bearer " + token));
     }
 

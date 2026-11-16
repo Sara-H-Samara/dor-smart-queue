@@ -20,6 +20,13 @@ public class StaffDeskController {
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
+    @GetMapping("/counters/{counterId}/current")
+    public ResponseEntity<CalledTicketResponse> currentStudent(@PathVariable Long counterId) {
+        return staffDeskService.findCurrentStudent(counterId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
     @PostMapping("/tickets/{ticketId}/done")
     public CalledTicketResponse markDone(@PathVariable Long ticketId) {
         return staffDeskService.markTicketDone(ticketId);

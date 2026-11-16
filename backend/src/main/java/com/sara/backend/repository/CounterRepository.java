@@ -19,6 +19,8 @@ public interface CounterRepository extends JpaRepository<Counter, Long> {
 
     List<Counter> findByActiveTrueOrderByNameAsc();
 
+    List<Counter> findByActiveTrueAndServiceTypeActiveTrueOrderByNameAsc();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Counter c where c.id = :id")
     Optional<Counter> findByIdWithWriteLock(@Param("id") Long id);

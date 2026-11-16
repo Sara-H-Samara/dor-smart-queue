@@ -24,6 +24,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     boolean existsByCounterIdAndStatus(Long counterId, TicketStatus status);
 
+    Optional<Ticket> findFirstByCounterIdAndStatusOrderByCalledAtDesc(Long counterId, TicketStatus status);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from Ticket t where t.id = :id")
     Optional<Ticket> findByIdWithWriteLock(@Param("id") Long id);
