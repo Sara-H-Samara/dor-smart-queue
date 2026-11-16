@@ -137,7 +137,7 @@ class MyTicketControllerTest {
 
         me("a@example.com")
                 .andExpect(status().isNotFound())
-                .andExpect(status().reason("You do not have an active ticket."));
+                .andExpect(jsonPath("$.message").value("You do not have an active ticket."));
     }
 
     @Test
