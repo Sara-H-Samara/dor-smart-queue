@@ -1,0 +1,34 @@
+@use '../../../../shared/styles/empty-state';
+@use '../../../../shared/styles/ticket-card';
+@use '../../../../shared/styles/ticket-content';
+
+:host {
+  display: block;
+}
+
+.current-student-heading {
+  margin-bottom: var(--space-3);
+}
+
+.current-ticket {
+  --stub-height: 104px;
+}
+
+.state-chip {
+  color: var(--color-state-called-fg);
+  background: var(--color-state-called-bg);
+}
+
+.ticket-stub {
+  gap: var(--space-3);
+  justify-content: center;
+
+  .btn {
+    width: auto;
+    padding: 0 var(--space-5);
+  }
+
+  .btn-no-show {
+    color: var(--color-danger);
+  }
+}

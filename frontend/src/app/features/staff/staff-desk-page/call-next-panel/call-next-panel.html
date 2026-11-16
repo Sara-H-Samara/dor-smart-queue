@@ -1,0 +1,12 @@
+<button
+  class="btn call-next-button"
+  type="button"
+  [disabled]="!canCallNext() || isCalling()"
+  (click)="callNextRequested.emit()"
+>
+  Call next
+</button>
+
+@if (notice(); as noticeText) {
+  <p class="call-next-notice" role="status">{{ noticeText }}</p>
+}

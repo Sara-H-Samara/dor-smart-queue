@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+.call-next-button {
+  min-height: 6.5rem; /* 104px, the biggest control on the desk */
+  font-size: var(--fs-large-title);
+  letter-spacing: -0.02em;
+}
+
+.call-next-notice {
+  margin: var(--space-3) 0 0;
+  text-align: center;
+  color: var(--color-text-muted);
+}
