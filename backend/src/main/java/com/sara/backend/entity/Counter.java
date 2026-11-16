@@ -16,6 +16,10 @@ public class Counter {
     @Column(nullable = false)
     private boolean active = true;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "service_type_id", nullable = false)
+    private ServiceType serviceType;
+
     public Long getId() { return id; }
 
     public String getName() { return name; }
@@ -23,4 +27,7 @@ public class Counter {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public ServiceType getServiceType() { return serviceType; }
+    public void setServiceType(ServiceType serviceType) { this.serviceType = serviceType; }
 }

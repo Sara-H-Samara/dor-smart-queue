@@ -2,6 +2,7 @@ package com.sara.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import com.sara.backend.config.DataSeeder;
+import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
 import com.sara.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,9 @@ class ServiceTypeControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private CounterRepository counterRepository;
+
+    @Autowired
     private ServiceTypeRepository serviceTypeRepository;
 
     @Autowired
@@ -41,6 +45,7 @@ class ServiceTypeControllerTest {
 
     @BeforeEach
     void deleteAllTestData() {
+        counterRepository.deleteAll();
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();

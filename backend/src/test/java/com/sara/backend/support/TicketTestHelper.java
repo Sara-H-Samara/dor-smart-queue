@@ -1,11 +1,13 @@
 package com.sara.backend.support;
 
 import com.jayway.jsonpath.JsonPath;
+import com.sara.backend.entity.Counter;
 import com.sara.backend.entity.Role;
 import com.sara.backend.entity.ServiceType;
 import com.sara.backend.entity.Ticket;
 import com.sara.backend.entity.TicketStatus;
 import com.sara.backend.entity.User;
+import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
 import com.sara.backend.repository.TicketRepository;
 import com.sara.backend.repository.UserRepository;
@@ -26,6 +28,7 @@ public class TicketTestHelper {
     private final UserRepository userRepository;
     private final ServiceTypeRepository serviceTypeRepository;
     private final TicketRepository ticketRepository;
+    private final CounterRepository counterRepository;
     private final PasswordEncoder passwordEncoder;
 
     public TicketTestHelper(
@@ -33,11 +36,13 @@ public class TicketTestHelper {
             UserRepository userRepository,
             ServiceTypeRepository serviceTypeRepository,
             TicketRepository ticketRepository,
+            CounterRepository counterRepository,
             PasswordEncoder passwordEncoder) {
         this.mockMvc = mockMvc;
         this.userRepository = userRepository;
         this.serviceTypeRepository = serviceTypeRepository;
         this.ticketRepository = ticketRepository;
+        this.counterRepository = counterRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -80,6 +85,21 @@ public class TicketTestHelper {
         service.setCode(code);
         service.setActive(true);
         return serviceTypeRepository.save(service);
+    }
+
+    public ServiceType createInactiveService(String name, String code) {
+        ServiceType service = new ServiceType();
+        service.setName(name);
+        service.setCode(code);
+        service.setActive(false);
+        return serviceTypeRepository.save(service);
+    }
+
+    public Counter createCounter(String name, ServiceType service) {
+        Counter counter = new Counter();
+        counter.setName(name);
+        counter.setServiceType(service);
+        return counterRepository.save(counter);
     }
 
     public Ticket createTicketForRegisteredStudent(
