@@ -1,25 +1,8 @@
+@use '../../../../../shared/styles/modal-dialog';
+
 /* Catalog dialog (add and edit): native <dialog>, styled with the shared tokens. */
 .catalog-dialog {
-  box-sizing: border-box;
-  width: calc(100% - var(--space-5) * 2);
-  max-width: 28rem;
-  padding: var(--space-5);
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-lg);
-
-  &::backdrop {
-    background: var(--color-overlay);
-  }
-
-  h3 {
-    margin: 0 0 var(--space-4);
-  }
-
-  .alert {
-    margin-bottom: var(--space-4);
-  }
+  @include modal-dialog.modal-dialog-shell;
 
   .dialog-fields {
     display: flex;
