@@ -13,6 +13,7 @@ describe('TicketCard', () => {
       peopleAhead: null,
       estimatedWaitMinutes: null,
       counterName: null,
+      hasOpenCounter: true,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', ticketWithoutQueuePosition);
@@ -33,6 +34,7 @@ describe('TicketCard', () => {
       peopleAhead: 2,
       estimatedWaitMinutes: 5,
       counterName: null,
+      hasOpenCounter: true,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', waitingTicket);
@@ -54,6 +56,7 @@ describe('TicketCard', () => {
       peopleAhead: 0,
       estimatedWaitMinutes: 0,
       counterName: null,
+      hasOpenCounter: true,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', calledTicket);
@@ -78,6 +81,7 @@ describe('TicketCard', () => {
       peopleAhead: null,
       estimatedWaitMinutes: null,
       counterName: 'Counter 2',
+      hasOpenCounter: true,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', calledTicketWithCounter);

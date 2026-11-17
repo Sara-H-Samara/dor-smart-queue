@@ -20,7 +20,7 @@ import { TicketService } from '../../../core/services/ticket.service';
 import { firstNameOf } from './first-name';
 import { ServiceTileList } from './service-tile-list/service-tile-list';
 import { TicketCard } from './ticket-card/ticket-card';
-import { isNoActiveTicket, isTicketAlreadyTaken, messageForTicketFailure } from './ticket-failure';
+import { isConflict, isNoActiveTicket, messageForTicketFailure } from './ticket-failure';
 import { TICKET_REFRESH_INTERVAL_MS } from './ticket-refresh';
 
 type StudentScreenState = 'loading' | 'ticket' | 'noTicket' | 'failed';
@@ -58,7 +58,7 @@ export class StudentTicketPage {
     this.ticketService.takeTicket(service.id).subscribe({
       next: () => this.loadMyActiveTicket(),
       error: (error: unknown) =>
-        isTicketAlreadyTaken(error) ? this.loadMyActiveTicket() : this.showFailure(error),
+        isConflict(error) ? this.loadMyActiveTicket() : this.showFailure(error),
     });
   }
 
@@ -67,7 +67,7 @@ export class StudentTicketPage {
     this.ticketService.cancelMyActiveTicket().subscribe({
       next: () => this.loadMyActiveTicket(),
       error: (error: unknown) =>
-        isNoActiveTicket(error) || isTicketAlreadyTaken(error)
+        isNoActiveTicket(error) || isConflict(error)
           ? this.loadMyActiveTicket()
           : this.showFailure(error),
     });

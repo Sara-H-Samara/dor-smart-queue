@@ -7,8 +7,19 @@ export function isNoActiveTicket(error: unknown): boolean {
   return error instanceof HttpErrorResponse && error.status === NOT_FOUND_STATUS;
 }
 
-export function isTicketAlreadyTaken(error: unknown): boolean {
+export function isConflict(error: unknown): boolean {
   return error instanceof HttpErrorResponse && error.status === CONFLICT_STATUS;
+}
+
+export function serverMessageOf(error: unknown): string | null {
+  if (!(error instanceof HttpErrorResponse)) {
+    return null;
+  }
+  const body: unknown = error.error;
+  if (typeof body !== 'object' || body === null || !('message' in body)) {
+    return null;
+  }
+  return typeof body.message === 'string' && body.message.trim() !== '' ? body.message : null;
 }
 
 export function messageForTicketFailure(error: unknown): string {

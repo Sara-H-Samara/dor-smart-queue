@@ -3,4 +3,5 @@ export interface ActiveService {
   name: string;
   code: string;
   active: boolean;
+  hasOpenCounter: boolean;
 }

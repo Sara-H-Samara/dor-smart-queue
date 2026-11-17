@@ -19,9 +19,16 @@ const waitingTicket: ActiveTicket = {
   peopleAhead: 2,
   estimatedWaitMinutes: 10,
   counterName: null,
+  hasOpenCounter: true,
 };
 
-const openService: ActiveService = { id: 1, name: 'Registration', code: 'R', active: true };
+const openService: ActiveService = {
+  id: 1,
+  name: 'Registration',
+  code: 'R',
+  active: true,
+  hasOpenCounter: true,
+};
 
 const takenTicket: TakenTicket = {
   id: 7,
