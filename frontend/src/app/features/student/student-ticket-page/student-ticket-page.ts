@@ -18,9 +18,15 @@ import { AuthService } from '../../../core/services/auth.service';
 import { StudentCatalogService } from '../../../core/services/student-catalog.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { firstNameOf } from './first-name';
+import { SERVICE_LIST_REFRESH_INTERVAL_MS } from './service-list-refresh';
 import { ServiceTileList } from './service-tile-list/service-tile-list';
 import { TicketCard } from './ticket-card/ticket-card';
-import { isNoActiveTicket, isTicketAlreadyTaken, messageForTicketFailure } from './ticket-failure';
+import {
+  isConflict,
+  isNoActiveTicket,
+  messageForTicketFailure,
+  serverMessageOf,
+} from './ticket-failure';
 import { TICKET_REFRESH_INTERVAL_MS } from './ticket-refresh';
 
 type StudentScreenState = 'loading' | 'ticket' | 'noTicket' | 'failed';
@@ -47,18 +53,26 @@ export class StudentTicketPage {
   protected readonly activeServices = signal<ActiveService[]>([]);
   protected readonly isSubmitting = signal(false);
   protected readonly failureMessage = signal<string | null>(null);
+  protected readonly takeTicketConflictMessage = signal<string | null>(null);
 
   constructor() {
     this.loadMyActiveTicket();
     this.startAutoRefresh();
+    this.startServiceListAutoRefresh();
   }
 
   protected takeTicketForService(service: ActiveService): void {
     this.startSubmitting();
     this.ticketService.takeTicket(service.id).subscribe({
       next: () => this.loadMyActiveTicket(),
-      error: (error: unknown) =>
-        isTicketAlreadyTaken(error) ? this.loadMyActiveTicket() : this.showFailure(error),
+      error: (error: unknown) => {
+        if (isConflict(error)) {
+          this.takeTicketConflictMessage.set(serverMessageOf(error));
+          this.loadMyActiveTicket();
+        } else {
+          this.showFailure(error);
+        }
+      },
     });
   }
 
@@ -67,7 +81,7 @@ export class StudentTicketPage {
     this.ticketService.cancelMyActiveTicket().subscribe({
       next: () => this.loadMyActiveTicket(),
       error: (error: unknown) =>
-        isNoActiveTicket(error) || isTicketAlreadyTaken(error)
+        isNoActiveTicket(error) || isConflict(error)
           ? this.loadMyActiveTicket()
           : this.showFailure(error),
     });
@@ -87,6 +101,7 @@ export class StudentTicketPage {
     this.screenState.set('loading');
     this.ticketService.fetchMyActiveTicket().subscribe({
       next: (ticket) => {
+        this.takeTicketConflictMessage.set(null);
         this.activeTicket.set(ticket);
         this.screenState.set('ticket');
         this.isSubmitting.set(false);
@@ -130,6 +145,33 @@ export class StudentTicketPage {
     );
   }
 
+  private startServiceListAutoRefresh(): void {
+    interval(SERVICE_LIST_REFRESH_INTERVAL_MS)
+      .pipe(
+        filter(() => this.hasServiceListToRefresh()),
+        exhaustMap(() => this.refreshActiveServices()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private refreshActiveServices(): Observable<void> {
+    const servicesBeforeRequest = this.activeServices();
+    return this.studentCatalogService.listActiveServices().pipe(
+      tap((services) => {
+        if (this.hasServiceListToRefresh() && this.activeServices() === servicesBeforeRequest) {
+          this.activeServices.set(services);
+        }
+      }),
+      catchError(() => EMPTY),
+      ignoreElements(),
+    );
+  }
+
+  private hasServiceListToRefresh(): boolean {
+    return this.screenState() === 'noTicket' && !this.isSubmitting();
+  }
+
   private hasTicketToRefresh(): boolean {
     const status = this.activeTicket()?.status;
     return (
@@ -158,10 +200,12 @@ export class StudentTicketPage {
 
   private startSubmitting(): void {
     this.failureMessage.set(null);
+    this.takeTicketConflictMessage.set(null);
     this.isSubmitting.set(true);
   }
 
   private showFailure(error: unknown): void {
+    this.takeTicketConflictMessage.set(null);
     this.failureMessage.set(messageForTicketFailure(error));
     this.isSubmitting.set(false);
     this.screenState.set('failed');

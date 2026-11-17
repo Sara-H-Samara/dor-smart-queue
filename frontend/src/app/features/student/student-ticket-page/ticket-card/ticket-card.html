@@ -15,6 +15,9 @@
       <div class="ticket-status">
         @if (isCalled()) {
           <b>{{ calledHeadingText() }}</b>
+        } @else if (hasNoOpenCounter()) {
+          <b>No counter is open right now</b>
+          <span>Your place is kept.</span>
         } @else {
           @if (peopleAheadText(); as peopleAheadLine) {
             <b><app-icon iconName="people" />{{ peopleAheadLine }}</b>

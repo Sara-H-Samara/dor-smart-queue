@@ -29,6 +29,9 @@
       <button class="btn" type="button" (click)="retryAfterFailure()">Try again</button>
     }
     @case ('noTicket') {
+      @if (takeTicketConflictMessage(); as conflictMessage) {
+        <p class="alert" role="alert">{{ conflictMessage }}</p>
+      }
       <app-service-tile-list
         [services]="activeServices()"
         [isTakingTicket]="isSubmitting()"

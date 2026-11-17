@@ -1,5 +1,15 @@
-import { httpErrorResponseWithStatus } from '../../../testing/http-failure';
-import { isNoActiveTicket, isTicketAlreadyTaken, messageForTicketFailure } from './ticket-failure';
+import { HttpErrorResponse } from '@angular/common/http';
+
+import {
+  httpErrorResponseWithMessage,
+  httpErrorResponseWithStatus,
+} from '../../../testing/http-failure';
+import {
+  isConflict,
+  isNoActiveTicket,
+  messageForTicketFailure,
+  serverMessageOf,
+} from './ticket-failure';
 
 describe('isNoActiveTicket', () => {
   it('isNoActiveTicket_withNotFoundStatus_returnsTrue', () => {
@@ -15,17 +25,48 @@ describe('isNoActiveTicket', () => {
   });
 });
 
-describe('isTicketAlreadyTaken', () => {
-  it('isTicketAlreadyTaken_withConflictStatus_returnsTrue', () => {
-    expect(isTicketAlreadyTaken(httpErrorResponseWithStatus(409))).toBe(true);
+describe('isConflict', () => {
+  it('isConflict_withConflictStatus_returnsTrue', () => {
+    expect(isConflict(httpErrorResponseWithStatus(409))).toBe(true);
   });
 
-  it('isTicketAlreadyTaken_withNotFoundStatus_returnsFalse', () => {
-    expect(isTicketAlreadyTaken(httpErrorResponseWithStatus(404))).toBe(false);
+  it('isConflict_withNotFoundStatus_returnsFalse', () => {
+    expect(isConflict(httpErrorResponseWithStatus(404))).toBe(false);
   });
 
-  it('isTicketAlreadyTaken_withNonHttpError_returnsFalse', () => {
-    expect(isTicketAlreadyTaken(new Error('boom'))).toBe(false);
+  it('isConflict_withNonHttpError_returnsFalse', () => {
+    expect(isConflict(new Error('boom'))).toBe(false);
+  });
+});
+
+describe('serverMessageOf', () => {
+  it('serverMessageOf_withMessageInBody_returnsMessage', () => {
+    const noOpenCounterError = httpErrorResponseWithMessage(
+      409,
+      'No counter is open for Registration right now.',
+    );
+
+    expect(serverMessageOf(noOpenCounterError)).toBe(
+      'No counter is open for Registration right now.',
+    );
+  });
+
+  it('serverMessageOf_withoutBody_returnsNull', () => {
+    expect(serverMessageOf(httpErrorResponseWithStatus(409))).toBeNull();
+  });
+
+  it('serverMessageOf_withBodyWithoutMessage_returnsNull', () => {
+    const errorWithoutMessage = new HttpErrorResponse({ status: 409, error: { status: 409 } });
+
+    expect(serverMessageOf(errorWithoutMessage)).toBeNull();
+  });
+
+  it('serverMessageOf_withBlankMessage_returnsNull', () => {
+    expect(serverMessageOf(httpErrorResponseWithMessage(409, '   '))).toBeNull();
+  });
+
+  it('serverMessageOf_withNonHttpError_returnsNull', () => {
+    expect(serverMessageOf(new Error('boom'))).toBeNull();
   });
 });
 
