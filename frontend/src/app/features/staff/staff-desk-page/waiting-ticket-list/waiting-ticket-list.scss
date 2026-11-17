@@ -1,15 +1,23 @@
 @use '../../../../shared/styles/list-group';
-@use '../../../../shared/styles/ticket-content';
+@use '../../../../shared/styles/state-chip';
 
 :host {
   display: block;
 }
 
 .waiting-heading {
-  margin: var(--space-5) 0 var(--space-2);
-  font-size: var(--fs-body);
+  margin: 0 var(--space-4) var(--space-2);
+  font-size: var(--fs-small);
   font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--color-text-muted);
+}
+
+@media (min-width: 48rem) {
+  .waiting-heading {
+    margin-top: 1.75rem;
+  }
 }
 
 .waiting-list {
@@ -24,7 +32,7 @@
 
 .waiting-code {
   flex: 0 0 6rem;
-  font-size: 1.625rem;
+  font-size: var(--fs-title);
   font-weight: var(--fw-bold);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;

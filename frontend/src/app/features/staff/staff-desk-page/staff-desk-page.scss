@@ -28,7 +28,7 @@
 
 .staff-desk-main {
   width: 100%;
-  max-width: 56rem;
+  max-width: 66.5rem;
   margin: 0 auto;
   padding: var(--space-5) var(--space-4) var(--space-7);
 }
@@ -55,7 +55,23 @@
   }
 
   .desk-columns {
-    gap: 2.5rem;
+    gap: 0 2.5rem;
     grid-template-columns: minmax(0, 1fr) 26.25rem;
+    grid-template-rows: auto 1fr;
+  }
+
+  .call-next-area {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .waiting-list-area {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .current-student-area {
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 }

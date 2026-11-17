@@ -19,20 +19,25 @@
 }
 
 .idle-ticket {
+  -webkit-mask: none;
+  mask: none;
+
   .ticket-body {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
     align-items: center;
     justify-content: center;
-    min-height: 15.5rem;
+    min-height: 7.5rem;
     text-align: center;
     color: var(--color-state-served-fg);
     background: var(--color-state-served-bg);
   }
+}
 
-  app-icon {
-    font-size: var(--fs-large-title);
+@media (min-width: 48rem) {
+  .idle-ticket .ticket-body {
+    min-height: 15.5rem;
   }
 }
 
