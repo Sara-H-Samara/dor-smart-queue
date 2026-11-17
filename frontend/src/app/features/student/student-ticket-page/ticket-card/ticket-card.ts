@@ -16,6 +16,9 @@ export class TicketCard {
 
   protected readonly isCalled = computed(() => this.ticket().status === 'CALLED');
   protected readonly stateLabel = computed(() => (this.isCalled() ? 'Called' : 'Waiting'));
+  protected readonly hasNoOpenCounter = computed(
+    () => this.ticket().status === 'WAITING' && !this.ticket().hasOpenCounter,
+  );
 
   protected readonly calledHeadingText = computed(() => {
     const counterName = this.ticket().counterName;
