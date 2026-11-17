@@ -89,9 +89,11 @@ public class TicketService {
             return ActiveTicketResponse.forCalledTicket(ticket);
         }
 
+        Long serviceId = ticket.getServiceType().getId();
         int peopleAhead = (int) ticketRepository.countWaitingAhead(
-                ticket.getServiceType().getId(), ticket.getTicketDate(), ticket.getNumber());
-        return ActiveTicketResponse.forWaitingTicket(ticket, peopleAhead, ESTIMATED_MINUTES_PER_PERSON);
+                serviceId, ticket.getTicketDate(), ticket.getNumber());
+        return ActiveTicketResponse.forWaitingTicket(
+                ticket, peopleAhead, ESTIMATED_MINUTES_PER_PERSON, openCounterFinder.hasOpenCounter(serviceId));
     }
 
     @Transactional
