@@ -10,11 +10,21 @@
           <button
             class="service-tile"
             type="button"
+            [class.service-tile-unavailable]="!service.hasOpenCounter"
             [disabled]="isTakingTicket()"
-            (click)="serviceChosen.emit(service)"
+            [attr.aria-disabled]="service.hasOpenCounter ? null : 'true'"
+            [attr.aria-describedby]="service.hasOpenCounter ? null : 'service-note-' + service.id"
+            (click)="chooseService(service)"
           >
             <span class="code-tile" aria-hidden="true">{{ service.code }}</span>
-            <span class="service-name">{{ service.name }}</span>
+            <span class="service-text">
+              <span class="service-name">{{ service.name }}</span>
+              @if (!service.hasOpenCounter) {
+                <span class="service-note" [id]="'service-note-' + service.id"
+                  >No counter open right now</span
+                >
+              }
+            </span>
           </button>
         </li>
       }

@@ -11,4 +11,10 @@ export class ServiceTileList {
   readonly services = input.required<ActiveService[]>();
   readonly isTakingTicket = input(false);
   readonly serviceChosen = output<ActiveService>();
+
+  protected chooseService(service: ActiveService): void {
+    if (service.hasOpenCounter) {
+      this.serviceChosen.emit(service);
+    }
+  }
 }

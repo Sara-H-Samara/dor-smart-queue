@@ -34,7 +34,7 @@
   cursor: pointer;
   transition: background var(--duration-base) var(--ease-out);
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled, .service-tile-unavailable) {
     background: var(--color-bg);
   }
 
@@ -44,11 +44,33 @@
   }
 }
 
+.service-tile-unavailable {
+  color: var(--color-text-muted);
+  border-style: dashed;
+  cursor: not-allowed;
+
+  .code-tile {
+    color: var(--color-state-served-fg);
+    background: var(--color-state-served-bg);
+  }
+}
+
 .code-tile {
   width: 2.5rem;
   height: 2.5rem;
 }
 
+.service-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
 .service-name {
   font-weight: var(--fw-bold);
+}
+
+.service-note {
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
 }
