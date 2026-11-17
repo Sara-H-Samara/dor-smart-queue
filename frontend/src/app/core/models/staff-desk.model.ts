@@ -7,6 +7,16 @@ export interface AvailableCounter {
   serviceName: string;
 }
 
+export interface WaitingTicket {
+  ticketCode: string;
+  createdAt: string;
+}
+
+export interface WaitingList {
+  waitingCount: number;
+  tickets: WaitingTicket[];
+}
+
 export interface CalledStudent {
   id: number;
   ticketCode: string;

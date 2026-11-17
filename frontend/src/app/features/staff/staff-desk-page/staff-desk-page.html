@@ -27,10 +27,7 @@
     }
     @case ('noCounterChosen') {
       <div class="desk-columns">
-        <section aria-label="Queue">
-          <app-call-next-panel [canCallNext]="false" />
-        </section>
-        <section aria-label="Counter" class="choose-counter">
+        <section aria-label="Counter" class="choose-counter current-student-area">
           <div class="empty-state">
             <p class="empty-state-title">No counter chosen</p>
             <p class="empty-state-text">Choose the counter you are working at to start calling students.</p>
@@ -39,26 +36,34 @@
             Choose a counter
           </button>
         </section>
+        <section aria-label="Queue" class="call-next-area">
+          <app-call-next-panel [canCallNext]="false" />
+        </section>
       </div>
     }
     @case ('ready') {
       <div class="desk-columns">
-        <section aria-label="Queue">
-          <app-call-next-panel
-            [canCallNext]="canCallNext()"
-            [isCalling]="isSubmitting()"
-            (callNextRequested)="callNextStudent()"
-          />
-        </section>
-        <section aria-label="Current student">
+        <section aria-label="Current student" class="current-student-area">
           <app-current-student-card
             [student]="currentStudent()"
-            [nobodyWaitingMessage]="nobodyWaitingMessage()"
             [isSubmitting]="isSubmitting()"
             (doneRequested)="markCurrentStudentDone()"
             (noShowRequested)="markCurrentStudentNoShow()"
           />
         </section>
+        <app-call-next-panel
+          class="call-next-area"
+          [canCallNext]="canCallNext()"
+          [isCalling]="isSubmitting()"
+          [waitingCount]="waitingCount()"
+          [serviceName]="chosenServiceName()"
+          (callNextRequested)="callNextStudent()"
+        />
+        <app-waiting-ticket-list
+          class="waiting-list-area"
+          [tickets]="waitingTickets()"
+          [serviceName]="chosenServiceName()"
+        />
       </div>
     }
   }

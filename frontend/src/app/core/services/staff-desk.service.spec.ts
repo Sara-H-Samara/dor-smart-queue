@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../environments/environment';
-import { CalledStudent } from '../models/staff-desk.model';
+import { CalledStudent, WaitingList } from '../models/staff-desk.model';
 import { StaffDeskService } from './staff-desk.service';
 
 const calledStudent: CalledStudent = {
@@ -49,6 +49,24 @@ describe('StaffDeskService', () => {
       .expectOne(`${environment.apiUrl}/api/counters/2/current`)
       .flush(null, { status: 204, statusText: 'No Content' });
     expect(received).toBeNull();
+  });
+
+  it('fetchWaitingList_withCounterId_sendsGetToWaitingPathAndReturnsList', () => {
+    const waitingList: WaitingList = {
+      waitingCount: 2,
+      tickets: [
+        { ticketCode: 'R-015', createdAt: '2026-11-16T09:31:00' },
+        { ticketCode: 'R-016', createdAt: '2026-11-16T09:32:00' },
+      ],
+    };
+    let received: WaitingList | null = null;
+
+    staffDeskService.fetchWaitingList(2).subscribe((list) => (received = list));
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/api/counters/2/waiting`);
+    expect(request.request.method).toBe('GET');
+    request.flush(waitingList);
+    expect(received).toEqual(waitingList);
   });
 
   it('callNextStudent_withCounterId_sendsPostToCallNextPath', () => {

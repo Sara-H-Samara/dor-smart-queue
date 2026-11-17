@@ -6,3 +6,6 @@
 >
   Call next
 </button>
+@if (waitingCountText(); as waitingCountLine) {
+  <p class="waiting-count">{{ waitingCountLine }}</p>
+}

@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 
 @Component({
   selector: 'app-call-next-panel',
@@ -8,5 +8,12 @@ import { Component, input, output } from '@angular/core';
 export class CallNextPanel {
   readonly canCallNext = input.required<boolean>();
   readonly isCalling = input(false);
+  readonly waitingCount = input<number | null>(null);
+  readonly serviceName = input('');
   readonly callNextRequested = output<void>();
+
+  protected readonly waitingCountText = computed<string | null>(() => {
+    const waitingCount = this.waitingCount();
+    return waitingCount === null ? null : `${waitingCount} waiting for ${this.serviceName()}`;
+  });
 }

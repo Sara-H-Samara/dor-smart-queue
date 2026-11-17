@@ -1,9 +1,18 @@
-import { Component, Injector, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 
 import { CONFLICT_STATUS, NOT_FOUND_STATUS, isHttpStatus, serverMessageOf } from '../../../core/api-failure';
-import { AvailableCounter, CalledStudent } from '../../../core/models/staff-desk.model';
+import { AvailableCounter, CalledStudent, WaitingList } from '../../../core/models/staff-desk.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ChosenCounterStorage } from '../../../core/services/chosen-counter-storage';
 import { StaffCounterService } from '../../../core/services/staff-counter.service';
@@ -11,6 +20,8 @@ import { StaffDeskService } from '../../../core/services/staff-desk.service';
 import { CallNextPanel } from './call-next-panel/call-next-panel';
 import { CounterPickerDialog } from './counter-picker-dialog/counter-picker-dialog';
 import { CurrentStudentCard } from './current-student-card/current-student-card';
+import { WAITING_LIST_REFRESH_INTERVAL_MS } from './waiting-list-refresh';
+import { WaitingTicketList } from './waiting-ticket-list/waiting-ticket-list';
 
 type StaffDeskState = 'loading' | 'noCounterChosen' | 'ready' | 'failed';
 
@@ -19,9 +30,13 @@ const LOAD_COUNTERS_FAILURE_MESSAGE = 'Could not load the counters. Please try a
 const ACTION_FAILURE_MESSAGE = 'The action could not be completed. Please try again.';
 const COUNTER_GONE_NOTICE = 'Your counter is no longer available. Choose another one.';
 
+function ignoreWaitingListFailure(): void {
+  return;
+}
+
 @Component({
   selector: 'app-staff-desk-page',
-  imports: [CallNextPanel, CurrentStudentCard, CounterPickerDialog],
+  imports: [CallNextPanel, CurrentStudentCard, CounterPickerDialog, WaitingTicketList],
   templateUrl: './staff-desk-page.html',
   styleUrl: './staff-desk-page.scss',
 })
@@ -43,19 +58,25 @@ export class StaffDeskPage {
   protected readonly failureMessage = signal<string | null>(null);
   protected readonly actionFailureMessage = signal<string | null>(null);
   protected readonly counterNotice = signal<string | null>(null);
-  protected readonly nobodyWaitingMessage = signal<string | null>(null);
+  protected readonly waitingList = signal<WaitingList | null>(null);
   protected readonly isLoadingCounters = signal(false);
   protected readonly counterListFailureMessage = signal<string | null>(null);
 
   protected readonly chosenCounter = computed(() =>
     this.availableCounters().find((counter) => counter.id === this.chosenCounterId()),
   );
+  protected readonly chosenServiceName = computed(() => this.chosenCounter()?.serviceName ?? '');
+  protected readonly waitingCount = computed(() => this.waitingList()?.waitingCount ?? null);
+  protected readonly waitingTickets = computed(() => this.waitingList()?.tickets ?? []);
   protected readonly canCallNext = computed(
     () => this.screenState() === 'ready' && this.currentStudent() === null,
   );
 
+  private waitingListRequest: Subscription | null = null;
+
   constructor() {
     this.loadDesk();
+    this.pollWaitingListWhileDeskIsIdle();
   }
 
   protected changeCounter(): void {
@@ -68,7 +89,7 @@ export class StaffDeskPage {
     this.chosenCounterId.set(counterId);
     this.counterNotice.set(null);
     this.actionFailureMessage.set(null);
-    this.nobodyWaitingMessage.set(null);
+    this.discardWaitingList();
     this.currentStudent.set(null);
     this.screenState.set('loading');
     this.loadCurrentStudent(counterId);
@@ -81,14 +102,7 @@ export class StaffDeskPage {
     }
     this.startAction();
     this.staffDeskService.callNextStudent(counterId).subscribe({
-      next: (calledStudent) => {
-        if (calledStudent === null) {
-          this.nobodyWaitingMessage.set(
-            `Nobody is waiting for ${this.chosenCounter()?.serviceName ?? 'this service'}`,
-          );
-        }
-        this.loadCurrentStudent(counterId);
-      },
+      next: () => this.loadCurrentStudent(counterId),
       error: (error: unknown) => this.handleActionFailure(error),
     });
   }
@@ -157,8 +171,52 @@ export class StaffDeskPage {
         this.currentStudent.set(student);
         this.screenState.set('ready');
         this.isSubmitting.set(false);
+        this.loadWaitingList(counterId);
       },
       error: (error: unknown) => this.showLoadFailure(error, LOAD_DESK_FAILURE_MESSAGE),
+    });
+  }
+
+  private loadWaitingList(counterId: number): void {
+    this.cancelWaitingListRequest();
+    this.requestWaitingList(counterId);
+  }
+
+  private loadWaitingListWhenNoRequestRuns(): void {
+    const counterId = this.chosenCounterId();
+    if (counterId === null || this.waitingListRequest?.closed === false) {
+      return;
+    }
+    this.requestWaitingList(counterId);
+  }
+
+  private requestWaitingList(counterId: number): void {
+    this.waitingListRequest = this.staffDeskService.fetchWaitingList(counterId).subscribe({
+      next: (waitingList) => this.waitingList.set(waitingList),
+      error: ignoreWaitingListFailure,
+    });
+  }
+
+  private cancelWaitingListRequest(): void {
+    this.waitingListRequest?.unsubscribe();
+    this.waitingListRequest = null;
+  }
+
+  private discardWaitingList(): void {
+    this.cancelWaitingListRequest();
+    this.waitingList.set(null);
+  }
+
+  private pollWaitingListWhileDeskIsIdle(): void {
+    effect((onCleanup) => {
+      if (this.screenState() !== 'ready' || this.isSubmitting()) {
+        return;
+      }
+      const intervalId = setInterval(
+        () => this.loadWaitingListWhenNoRequestRuns(),
+        WAITING_LIST_REFRESH_INTERVAL_MS,
+      );
+      onCleanup(() => clearInterval(intervalId));
     });
   }
 
@@ -178,6 +236,7 @@ export class StaffDeskPage {
   }
 
   private showNoCounterChosen(): void {
+    this.discardWaitingList();
     this.currentStudent.set(null);
     this.screenState.set('noCounterChosen');
     this.isSubmitting.set(false);
@@ -186,7 +245,6 @@ export class StaffDeskPage {
 
   private startAction(): void {
     this.actionFailureMessage.set(null);
-    this.nobodyWaitingMessage.set(null);
     this.isSubmitting.set(true);
   }
 

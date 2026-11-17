@@ -39,6 +39,35 @@ describe('CallNextPanel', () => {
     expect(callNextButton().disabled).toBe(true);
   });
 
+  it('render_withWaitingCountAndServiceName_showsWaitingForServiceLine', () => {
+    fixture.componentRef.setInput('waitingCount', 3);
+    fixture.componentRef.setInput('serviceName', 'Course registration');
+
+    fixture.detectChanges();
+
+    expect(panelElement.querySelector('.waiting-count')?.textContent?.trim()).toBe(
+      '3 waiting for Course registration',
+    );
+  });
+
+  it('render_withZeroWaiting_showsZeroLineAndKeepsButtonEnabled', () => {
+    fixture.componentRef.setInput('waitingCount', 0);
+    fixture.componentRef.setInput('serviceName', 'Course registration');
+
+    fixture.detectChanges();
+
+    expect(panelElement.querySelector('.waiting-count')?.textContent?.trim()).toBe(
+      '0 waiting for Course registration',
+    );
+    expect(callNextButton().disabled).toBe(false);
+  });
+
+  it('render_withNullWaitingCount_showsNoCountLine', () => {
+    fixture.detectChanges();
+
+    expect(panelElement.querySelector('.waiting-count')).toBeNull();
+  });
+
   it('click_whenCallNextIsAllowed_emitsCallNextRequested', () => {
     const callNextRequested = vi.fn();
     fixture.componentInstance.callNextRequested.subscribe(callNextRequested);

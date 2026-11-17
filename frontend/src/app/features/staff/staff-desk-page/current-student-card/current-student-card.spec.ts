@@ -64,21 +64,27 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelector('.idle-ticket-message')?.textContent?.trim()).toBe(
       'No student at your desk',
     );
-    expect(cardElement.querySelector('.idle-ticket app-icon')).not.toBeNull();
+    expect(cardElement.querySelector('.idle-ticket app-icon')).toBeNull();
     expect(cardElement.querySelector('.empty-state')).toBeNull();
     expect(cardElement.querySelector('article')).toBeNull();
   });
 
-  it('render_withoutStudentAndWithNobodyWaitingMessage_showsThatMessageInsteadOfDefault', () => {
+  it('render_withoutStudent_showsPlainTicketWithoutStubOrPerforation', () => {
     fixture.componentRef.setInput('student', null);
-    fixture.componentRef.setInput('nobodyWaitingMessage', 'Nobody is waiting for Registration');
 
     fixture.detectChanges();
 
-    expect(cardElement.querySelectorAll('.idle-ticket-message').length).toBe(1);
-    expect(cardElement.querySelector('.idle-ticket-message')?.textContent?.trim()).toBe(
-      'Nobody is waiting for Registration',
-    );
+    expect(cardElement.querySelector('.idle-ticket')).not.toBeNull();
+    expect(cardElement.querySelector('.ticket-stub')).toBeNull();
+  });
+
+  it('render_withStudent_showsStubWithOutcomeButtons', () => {
+    fixture.componentRef.setInput('student', calledStudent);
+
+    fixture.detectChanges();
+
+    expect(cardElement.querySelector('.ticket-stub')).not.toBeNull();
+    expect(cardElement.querySelectorAll('.ticket-stub button')).toHaveLength(2);
   });
 
   it('render_withoutStudent_showsNoButtons', () => {
@@ -89,9 +95,8 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelectorAll('button').length).toBe(0);
   });
 
-  it('render_withStudentAndNobodyWaitingMessage_showsTicketAndNoIdleLine', () => {
+  it('render_withStudent_showsTicketAndNoIdleLine', () => {
     fixture.componentRef.setInput('student', calledStudent);
-    fixture.componentRef.setInput('nobodyWaitingMessage', 'Nobody is waiting for Registration');
 
     fixture.detectChanges();
 
