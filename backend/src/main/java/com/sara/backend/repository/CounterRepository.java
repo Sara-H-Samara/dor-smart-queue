@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface CounterRepository extends JpaRepository<Counter, Long> {
 
@@ -20,6 +21,9 @@ public interface CounterRepository extends JpaRepository<Counter, Long> {
     List<Counter> findByActiveTrueOrderByNameAsc();
 
     List<Counter> findByActiveTrueAndServiceTypeActiveTrueOrderByNameAsc();
+
+    @Query("select distinct c.serviceType.id from Counter c where c.active = true and c.serviceType.active = true")
+    Set<Long> findIdsOfServicesWithOpenCounter();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Counter c where c.id = :id")
