@@ -38,6 +38,9 @@ public class TicketService {
     @Autowired
     private ServiceTypeRepository serviceTypeRepository;
 
+    @Autowired
+    private OpenCounterFinder openCounterFinder;
+
     @Transactional
     public TicketResponse takeTicket(String email, TakeTicketRequest request) {
         Long serviceId = request.serviceId();
@@ -55,6 +58,10 @@ public class TicketService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found."));
         if (!serviceType.isActive()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This service is not available.");
+        }
+        if (!openCounterFinder.hasOpenCounter(serviceId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "No counter is open for " + serviceType.getName() + " right now.");
         }
 
         LocalDate today = LocalDate.now();
