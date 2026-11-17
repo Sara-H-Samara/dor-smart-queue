@@ -2,6 +2,7 @@ package com.sara.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import com.sara.backend.config.DataSeeder;
+import com.sara.backend.entity.Counter;
 import com.sara.backend.entity.Role;
 import com.sara.backend.entity.ServiceType;
 import com.sara.backend.entity.Ticket;
@@ -11,6 +12,7 @@ import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
 import com.sara.backend.repository.TicketRepository;
 import com.sara.backend.repository.UserRepository;
+import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +60,8 @@ class MyTicketControllerTest {
     @Autowired
     private DataSeeder dataSeeder;
 
+    private TicketTestHelper testHelper;
+
     @BeforeEach
     void deleteAllTestData() {
         ticketRepository.deleteAll();
@@ -65,6 +69,8 @@ class MyTicketControllerTest {
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();
+        testHelper = new TicketTestHelper(
+                mockMvc, userRepository, serviceTypeRepository, ticketRepository, counterRepository, passwordEncoder);
     }
 
     @AfterEach
@@ -143,6 +149,7 @@ class MyTicketControllerTest {
     @Test
     void firstInLine_hasPositionOne() throws Exception {
         ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
         ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
 
         me("a@example.com")
@@ -158,6 +165,7 @@ class MyTicketControllerTest {
     @Test
     void thirdInLine_hasPositionThree() throws Exception {
         ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
         ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
         ticketFor("b@example.com", registration, 2, LocalDate.now(), TicketStatus.WAITING);
         ticketFor("c@example.com", registration, 3, LocalDate.now(), TicketStatus.WAITING);
@@ -187,6 +195,7 @@ class MyTicketControllerTest {
     void getActiveTicket_withTicketInOtherService_doesNotCountItAhead() throws Exception {
         ServiceType registration = createService("Registration", "R");
         ServiceType documents = createService("Documents", "D");
+        testHelper.createCounter("Window 1", registration);
         ticketFor("other@example.com", documents, 1, LocalDate.now(), TicketStatus.WAITING);
         ticketFor("a@example.com", registration, 2, LocalDate.now(), TicketStatus.WAITING);
 
@@ -200,6 +209,7 @@ class MyTicketControllerTest {
     @Test
     void getActiveTicket_withTicketFromEarlierDay_doesNotCountItAhead() throws Exception {
         ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
         ticketFor("old@example.com", registration, 1, LocalDate.now().minusDays(1), TicketStatus.WAITING);
         ticketFor("a@example.com", registration, 2, LocalDate.now(), TicketStatus.WAITING);
 
@@ -220,6 +230,60 @@ class MyTicketControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.position").value(1))
                 .andExpect(jsonPath("$.peopleAhead").value(0));
+    }
+
+    @Test
+    void getActiveTicket_waitingWithOpenCounter_hasOpenCounterTrue() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasOpenCounter").value(true))
+                .andExpect(jsonPath("$.estimatedWaitMinutes").value(5));
+    }
+
+    @Test
+    void getActiveTicket_waitingWithoutOpenCounter_hasOpenCounterFalseAndNoEstimate() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        Counter window = testHelper.createCounter("Window 1", registration);
+        window.setActive(false);
+        counterRepository.save(window);
+        ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("WAITING"))
+                .andExpect(jsonPath("$.hasOpenCounter").value(false))
+                .andExpect(jsonPath("$.position").value(1))
+                .andExpect(jsonPath("$.peopleAhead").value(0))
+                .andExpect(jsonPath("$.estimatedWaitMinutes").isEmpty());
+    }
+
+    @Test
+    void getActiveTicket_calledTicket_hasOpenCounterTrue() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.CALLED);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CALLED"))
+                .andExpect(jsonPath("$.hasOpenCounter").value(true));
+    }
+
+    @Test
+    void getActiveTicket_serviceDeactivated_hasOpenCounterFalse() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
+        registration.setActive(false);
+        serviceTypeRepository.save(registration);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasOpenCounter").value(false))
+                .andExpect(jsonPath("$.estimatedWaitMinutes").isEmpty());
     }
 
     @Test

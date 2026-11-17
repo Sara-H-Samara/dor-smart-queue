@@ -2,6 +2,7 @@ package com.sara.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import com.sara.backend.config.DataSeeder;
+import com.sara.backend.entity.Counter;
 import com.sara.backend.entity.Role;
 import com.sara.backend.entity.ServiceType;
 import com.sara.backend.entity.Ticket;
@@ -11,6 +12,7 @@ import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
 import com.sara.backend.repository.TicketRepository;
 import com.sara.backend.repository.UserRepository;
+import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,6 +69,8 @@ class TicketControllerTest {
     @Autowired
     private DataSeeder dataSeeder;
 
+    private TicketTestHelper testHelper;
+
     @BeforeEach
     void deleteAllTestData() {
         // Tickets first: they reference users and services.
@@ -75,6 +79,8 @@ class TicketControllerTest {
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();
+        testHelper = new TicketTestHelper(
+                mockMvc, userRepository, serviceTypeRepository, ticketRepository, counterRepository, passwordEncoder);
     }
 
     @AfterEach
@@ -143,6 +149,7 @@ class TicketControllerTest {
     @Test
     void takeTicket_firstStudent_returnsCreatedWithFirstCode() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
 
         take(registerStudentAndLogin("a@example.com"), registration.getId())
                 .andExpect(status().isCreated())
@@ -157,6 +164,7 @@ class TicketControllerTest {
     @Test
     void takeTicket_secondStudentSameService_returnsNextNumber() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
 
         take(registerStudentAndLogin("a@example.com"), registration.getId())
                 .andExpect(status().isCreated())
@@ -170,6 +178,8 @@ class TicketControllerTest {
     void takeTicket_differentService_restartsNumberingAtOne() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         ServiceType documents = createService("Documents", "D", true);
+        testHelper.createCounter("Window 1", registration);
+        testHelper.createCounter("Window 2", documents);
 
         take(registerStudentAndLogin("a@example.com"), registration.getId())
                 .andExpect(jsonPath("$.ticketCode").value("R-001"));
@@ -184,6 +194,8 @@ class TicketControllerTest {
     void takeTicket_whileStudentHasWaitingTicket_returnsConflict() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         ServiceType documents = createService("Documents", "D", true);
+        testHelper.createCounter("Window 1", registration);
+        testHelper.createCounter("Window 2", documents);
         String token = registerStudentAndLogin("a@example.com");
 
         take(token, registration.getId()).andExpect(status().isCreated());
@@ -196,6 +208,7 @@ class TicketControllerTest {
     @Test
     void takeTicket_afterServed_returnsCreated() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
         String token = registerStudentAndLogin("a@example.com");
 
         take(token, registration.getId()).andExpect(status().isCreated());
@@ -211,6 +224,7 @@ class TicketControllerTest {
     @Test
     void takeTicket_afterCancelled_returnsCreated() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
         String token = registerStudentAndLogin("a@example.com");
 
         take(token, registration.getId()).andExpect(status().isCreated());
@@ -232,6 +246,46 @@ class TicketControllerTest {
         take(registerStudentAndLogin("a@example.com"), closed.getId())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("This service is not available."));
+    }
+
+    @Test
+    void takeTicket_serviceWithoutCounter_returnsConflict() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+
+        take(registerStudentAndLogin("a@example.com"), registration.getId())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("No counter is open for Registration right now."));
+
+        assertEquals(0, ticketRepository.count());
+    }
+
+    @Test
+    void takeTicket_onlyCounterInactive_returnsConflictWithServiceName() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        Counter window = testHelper.createCounter("Window 1", registration);
+        window.setActive(false);
+        counterRepository.save(window);
+
+        take(registerStudentAndLogin("a@example.com"), registration.getId())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("No counter is open for Registration right now."));
+    }
+
+    @Test
+    void takeTicket_afterCounterReactivated_returnsCreated() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        Counter window = testHelper.createCounter("Window 1", registration);
+        window.setActive(false);
+        counterRepository.save(window);
+        String token = registerStudentAndLogin("a@example.com");
+        take(token, registration.getId()).andExpect(status().isConflict());
+
+        window.setActive(true);
+        counterRepository.save(window);
+
+        take(token, registration.getId())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.ticketCode").value("R-001"));
     }
 
     @Test
@@ -275,6 +329,7 @@ class TicketControllerTest {
     void takeTicket_concurrentStudents_returnsUniqueConsecutiveNumbers() throws Exception {
         int students = 5;
         ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
         List<String> tokens = new ArrayList<>();
         for (int i = 0; i < students; i++) {
             tokens.add(registerStudentAndLogin("student" + i + "@example.com"));

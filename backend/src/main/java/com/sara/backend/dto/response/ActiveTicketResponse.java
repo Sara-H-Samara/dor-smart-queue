@@ -10,11 +10,13 @@ public record ActiveTicketResponse(
         Integer position,
         Integer peopleAhead,
         Integer estimatedWaitMinutes,
-        String counterName
+        String counterName,
+        boolean hasOpenCounter
 ) {
 
-    /** Builds the response for a WAITING ticket. */
-    public static ActiveTicketResponse forWaitingTicket(Ticket ticket, int peopleAhead, int minutesPerPerson) {
+    /** Builds the response for a WAITING ticket. Without an open counter there is no wait estimate. */
+    public static ActiveTicketResponse forWaitingTicket(
+            Ticket ticket, int peopleAhead, int minutesPerPerson, boolean hasOpenCounter) {
         int position = peopleAhead + 1;
         return new ActiveTicketResponse(
                 TicketResponse.formatTicketCode(ticket),
@@ -22,8 +24,9 @@ public record ActiveTicketResponse(
                 ticket.getStatus(),
                 position,
                 peopleAhead,
-                position * minutesPerPerson,
-                null);
+                hasOpenCounter ? position * minutesPerPerson : null,
+                null,
+                hasOpenCounter);
     }
 
     /** Builds the response for a CALLED ticket: no queue information applies. */
@@ -35,6 +38,7 @@ public record ActiveTicketResponse(
                 null,
                 null,
                 null,
-                ticket.getCounter() == null ? null : ticket.getCounter().getName());
+                ticket.getCounter() == null ? null : ticket.getCounter().getName(),
+                true);
     }
 }

@@ -4,6 +4,7 @@ import com.sara.backend.dto.request.SetActiveRequest;
 import com.sara.backend.dto.request.NameRequest;
 import com.sara.backend.dto.request.ServiceTypeCreateRequest;
 import com.sara.backend.dto.response.ServiceTypeResponse;
+import com.sara.backend.dto.response.StudentServiceResponse;
 import com.sara.backend.entity.ServiceType;
 import com.sara.backend.repository.ServiceTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class ServiceTypeService {
@@ -20,12 +22,19 @@ public class ServiceTypeService {
     @Autowired
     private ServiceTypeRepository serviceTypeRepository;
 
+    @Autowired
+    private OpenCounterFinder openCounterFinder;
+
     public List<ServiceTypeResponse> list() {
         return serviceTypeRepository.findAllByOrderByNameAsc().stream().map(ServiceTypeResponse::from).toList();
     }
 
-    public List<ServiceTypeResponse> listActive() {
-        return serviceTypeRepository.findByActiveTrueOrderByNameAsc().stream().map(ServiceTypeResponse::from).toList();
+    public List<StudentServiceResponse> listActive() {
+        Set<Long> serviceIdsWithOpenCounter = openCounterFinder.findServiceIdsWithOpenCounter();
+        return serviceTypeRepository.findByActiveTrueOrderByNameAsc().stream()
+                .map(serviceType -> StudentServiceResponse.from(
+                        serviceType, serviceIdsWithOpenCounter.contains(serviceType.getId())))
+                .toList();
     }
 
     public ServiceTypeResponse create(ServiceTypeCreateRequest request) {

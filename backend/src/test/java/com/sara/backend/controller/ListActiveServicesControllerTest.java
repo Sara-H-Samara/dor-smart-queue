@@ -1,6 +1,7 @@
 package com.sara.backend.controller;
 
 import com.sara.backend.config.DataSeeder;
+import com.sara.backend.entity.Counter;
 import com.sara.backend.entity.ServiceType;
 import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
@@ -83,6 +84,48 @@ class ListActiveServicesControllerTest {
                 .andExpect(jsonPath("$[0].code").value("D"))
                 .andExpect(jsonPath("$[0].active").value(true))
                 .andExpect(jsonPath("$[1].name").value("Registration"));
+    }
+
+    @Test
+    void listActiveServices_serviceWithActiveCounter_hasOpenCounterTrue() throws Exception {
+        ServiceType registration = testHelper.createActiveService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        String token = testHelper.registerStudentAndLogin("a@example.com");
+
+        mockMvc.perform(get(SERVICES_URL).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Registration"))
+                .andExpect(jsonPath("$[0].active").value(true))
+                .andExpect(jsonPath("$[0].hasOpenCounter").value(true));
+    }
+
+    @Test
+    void listActiveServices_serviceWithOnlyInactiveCounter_hasOpenCounterFalse() throws Exception {
+        ServiceType registration = testHelper.createActiveService("Registration", "R");
+        Counter window = testHelper.createCounter("Window 1", registration);
+        window.setActive(false);
+        counterRepository.save(window);
+        String token = testHelper.registerStudentAndLogin("a@example.com");
+
+        mockMvc.perform(get(SERVICES_URL).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Registration"))
+                .andExpect(jsonPath("$[0].hasOpenCounter").value(false));
+    }
+
+    @Test
+    void listActiveServices_serviceWithoutCounters_hasOpenCounterFalse() throws Exception {
+        testHelper.createActiveService("Registration", "R");
+        ServiceType documents = testHelper.createActiveService("Documents", "D");
+        testHelper.createCounter("Window 1", documents);
+        String token = testHelper.registerStudentAndLogin("a@example.com");
+
+        mockMvc.perform(get(SERVICES_URL).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Documents"))
+                .andExpect(jsonPath("$[0].hasOpenCounter").value(true))
+                .andExpect(jsonPath("$[1].name").value("Registration"))
+                .andExpect(jsonPath("$[1].hasOpenCounter").value(false));
     }
 
     @Test

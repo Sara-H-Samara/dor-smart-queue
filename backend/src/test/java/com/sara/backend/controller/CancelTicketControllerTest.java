@@ -96,6 +96,7 @@ class CancelTicketControllerTest {
     @Test
     void cancelTicket_thenTakeTicket_returnsNextNumber() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
         String token = testHelper.registerStudentAndLogin("a@example.com");
         Ticket cancelledTicket = testHelper.createTicketForRegisteredStudent(
                 "a@example.com", registration, 1, TicketStatus.WAITING);
