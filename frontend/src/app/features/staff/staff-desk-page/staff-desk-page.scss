@@ -1,36 +1,18 @@
-@use '../../../shared/styles/app-header';
 @use '../../../shared/styles/empty-state';
-@use '../../../shared/styles/sticky-app-header';
 
 :host {
+  --page-width: var(--page-width-desk);
+
   display: block;
   min-height: 100vh; /* fallback */
   min-height: 100dvh;
 }
 
-.header-actions {
-  min-width: 0;
-}
-
-.counter-summary {
-  min-width: 0;
-  margin-right: var(--space-2);
-  overflow: hidden;
-  font-size: var(--fs-small);
-  color: var(--color-text-muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  b {
-    color: var(--color-text);
-  }
-}
-
 .staff-desk-main {
   width: 100%;
-  max-width: 66.5rem;
+  max-width: var(--page-width);
   margin: 0 auto;
-  padding: var(--space-5) var(--space-4) var(--space-7);
+  padding: var(--space-5) var(--page-gutter) var(--space-7);
 }
 
 .desk-columns {
@@ -50,7 +32,6 @@
 
 @media (min-width: 48rem) {
   .staff-desk-main {
-    padding-inline: var(--space-6);
     padding-top: var(--space-6);
   }
 

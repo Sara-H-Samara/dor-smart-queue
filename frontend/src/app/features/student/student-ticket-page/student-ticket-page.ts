@@ -17,6 +17,7 @@ import { ActiveTicket } from '../../../core/models/ticket.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { StudentCatalogService } from '../../../core/services/student-catalog.service';
 import { TicketService } from '../../../core/services/ticket.service';
+import { PageHeader } from '../../../shared/page-header/page-header';
 import { firstNameOf } from './first-name';
 import { SERVICE_LIST_REFRESH_INTERVAL_MS } from './service-list-refresh';
 import { ServiceTileList } from './service-tile-list/service-tile-list';
@@ -33,7 +34,7 @@ type StudentScreenState = 'loading' | 'ticket' | 'noTicket' | 'failed';
 
 @Component({
   selector: 'app-student-ticket-page',
-  imports: [TicketCard, ServiceTileList],
+  imports: [PageHeader, TicketCard, ServiceTileList],
   templateUrl: './student-ticket-page.html',
   styleUrl: './student-ticket-page.scss',
 })

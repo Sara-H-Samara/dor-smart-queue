@@ -7,11 +7,12 @@ import { EMPTY, Observable, catchError, switchMap, tap } from 'rxjs';
 import { HOME_PATH_BY_ROLE } from '../../../core/role-routes';
 import { LoginResponse, RegisterRequest, Role } from '../../../core/models/auth.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { PageHeader } from '../../../shared/page-header/page-header';
 import { registrationErrorMessage } from './registration-error-message';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [PageHeader, ReactiveFormsModule, RouterLink],
   templateUrl: './register.html',
   styleUrls: ['../auth-ticket.scss'],
 })
