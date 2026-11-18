@@ -2,7 +2,9 @@ package com.sara.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import com.sara.backend.config.DataSeeder;
+import com.sara.backend.entity.Counter;
 import com.sara.backend.entity.ServiceType;
+import com.sara.backend.entity.TicketStatus;
 import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
 import com.sara.backend.repository.TicketRepository;
@@ -18,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -409,5 +413,82 @@ class CounterControllerTest {
                 .andExpect(jsonPath("$[0].id").value(id))
                 .andExpect(jsonPath("$[0].name").value("Counter 1"))
                 .andExpect(jsonPath("$[0].active").value(false));
+    }
+
+    private void patchActive(String token, long counterId, boolean active, int expectedStatus) throws Exception {
+        mockMvc.perform(patch(URL + "/" + counterId + "/active")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":" + active + "}"))
+                .andExpect(status().is(expectedStatus));
+    }
+
+    @Test
+    void setActive_withFalseWhileTicketIsCalled_returnsConflictAndKeepsCounterActive() throws Exception {
+        Counter counter = testHelper.createCounter("Counter 1", activeService);
+        testHelper.registerStudentAndLogin("layla@example.com");
+        testHelper.createCalledTicketForRegisteredStudent("layla@example.com", activeService, 1, counter);
+
+        mockMvc.perform(patch(URL + "/" + counter.getId() + "/active")
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Finish the called student first."));
+
+        assertTrue(counterRepository.findById(counter.getId()).orElseThrow().isActive());
+    }
+
+    @Test
+    void setActive_withFalseWithOnlyWaitingAndDoneTickets_returnsOk() throws Exception {
+        Counter counter = testHelper.createCounter("Counter 1", activeService);
+        testHelper.registerStudentAndLogin("layla@example.com");
+        testHelper.createTicketForRegisteredStudent("layla@example.com", activeService, 1, TicketStatus.WAITING);
+        testHelper.createTicketForRegisteredStudent("layla@example.com", activeService, 2, TicketStatus.DONE);
+
+        patchActive(testHelper.loginAsAdmin(), counter.getId(), false, 200);
+    }
+
+    @Test
+    void setActive_withTrueWhileTicketIsCalled_returnsOk() throws Exception {
+        Counter counter = testHelper.createCounter("Counter 1", activeService);
+        counter.setActive(false);
+        counterRepository.save(counter);
+        testHelper.registerStudentAndLogin("layla@example.com");
+        testHelper.createCalledTicketForRegisteredStudent("layla@example.com", activeService, 1, counter);
+
+        patchActive(testHelper.loginAsAdmin(), counter.getId(), true, 200);
+    }
+
+    @Test
+    void updateCounter_withAnotherServiceWhileTicketIsCalled_returnsConflictAndKeepsService() throws Exception {
+        Counter counter = testHelper.createCounter("Counter 1", activeService);
+        ServiceType otherService = testHelper.createActiveService("Fees", "F");
+        testHelper.registerStudentAndLogin("layla@example.com");
+        testHelper.createCalledTicketForRegisteredStudent("layla@example.com", activeService, 1, counter);
+
+        mockMvc.perform(put(URL + "/" + counter.getId())
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(counterJson("Counter 1", otherService.getId())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Finish the called student first."));
+
+        Counter unchangedCounter = counterRepository.findAll().get(0);
+        assertEquals(activeService.getId(), unchangedCounter.getServiceType().getId());
+    }
+
+    @Test
+    void updateCounter_withNewNameWhileTicketIsCalled_returnsOk() throws Exception {
+        Counter counter = testHelper.createCounter("Counter 1", activeService);
+        testHelper.registerStudentAndLogin("layla@example.com");
+        testHelper.createCalledTicketForRegisteredStudent("layla@example.com", activeService, 1, counter);
+
+        mockMvc.perform(put(URL + "/" + counter.getId())
+                        .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(counterJson("Counter 2", activeService.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Counter 2"));
     }
 }

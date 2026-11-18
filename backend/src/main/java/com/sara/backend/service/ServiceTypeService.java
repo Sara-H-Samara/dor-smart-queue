@@ -6,11 +6,15 @@ import com.sara.backend.dto.request.ServiceTypeCreateRequest;
 import com.sara.backend.dto.response.ServiceTypeResponse;
 import com.sara.backend.dto.response.StudentServiceResponse;
 import com.sara.backend.entity.ServiceType;
+import com.sara.backend.entity.TicketStatus;
+import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
+import com.sara.backend.repository.TicketRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -21,6 +25,12 @@ public class ServiceTypeService {
 
     @Autowired
     private ServiceTypeRepository serviceTypeRepository;
+
+    @Autowired
+    private CounterRepository counterRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
 
     @Autowired
     private OpenCounterFinder openCounterFinder;
@@ -74,10 +84,22 @@ public class ServiceTypeService {
         return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
     }
 
+    @Transactional
     public ServiceTypeResponse updateActive(Long id, SetActiveRequest request) {
-        ServiceType serviceType = findOrThrow(id);
+        ServiceType serviceType = serviceTypeRepository.findByIdWithWriteLock(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found."));
+        if (!request.active()) {
+            lockCountersOfService(id);
+            if (ticketRepository.existsByCounterServiceTypeIdAndStatus(id, TicketStatus.CALLED)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Finish the called student first.");
+            }
+        }
         serviceType.setActive(request.active());
         return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
+    }
+
+    private void lockCountersOfService(Long serviceId) {
+        counterRepository.findByServiceTypeIdWithWriteLock(serviceId);
     }
 
     private ServiceType findOrThrow(Long id) {

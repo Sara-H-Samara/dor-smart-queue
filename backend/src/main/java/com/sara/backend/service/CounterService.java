@@ -6,11 +6,14 @@ import com.sara.backend.dto.response.AvailableCounterResponse;
 import com.sara.backend.dto.response.CounterResponse;
 import com.sara.backend.entity.Counter;
 import com.sara.backend.entity.ServiceType;
+import com.sara.backend.entity.TicketStatus;
 import com.sara.backend.repository.CounterRepository;
 import com.sara.backend.repository.ServiceTypeRepository;
+import com.sara.backend.repository.TicketRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -23,6 +26,9 @@ public class CounterService {
 
     @Autowired
     private ServiceTypeRepository serviceTypeRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
 
     public List<CounterResponse> list() {
         return counterRepository.findAllByOrderByNameAsc().stream().map(CounterResponse::from).toList();
@@ -48,15 +54,18 @@ public class CounterService {
         return CounterResponse.from(counterRepository.save(counter));
     }
 
+    @Transactional
     public CounterResponse update(Long id, CounterRequest request) {
-        Counter counter = findOrThrow(id);
+        ServiceType serviceType = serviceTypeRepository.findByIdWithWriteLock(request.serviceId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found."));
+        Counter counter = findWithWriteLockOrThrow(id);
         String name = trimAndValidateName(request.name());
         if (counterRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Counter name already exists.");
         }
-        ServiceType serviceType = findServiceOrThrow(request.serviceId());
         if (!serviceType.getId().equals(counter.getServiceType().getId())) {
             rejectInactiveService(serviceType);
+            rejectWhileStudentIsCalled(counter);
         }
 
         counter.setName(name);
@@ -64,10 +73,20 @@ public class CounterService {
         return CounterResponse.from(counterRepository.save(counter));
     }
 
+    @Transactional
     public CounterResponse updateActive(Long id, SetActiveRequest request) {
-        Counter counter = findOrThrow(id);
+        Counter counter = findWithWriteLockOrThrow(id);
+        if (!request.active()) {
+            rejectWhileStudentIsCalled(counter);
+        }
         counter.setActive(request.active());
         return CounterResponse.from(counterRepository.save(counter));
+    }
+
+    private void rejectWhileStudentIsCalled(Counter counter) {
+        if (ticketRepository.existsByCounterIdAndStatus(counter.getId(), TicketStatus.CALLED)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Finish the called student first.");
+        }
     }
 
     private String trimAndValidateName(String name) {
@@ -89,8 +108,8 @@ public class CounterService {
         }
     }
 
-    private Counter findOrThrow(Long id) {
-        return counterRepository.findById(id)
+    private Counter findWithWriteLockOrThrow(Long id) {
+        return counterRepository.findByIdWithWriteLock(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Counter not found."));
     }
 }

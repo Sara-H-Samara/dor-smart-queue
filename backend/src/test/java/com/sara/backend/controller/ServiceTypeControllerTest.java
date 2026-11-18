@@ -3,17 +3,23 @@ package com.sara.backend.controller;
 import com.jayway.jsonpath.JsonPath;
 import com.sara.backend.config.DataSeeder;
 import com.sara.backend.repository.CounterRepository;
+import com.sara.backend.entity.Counter;
+import com.sara.backend.entity.ServiceType;
 import com.sara.backend.repository.ServiceTypeRepository;
+import com.sara.backend.repository.TicketRepository;
 import com.sara.backend.repository.UserRepository;
+import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -41,14 +47,25 @@ class ServiceTypeControllerTest {
     private ServiceTypeRepository serviceTypeRepository;
 
     @Autowired
+    private TicketRepository ticketRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
     private DataSeeder dataSeeder;
+
+    private TicketTestHelper testHelper;
 
     @BeforeEach
     void deleteAllTestData() {
+        ticketRepository.deleteAll();
         counterRepository.deleteAll();
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();
+        testHelper = new TicketTestHelper(
+                mockMvc, userRepository, serviceTypeRepository, ticketRepository, counterRepository, passwordEncoder);
     }
 
     // ---------- Helpers ----------
@@ -429,5 +446,38 @@ class ServiceTypeControllerTest {
                 .andExpect(jsonPath("$[0].id").value(id))
                 .andExpect(jsonPath("$[0].name").value("Fees"))
                 .andExpect(jsonPath("$[0].active").value(false));
+    }
+
+    @Test
+    void setActive_withFalseWhileCounterHasCalledTicket_returnsConflictAndKeepsServiceActive() throws Exception {
+        ServiceType service = testHelper.createActiveService("Fees", "F");
+        Counter counter = testHelper.createCounter("Counter 1", service);
+        testHelper.registerStudentAndLogin("layla@example.com");
+        testHelper.createCalledTicketForRegisteredStudent("layla@example.com", service, 1, counter);
+
+        mockMvc.perform(patch(URL + "/" + service.getId() + "/active")
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Finish the called student first."));
+
+        assertTrue(serviceTypeRepository.findById(service.getId()).orElseThrow().isActive());
+    }
+
+    @Test
+    void setActive_withFalseWhenCalledTicketIsAtCounterOfAnotherService_returnsOk() throws Exception {
+        ServiceType service = testHelper.createActiveService("Fees", "F");
+        ServiceType otherService = testHelper.createActiveService("Registration", "R");
+        Counter otherCounter = testHelper.createCounter("Counter 1", otherService);
+        testHelper.registerStudentAndLogin("layla@example.com");
+        testHelper.createCalledTicketForRegisteredStudent("layla@example.com", otherService, 1, otherCounter);
+
+        mockMvc.perform(patch(URL + "/" + service.getId() + "/active")
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.active").value(false));
     }
 }
