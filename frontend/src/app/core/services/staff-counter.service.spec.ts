@@ -20,7 +20,7 @@ describe('StaffCounterService', () => {
 
   afterEach(() => httpTesting.verify());
 
-  it('listAvailableCounters_whenCalled_sendsGetAndReturnsCounters', () => {
+  it('sends a GET request and returns the available counters', () => {
     const counters: AvailableCounter[] = [
       { id: 2, name: 'Counter 2', serviceId: 5, serviceName: 'Course registration' },
     ];

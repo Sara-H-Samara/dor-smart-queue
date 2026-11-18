@@ -5,7 +5,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { Register } from './register';
 
 describe('Register', () => {
-  it('render_onRegisterScreen_showsHeroTitleWithoutRepeatedSignInPrompt', () => {
+  it('shows the hero title and the Create an account heading, with no repeated sign-in prompt', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),

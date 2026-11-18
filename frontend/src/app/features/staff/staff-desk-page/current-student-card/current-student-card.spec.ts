@@ -27,7 +27,7 @@ describe('CurrentStudentCard', () => {
     );
   }
 
-  it('render_withCalledStudent_showsNameCodeAndCalledChip', () => {
+  it('shows the name, code and called chip for a called student', () => {
     fixture.componentRef.setInput('student', calledStudent);
 
     fixture.detectChanges();
@@ -38,7 +38,7 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelector('article')?.getAttribute('aria-label')).toBe('Ticket R-014');
   });
 
-  it('render_withCounterName_showsCalledToCounterLine', () => {
+  it('shows the called-to-counter line when the counter has a name', () => {
     fixture.componentRef.setInput('student', calledStudent);
 
     fixture.detectChanges();
@@ -48,7 +48,7 @@ describe('CurrentStudentCard', () => {
     );
   });
 
-  it('render_withoutCounterName_showsCalledLineOnly', () => {
+  it('shows only the called line when the counter has no name', () => {
     fixture.componentRef.setInput('student', { ...calledStudent, counterName: null });
 
     fixture.detectChanges();
@@ -56,7 +56,7 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelector('.ticket-status b')?.textContent?.trim()).toBe('Called');
   });
 
-  it('render_withoutStudent_showsDefaultIdleLineOnQuietTicket', () => {
+  it('shows the idle line on a quiet ticket when nobody is called', () => {
     fixture.componentRef.setInput('student', null);
 
     fixture.detectChanges();
@@ -69,7 +69,7 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelector('article')).toBeNull();
   });
 
-  it('render_withoutStudent_showsPlainTicketWithoutStubOrPerforation', () => {
+  it('shows the idle ticket without a stub when nobody is called', () => {
     fixture.componentRef.setInput('student', null);
 
     fixture.detectChanges();
@@ -78,7 +78,7 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelector('.ticket-stub')).toBeNull();
   });
 
-  it('render_withStudent_showsStubWithOutcomeButtons', () => {
+  it('shows the stub with two outcome buttons for a called student', () => {
     fixture.componentRef.setInput('student', calledStudent);
 
     fixture.detectChanges();
@@ -87,7 +87,7 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelectorAll('.ticket-stub button')).toHaveLength(2);
   });
 
-  it('render_withoutStudent_showsNoButtons', () => {
+  it('shows no buttons when nobody is called', () => {
     fixture.componentRef.setInput('student', null);
 
     fixture.detectChanges();
@@ -95,7 +95,7 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelectorAll('button').length).toBe(0);
   });
 
-  it('render_withStudent_showsTicketAndNoIdleLine', () => {
+  it('shows the ticket and no idle line for a called student', () => {
     fixture.componentRef.setInput('student', calledStudent);
 
     fixture.detectChanges();
@@ -104,7 +104,7 @@ describe('CurrentStudentCard', () => {
     expect(cardElement.querySelector('.ticket-code')?.textContent?.trim()).toBe('R-014');
   });
 
-  it('click_onServed_emitsDoneRequested', () => {
+  it('emits a done request when Served is clicked', () => {
     const doneRequested = vi.fn();
     const noShowRequested = vi.fn();
     fixture.componentInstance.doneRequested.subscribe(doneRequested);
@@ -118,7 +118,7 @@ describe('CurrentStudentCard', () => {
     expect(noShowRequested).not.toHaveBeenCalled();
   });
 
-  it('click_onNoShow_emitsNoShowRequested', () => {
+  it('emits a no-show request when No-show is clicked', () => {
     const doneRequested = vi.fn();
     const noShowRequested = vi.fn();
     fixture.componentInstance.doneRequested.subscribe(doneRequested);
@@ -132,7 +132,7 @@ describe('CurrentStudentCard', () => {
     expect(doneRequested).not.toHaveBeenCalled();
   });
 
-  it('render_whileSubmitting_disablesBothButtons', () => {
+  it('disables both buttons while submitting', () => {
     fixture.componentRef.setInput('student', calledStudent);
     fixture.componentRef.setInput('isSubmitting', true);
 
@@ -142,7 +142,7 @@ describe('CurrentStudentCard', () => {
     expect(buttonWithText('No-show')?.disabled).toBe(true);
   });
 
-  it('render_whenNotSubmitting_enablesBothButtons', () => {
+  it('enables both buttons when not submitting', () => {
     fixture.componentRef.setInput('student', calledStudent);
 
     fixture.detectChanges();

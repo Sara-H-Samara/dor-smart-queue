@@ -16,14 +16,14 @@ describe('CallNextPanel', () => {
     return panelElement.querySelector<HTMLButtonElement>('.call-next-button')!;
   }
 
-  it('render_whenCallNextIsAllowed_enablesButton', () => {
+  it('enables the button when calling next is allowed', () => {
     fixture.detectChanges();
 
     expect(callNextButton().textContent?.trim()).toBe('Call next');
     expect(callNextButton().disabled).toBe(false);
   });
 
-  it('render_whenCallNextIsNotAllowed_disablesButton', () => {
+  it('disables the button when calling next is not allowed', () => {
     fixture.componentRef.setInput('canCallNext', false);
 
     fixture.detectChanges();
@@ -31,7 +31,7 @@ describe('CallNextPanel', () => {
     expect(callNextButton().disabled).toBe(true);
   });
 
-  it('render_whileCalling_disablesButton', () => {
+  it('disables the button while a call is running', () => {
     fixture.componentRef.setInput('isCalling', true);
 
     fixture.detectChanges();
@@ -39,7 +39,7 @@ describe('CallNextPanel', () => {
     expect(callNextButton().disabled).toBe(true);
   });
 
-  it('render_withWaitingCountAndServiceName_showsWaitingForServiceLine', () => {
+  it('shows how many are waiting for the service', () => {
     fixture.componentRef.setInput('waitingCount', 3);
     fixture.componentRef.setInput('serviceName', 'Course registration');
 
@@ -50,7 +50,7 @@ describe('CallNextPanel', () => {
     );
   });
 
-  it('render_withZeroWaiting_showsZeroLineAndKeepsButtonEnabled', () => {
+  it('shows zero waiting and keeps the button enabled', () => {
     fixture.componentRef.setInput('waitingCount', 0);
     fixture.componentRef.setInput('serviceName', 'Course registration');
 
@@ -62,13 +62,13 @@ describe('CallNextPanel', () => {
     expect(callNextButton().disabled).toBe(false);
   });
 
-  it('render_withNullWaitingCount_showsNoCountLine', () => {
+  it('shows no waiting line when the waiting count is unknown', () => {
     fixture.detectChanges();
 
     expect(panelElement.querySelector('.waiting-count')).toBeNull();
   });
 
-  it('click_whenCallNextIsAllowed_emitsCallNextRequested', () => {
+  it('emits a call-next request when the button is clicked', () => {
     const callNextRequested = vi.fn();
     fixture.componentInstance.callNextRequested.subscribe(callNextRequested);
     fixture.detectChanges();

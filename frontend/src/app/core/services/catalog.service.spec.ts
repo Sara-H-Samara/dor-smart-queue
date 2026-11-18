@@ -19,7 +19,7 @@ describe('CatalogService', () => {
 
   afterEach(() => httpTesting.verify());
 
-  it('createCounter_withNameAndServiceId_postsBody', () => {
+  it('sends a POST request with the name and service id when creating a counter', () => {
     catalogService.createCounter('Counter 3', 7).subscribe();
 
     const request = httpTesting.expectOne(`${environment.apiUrl}/api/admin/counters`);
@@ -27,7 +27,7 @@ describe('CatalogService', () => {
     expect(request.request.body).toEqual({ name: 'Counter 3', serviceId: 7 });
   });
 
-  it('updateCounter_withNameAndServiceId_putsBody', () => {
+  it('sends a PUT request with the name and service id when updating a counter', () => {
     catalogService.updateCounter(4, 'Counter 4', 7).subscribe();
 
     const request = httpTesting.expectOne(`${environment.apiUrl}/api/admin/counters/4`);

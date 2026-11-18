@@ -5,7 +5,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { Login } from './login';
 
 describe('Login', () => {
-  it('render_onLoginScreen_showsHeroTitleWithoutRepeatedSignInPrompt', () => {
+  it('shows the hero title and the Sign in heading, with no repeated sign-in prompt', () => {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), { provide: AuthService, useValue: { login: vi.fn() } }],
     });

@@ -36,7 +36,7 @@ describe('ServiceTileList', () => {
     return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'));
   }
 
-  it('render_serviceWithoutOpenCounter_showsNoCounterLineAndAriaDisabled', () => {
+  it('shows the no-counter note and marks the tile aria-disabled when no counter is open', () => {
     renderWithServices([serviceWithoutOpenCounter]);
 
     const tileButton = tileButtons()[0];
@@ -48,7 +48,7 @@ describe('ServiceTileList', () => {
     expect(tileButton.disabled).toBe(false);
   });
 
-  it('chooseService_serviceWithoutOpenCounter_emitsNothing', () => {
+  it('emits nothing when a service without an open counter is chosen', () => {
     renderWithServices([serviceWithoutOpenCounter]);
 
     tileButtons()[0].click();
@@ -56,7 +56,7 @@ describe('ServiceTileList', () => {
     expect(chosenServices).toEqual([]);
   });
 
-  it('chooseService_serviceWithOpenCounter_emitsService', () => {
+  it('emits the service when a service with an open counter is chosen', () => {
     renderWithServices([serviceWithOpenCounter]);
 
     tileButtons()[0].click();
@@ -64,7 +64,7 @@ describe('ServiceTileList', () => {
     expect(chosenServices).toEqual([serviceWithOpenCounter]);
   });
 
-  it('render_serviceWithOpenCounter_showsNoNoteAndNoAriaAttributes', () => {
+  it('shows no note and no aria attributes when the service has an open counter', () => {
     renderWithServices([serviceWithOpenCounter]);
 
     const tileButton = tileButtons()[0];
@@ -73,7 +73,7 @@ describe('ServiceTileList', () => {
     expect(tileButton.hasAttribute('aria-describedby')).toBe(false);
   });
 
-  it('render_whileTakingTicket_disablesEveryTileNatively', () => {
+  it('disables every tile while a ticket is being taken', () => {
     renderWithServices([serviceWithOpenCounter, serviceWithoutOpenCounter], true);
 
     expect(tileButtons().map((tileButton) => tileButton.disabled)).toEqual([true, true]);

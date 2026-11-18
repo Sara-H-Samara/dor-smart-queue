@@ -30,7 +30,7 @@ describe('CatalogFormDialog', () => {
     return select?.selectedOptions[0]?.textContent?.trim();
   }
 
-  it('render_withServiceHeading_labelsNameFieldWithJustName', () => {
+  it('shows the given heading and labels the name field Name', () => {
     fixture.componentRef.setInput('idPrefix', 'services');
     fixture.componentRef.setInput('heading', 'Add service');
 
@@ -42,7 +42,7 @@ describe('CatalogFormDialog', () => {
     expect(dialogElement.querySelector('h3')?.textContent?.trim()).toBe('Add service');
   });
 
-  it('render_withServiceField_listsGivenServicesInSelect', () => {
+  it('lists the given services in the select and marks inactive ones', () => {
     fixture.componentRef.setInput('showServiceField', true);
     fixture.componentRef.setInput('serviceOptions', [registrationService, documentsService]);
 
@@ -57,13 +57,13 @@ describe('CatalogFormDialog', () => {
     );
   });
 
-  it('render_withoutServiceField_hidesSelect', () => {
+  it('hides the select when the form has no service field', () => {
     fixture.detectChanges();
 
     expect(dialogElement.querySelector('select')).toBeNull();
   });
 
-  it('open_withInitialServiceId_selectsCurrentService', () => {
+  it('selects the initial service when the form opens', () => {
     fixture.componentRef.setInput('showServiceField', true);
     fixture.componentRef.setInput('serviceOptions', [registrationService, documentsService]);
     fixture.detectChanges();
@@ -74,7 +74,7 @@ describe('CatalogFormDialog', () => {
     expect(selectedServiceText()).toBe('Documents (inactive)');
   });
 
-  it('submit_withoutService_showsServiceErrorAndDoesNotEmit', () => {
+  it('shows a service error and emits nothing when no service is chosen', () => {
     const emittedValues: CatalogFormValue[] = [];
     fixture.componentInstance.submitted.subscribe((value) => emittedValues.push(value));
     fixture.componentRef.setInput('showServiceField', true);
@@ -90,7 +90,7 @@ describe('CatalogFormDialog', () => {
     );
   });
 
-  it('submit_withNameAndService_emitsNameAndServiceId', () => {
+  it('emits the name and service id when both are filled in', () => {
     const emittedValues: CatalogFormValue[] = [];
     fixture.componentInstance.submitted.subscribe((value) => emittedValues.push(value));
     fixture.componentRef.setInput('showServiceField', true);

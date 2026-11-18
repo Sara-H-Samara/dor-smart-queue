@@ -12,20 +12,20 @@ describe('AppIcon', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('render_withIconName_drawsThatIconPath', () => {
+  it('draws the path of the given icon', () => {
     const iconElement = renderIcon('plus');
 
     expect(iconElement.querySelector('path')?.getAttribute('d')).toBe(ICON_PATHS.plus);
   });
 
-  it('render_always_hidesSvgFromScreenReaders', () => {
+  it('hides the icon from screen readers', () => {
     const iconElement = renderIcon('pencil');
 
     expect(iconElement.getAttribute('aria-hidden')).toBe('true');
     expect(iconElement.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('render_withEachIconName_drawsNonEmptyPath', () => {
+  it('draws a non-empty path for every icon name', () => {
     const iconNames = Object.keys(ICON_PATHS) as IconName[];
 
     for (const iconName of iconNames) {

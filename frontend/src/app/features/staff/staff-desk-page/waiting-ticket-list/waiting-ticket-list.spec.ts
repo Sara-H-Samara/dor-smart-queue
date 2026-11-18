@@ -18,7 +18,7 @@ describe('WaitingTicketList', () => {
     listElement = fixture.nativeElement as HTMLElement;
   });
 
-  it('render_withTickets_showsHeadingAndOneRowPerTicket', () => {
+  it('shows the heading and one row per ticket', () => {
     fixture.componentRef.setInput('tickets', waitingTickets);
 
     fixture.detectChanges();
@@ -27,7 +27,7 @@ describe('WaitingTicketList', () => {
     expect(listElement.querySelectorAll('.waiting-row')).toHaveLength(2);
   });
 
-  it('render_withTickets_showsCodeServiceNameAndWaitingChipInEachRow', () => {
+  it('shows the code, service name and waiting chip in each row', () => {
     fixture.componentRef.setInput('tickets', waitingTickets);
 
     fixture.detectChanges();
@@ -41,7 +41,7 @@ describe('WaitingTicketList', () => {
     });
   });
 
-  it('render_withoutTickets_showsNoHeadingAndNoList', () => {
+  it('shows no heading and no list when nobody is waiting', () => {
     fixture.componentRef.setInput('tickets', []);
 
     fixture.detectChanges();
