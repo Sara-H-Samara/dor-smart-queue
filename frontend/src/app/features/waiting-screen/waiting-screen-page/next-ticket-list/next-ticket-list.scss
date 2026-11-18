@@ -1,0 +1,49 @@
+:host {
+  display: block;
+}
+
+.next-tickets {
+  display: grid;
+  gap: calc(18 * var(--tv-unit));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.next-ticket {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(24 * var(--tv-unit));
+  height: calc(140 * var(--tv-unit));
+  padding: 0 calc(44 * var(--tv-unit));
+  background: var(--color-surface);
+  border: 2px solid var(--color-separator);
+  border-radius: calc(28 * var(--tv-unit));
+}
+
+.next-ticket-code {
+  font-size: calc(68 * var(--tv-unit));
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.next-ticket-service {
+  font-size: calc(34 * var(--tv-unit));
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.more-waiting,
+.no-one-waiting {
+  margin: calc(28 * var(--tv-unit)) 0 0;
+  font-size: calc(34 * var(--tv-unit));
+  color: var(--color-text-muted);
+}
+
+.no-one-waiting {
+  margin-top: 0;
+}

@@ -32,5 +32,12 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('ADMIN')],
     loadComponent: () => import('./features/admin/admin-home/admin-home').then((m) => m.AdminHome),
   },
+  {
+    path: 'waiting-room',
+    loadComponent: () =>
+      import('./features/waiting-screen/waiting-screen-page/waiting-screen-page').then(
+        (m) => m.WaitingScreenPage,
+      ),
+  },
   { path: '**', redirectTo: 'login' },
 ];

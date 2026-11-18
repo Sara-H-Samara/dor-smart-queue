@@ -54,6 +54,24 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     long countByServiceTypeIdAndTicketDateAndStatus(Long serviceId, LocalDate ticketDate, TicketStatus status);
 
+    @Query("select new com.sara.backend.repository.CalledTicketRow("
+            + "t.counter.id, t.serviceType.code, t.number)"
+            + " from Ticket t where t.ticketDate = :date"
+            + " and t.status = com.sara.backend.entity.TicketStatus.CALLED and t.counter is not null"
+            + " order by t.calledAt desc")
+    List<CalledTicketRow> findCalledTicketRowsOfDay(@Param("date") LocalDate date);
+
+    @Query("select new com.sara.backend.repository.NextTicketRow("
+            + "t.serviceType.code, t.number, t.serviceType.name)"
+            + " from Ticket t where t.ticketDate = :date"
+            + " and t.status = com.sara.backend.entity.TicketStatus.WAITING and t.serviceType.active = true"
+            + " order by t.createdAt asc, t.id asc")
+    List<NextTicketRow> findOldestWaitingTicketRowsOfDay(@Param("date") LocalDate date, Pageable pageable);
+
+    @Query("select count(t) from Ticket t where t.ticketDate = :date"
+            + " and t.status = com.sara.backend.entity.TicketStatus.WAITING and t.serviceType.active = true")
+    long countWaitingTicketsOfDay(@Param("date") LocalDate date);
+
     @Query("select max(t.number) from Ticket t where t.serviceType.id = :serviceId and t.ticketDate = :date")
     Integer findHighestNumberForDay(@Param("serviceId") Long serviceId, @Param("date") LocalDate date);
 

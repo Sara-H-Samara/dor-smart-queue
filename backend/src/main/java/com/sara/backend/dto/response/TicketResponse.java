@@ -25,6 +25,10 @@ public record TicketResponse(
     }
 
     public static String formatTicketCode(Ticket ticket) {
-        return ticket.getServiceType().getCode() + "-" + String.format("%03d", ticket.getNumber());
+        return formatTicketCode(ticket.getServiceType().getCode(), ticket.getNumber());
+    }
+
+    public static String formatTicketCode(String serviceCode, int number) {
+        return serviceCode + "-" + String.format("%03d", number);
     }
 }

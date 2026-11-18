@@ -1,0 +1,15 @@
+@if (nextTickets().length === 0) {
+  <p class="no-one-waiting">No one is waiting</p>
+} @else {
+  <ul class="next-tickets">
+    @for (nextTicket of nextTickets(); track nextTicket.ticketCode) {
+      <li class="next-ticket">
+        <span class="next-ticket-code">{{ nextTicket.ticketCode }}</span>
+        <span class="next-ticket-service">{{ nextTicket.serviceName }}</span>
+      </li>
+    }
+  </ul>
+  @if (moreWaitingCount() > 0) {
+    <p class="more-waiting">{{ moreWaitingCount() }} more waiting</p>
+  }
+}
