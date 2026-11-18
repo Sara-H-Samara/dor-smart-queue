@@ -50,7 +50,8 @@ public class TicketService {
         User student = userRepository.findByIdWithWriteLock(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."));
 
-        if (ticketRepository.existsByStudentIdAndStatusIn(student.getId(), ACTIVE_STATUSES)) {
+        LocalDate today = LocalDate.now();
+        if (ticketRepository.existsByStudentIdAndTicketDateAndStatusIn(student.getId(), today, ACTIVE_STATUSES)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You already have an active ticket.");
         }
 
@@ -64,7 +65,6 @@ public class TicketService {
                     HttpStatus.CONFLICT, "No counter is open for " + serviceType.getName() + " right now.");
         }
 
-        LocalDate today = LocalDate.now();
         Integer lastNumberToday = ticketRepository.findHighestNumberForDay(serviceId, today);
 
         Ticket ticket = new Ticket();
@@ -101,7 +101,8 @@ public class TicketService {
         Long studentId = findStudentIdOrThrow(email);
         userRepository.findByIdWithWriteLock(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."));
-        Ticket ticket = ticketRepository.findActiveTicketOfStudentWithWriteLock(studentId, ACTIVE_STATUSES)
+        Ticket ticket = ticketRepository.findActiveTicketOfStudentWithWriteLock(
+                        studentId, LocalDate.now(), ACTIVE_STATUSES)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
 
         if (!ticket.getStatus().canChangeTo(TicketStatus.CANCELLED)) {
@@ -121,7 +122,8 @@ public class TicketService {
     private Ticket findActiveTicketOrThrow(String email) {
         Long studentId = findStudentIdOrThrow(email);
 
-        return ticketRepository.findFirstByStudentIdAndStatusIn(studentId, ACTIVE_STATUSES)
+        return ticketRepository.findFirstByStudentIdAndTicketDateAndStatusIn(
+                        studentId, LocalDate.now(), ACTIVE_STATUSES)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
     }
 }

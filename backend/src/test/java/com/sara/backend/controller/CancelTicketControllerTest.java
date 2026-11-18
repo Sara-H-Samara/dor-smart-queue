@@ -22,6 +22,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -126,6 +128,18 @@ class CancelTicketControllerTest {
         cancelMyTicket(token).andExpect(status().isConflict());
 
         assertEquals(TicketStatus.CALLED, ticketRepository.findById(ticket.getId()).orElseThrow().getStatus());
+    }
+
+    @Test
+    void cancelTicket_withWaitingTicketFromYesterday_returnsNotFoundAndKeepsTicketWaiting() throws Exception {
+        ServiceType registration = testHelper.createActiveService("Registration", "R");
+        String token = testHelper.registerStudentAndLogin("a@example.com");
+        Ticket yesterdayTicket = testHelper.createTicketOnDateForRegisteredStudent(
+                "a@example.com", registration, 1, LocalDate.now().minusDays(1), TicketStatus.WAITING);
+
+        cancelMyTicket(token).andExpect(status().isNotFound());
+
+        assertEquals(TicketStatus.WAITING, ticketRepository.findById(yesterdayTicket.getId()).orElseThrow().getStatus());
     }
 
     @Test

@@ -18,9 +18,11 @@ import java.util.Optional;
 
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
-    boolean existsByStudentIdAndStatusIn(Long studentId, Collection<TicketStatus> statuses);
+    boolean existsByStudentIdAndTicketDateAndStatusIn(
+            Long studentId, LocalDate ticketDate, Collection<TicketStatus> statuses);
 
-    Optional<Ticket> findFirstByStudentIdAndStatusIn(Long studentId, Collection<TicketStatus> statuses);
+    Optional<Ticket> findFirstByStudentIdAndTicketDateAndStatusIn(
+            Long studentId, LocalDate ticketDate, Collection<TicketStatus> statuses);
 
     boolean existsByCounterIdAndStatus(Long counterId, TicketStatus status);
 
@@ -31,9 +33,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     Optional<Ticket> findByIdWithWriteLock(@Param("id") Long id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select t from Ticket t where t.student.id = :studentId and t.status in :statuses")
+    @Query("select t from Ticket t where t.student.id = :studentId and t.ticketDate = :ticketDate"
+            + " and t.status in :statuses")
     Optional<Ticket> findActiveTicketOfStudentWithWriteLock(
-            @Param("studentId") Long studentId, @Param("statuses") Collection<TicketStatus> statuses);
+            @Param("studentId") Long studentId,
+            @Param("ticketDate") LocalDate ticketDate,
+            @Param("statuses") Collection<TicketStatus> statuses);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
