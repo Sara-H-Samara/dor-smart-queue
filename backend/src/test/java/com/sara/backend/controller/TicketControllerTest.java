@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -235,6 +236,34 @@ class TicketControllerTest {
         take(token, registration.getId())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.ticketCode").value("R-002"));
+    }
+
+    @Test
+    void takeTicket_withWaitingTicketFromYesterday_returnsCreatedAndKeepsOldTicketWaiting() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
+        String token = registerStudentAndLogin("a@example.com");
+        Ticket yesterdayTicket = testHelper.createTicketOnDateForRegisteredStudent(
+                "a@example.com", registration, 1, LocalDate.now().minusDays(1), TicketStatus.WAITING);
+
+        take(token, registration.getId())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.ticketCode").value("R-001"));
+
+        assertEquals(TicketStatus.WAITING, ticketRepository.findById(yesterdayTicket.getId()).orElseThrow().getStatus());
+    }
+
+    @Test
+    void takeTicket_withCalledTicketFromYesterday_returnsCreatedAndKeepsOldTicketCalled() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
+        String token = registerStudentAndLogin("a@example.com");
+        Ticket yesterdayTicket = testHelper.createTicketOnDateForRegisteredStudent(
+                "a@example.com", registration, 1, LocalDate.now().minusDays(1), TicketStatus.CALLED);
+
+        take(token, registration.getId()).andExpect(status().isCreated());
+
+        assertEquals(TicketStatus.CALLED, ticketRepository.findById(yesterdayTicket.getId()).orElseThrow().getStatus());
     }
 
     // ---------- Service problems and validation ----------

@@ -221,6 +221,17 @@ class MyTicketControllerTest {
     }
 
     @Test
+    void getActiveTicket_withOnlyWaitingTicketFromYesterday_returnsNotFound() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        ticketFor("a@example.com", registration, 1, LocalDate.now().minusDays(1), TicketStatus.WAITING);
+
+        me("a@example.com")
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("You do not have an active ticket."));
+    }
+
+    @Test
     void doneTicket_isNotCountedAhead() throws Exception {
         ServiceType registration = createService("Registration", "R");
         ticketFor("done@example.com", registration, 1, LocalDate.now(), TicketStatus.DONE);
