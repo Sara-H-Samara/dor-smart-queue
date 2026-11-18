@@ -1,0 +1,23 @@
+@use '../../../../shared/styles/wordmark';
+
+:host {
+  display: block;
+}
+
+.waiting-screen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(24 * var(--tv-unit));
+  height: calc(112 * var(--tv-unit));
+  padding: 0 calc(80 * var(--tv-unit));
+}
+
+.wordmark {
+  font-size: calc(68 * var(--tv-unit));
+}
+
+.organization-name {
+  font-size: calc(34 * var(--tv-unit));
+  color: var(--color-text-muted);
+}

@@ -5,8 +5,9 @@ import { catchError, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../services/auth.service';
+import { WAITING_ROOM_PATH } from '../services/waiting-room.service';
 
-const ENDPOINTS_WITHOUT_TOKEN = ['/api/auth/login', '/api/auth/register'];
+const ENDPOINTS_WITHOUT_TOKEN = ['/api/auth/login', '/api/auth/register', WAITING_ROOM_PATH];
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
@@ -20,9 +21,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
 
-  return next(
-    request.clone({ setHeaders: { Authorization: `Bearer ${token}` } }),
-  ).pipe(
+  return next(request.clone({ setHeaders: { Authorization: `Bearer ${token}` } })).pipe(
     catchError((error: unknown) => {
       // 401 means the token is rejected or expired, so sign out and go to login.
       if (error instanceof HttpErrorResponse && error.status === 401) {

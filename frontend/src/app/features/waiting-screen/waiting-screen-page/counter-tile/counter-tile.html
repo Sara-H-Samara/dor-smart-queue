@@ -1,0 +1,11 @@
+<div class="counter-tile" [class.counter-tile-called]="counter().ticketCode !== null">
+  <div class="counter-text">
+    <span class="counter-name">{{ counter().counterName }}</span>
+    <span class="service-name">{{ counter().serviceName }}</span>
+  </div>
+  @if (counter().ticketCode; as ticketCode) {
+    <span class="ticket-code">{{ ticketCode }}</span>
+  } @else {
+    <span class="not-serving">Not serving</span>
+  }
+</div>

@@ -1,0 +1,44 @@
+<h1 class="visually-hidden">Waiting room</h1>
+<app-waiting-screen-header [organizationName]="organizationName" />
+
+<main class="waiting-screen-main">
+  @switch (screenState()) {
+    @case ('loading') {
+      <p class="notice screen-message" role="status">Loading…</p>
+    }
+    @case ('failed') {
+      <p class="alert screen-message" role="alert">Cannot load the queue. Trying again…</p>
+    }
+    @case ('ready') {
+      @if (waitingRoom(); as currentWaitingRoom) {
+        <div class="columns">
+          <section class="now-serving" aria-label="Now serving">
+            <h2>Now serving</h2>
+            @if (currentWaitingRoom.counters.length === 0) {
+              <div class="empty-state">
+                <p class="empty-state-title">No counters are open right now</p>
+              </div>
+            } @else {
+              <ul class="counter-tiles">
+                @for (counter of currentWaitingRoom.counters; track counter.counterName) {
+                  <li>
+                    <app-counter-tile [counter]="counter" />
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+
+          <section class="next-section" aria-label="Next">
+            <h2>Next</h2>
+            <app-next-ticket-list
+              [nextTickets]="currentWaitingRoom.nextTickets"
+              [moreWaitingCount]="currentWaitingRoom.moreWaitingCount"
+            />
+            <p class="footer-note">Go to the counter shown when your number appears.</p>
+          </section>
+        </div>
+      }
+    }
+  }
+</main>

@@ -1,3 +1,5 @@
+@use '../styles/wordmark';
+
 :host {
   position: sticky;
   top: 0;
@@ -25,21 +27,7 @@
 }
 
 .wordmark {
-  display: inline-flex;
-  align-items: baseline;
   margin-right: auto;
-  font-size: var(--fs-title);
-  font-weight: var(--fw-bold);
-  letter-spacing: -0.04em;
-}
-
-.wordmark-o {
-  display: inline-block;
-  width: 0.5em;
-  height: 0.5em;
-  margin: 0 0.04em 0 0.03em;
-  border: 0.14em solid var(--color-link);
-  border-radius: 50%;
 }
 
 .page-header-context {

@@ -85,6 +85,8 @@
   --color-state-served-fg: #34383f;
   --color-state-noshow-bg: #ffe0dc;
   --color-state-noshow-fg: #8f1a14;
+  --color-state-called-solid: #14733a;
+  --color-state-called-on-solid: #ffffff;
 
   /* ---- Elevation ---- */
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.05);
@@ -144,6 +146,8 @@
     --color-state-served-fg: #cdd1da;
     --color-state-noshow-bg: #471a1a;
     --color-state-noshow-fg: #ffa5a0;
+    --color-state-called-solid: #4ade80;
+    --color-state-called-on-solid: #04200f;
 
     --shadow-soft: none;
   }
