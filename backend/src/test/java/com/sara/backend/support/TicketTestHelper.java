@@ -129,6 +129,13 @@ public class TicketTestHelper {
         return ticketRepository.save(ticket);
     }
 
+    public Ticket createCalledTicketOnDateForRegisteredStudent(
+            String email, ServiceType service, int number, Counter counter, LocalDate ticketDate) {
+        Ticket ticket = createCalledTicketForRegisteredStudent(email, service, number, counter);
+        ticket.setTicketDate(ticketDate);
+        return ticketRepository.save(ticket);
+    }
+
     public Ticket createTicketOnDateForRegisteredStudent(
             String email, ServiceType service, int number, LocalDate ticketDate, TicketStatus status) {
         Ticket ticket = createTicketForRegisteredStudent(email, service, number, status);

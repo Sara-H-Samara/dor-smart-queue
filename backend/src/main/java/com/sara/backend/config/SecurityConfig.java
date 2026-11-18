@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/api/health", "/api/auth/register", "/api/auth/login", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/public/queue-status").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,
                                 "/api/counters/*/call-next", "/api/tickets/*/done", "/api/tickets/*/no-show")
