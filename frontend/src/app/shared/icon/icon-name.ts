@@ -1,1 +1,1 @@
-export type IconName = 'pencil' | 'desk' | 'plus' | 'people' | 'clock' | 'signOut';
+export type IconName = 'pencil' | 'desk' | 'plus' | 'people' | 'clock' | 'signOut' | 'arrowRight';
