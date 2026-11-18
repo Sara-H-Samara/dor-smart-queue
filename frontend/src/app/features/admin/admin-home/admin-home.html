@@ -1,11 +1,5 @@
 <div class="admin-screen">
-  <header class="app-header app-header-sticky">
-    <span class="wordmark" role="img" aria-label="Dor">D<i class="wordmark-o"></i>r</span>
-    <div class="header-actions">
-      <span class="header-user-label">Admin</span>
-      <button class="header-text-button" type="button" (click)="signOut()">Sign out</button>
-    </div>
-  </header>
+  <app-page-header [showSignOut]="true" (signOutRequested)="signOut()" />
 
   <main class="admin-main">
     <h1>Admin</h1>

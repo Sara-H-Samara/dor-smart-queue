@@ -1,10 +1,11 @@
 /* Ticket-shaped auth screen; tokens from src/styles.scss. Same rules in register.scss. */
 
-@use "../../shared/styles/app-header";
 @use "../../shared/styles/ticket-card";
 @use "../../shared/styles/page-layout";
 
 :host {
+  --page-width: var(--page-width-narrow);
+
   display: block;
   min-height: 100vh; /* fallback */
   min-height: 100dvh;
@@ -19,9 +20,9 @@
 .auth-main {
   flex: 1;
   width: 100%;
-  max-width: 26.25rem;
+  max-width: var(--page-width);
   margin: 0 auto;
-  padding: var(--space-5) var(--space-4) var(--space-7);
+  padding: var(--space-5) var(--page-gutter) var(--space-7);
 
   @include page-layout.phone-centered-main;
 }
@@ -125,31 +126,17 @@
   color: var(--color-text-muted);
 }
 
-.btn-text {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.75rem;
-  padding: 0 var(--space-3);
-  font-size: var(--fs-body);
-  color: var(--color-link);
-  text-decoration: none;
-  border-radius: var(--radius-sm);
-
-  &:hover {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-}
-
 @media (min-width: 60rem) {
+  :host {
+    --page-width: var(--page-width-auth-wide);
+  }
+
   .auth-main {
     display: grid;
     grid-template-columns: 1fr 27.5rem;
     align-items: center;
     gap: var(--space-8);
-    max-width: 53.75rem;
-    padding: var(--space-7) 0;
+    padding-block: var(--space-7);
   }
 
   .hero {

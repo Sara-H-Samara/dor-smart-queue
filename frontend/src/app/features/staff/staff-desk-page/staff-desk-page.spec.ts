@@ -155,7 +155,7 @@ describe('StaffDeskPage', () => {
   it('loadDesk_withStoredCounterInList_showsCounterAndServiceInHeader', async () => {
     const fixture = await createPage();
 
-    expect(textOf(fixture, '.counter-summary')).toBe('Counter 2 · Course registration');
+    expect(textOf(fixture, '.page-header-context')).toBe('Counter 2 · Course registration');
     expect(fetchCurrentStudent).toHaveBeenCalledWith(2);
     expect(buttonWithText(fixture, 'Change counter')).toBeDefined();
   });
@@ -168,7 +168,7 @@ describe('StaffDeskPage', () => {
     expect(clearChosenCounter).toHaveBeenCalledTimes(1);
     expect(textOf(fixture, '.notice')).toBe('Your counter is no longer available. Choose another one.');
     expect(isCounterPickerOpen(fixture)).toBe(true);
-    expect(pageElement(fixture).querySelector('.counter-summary')).toBeNull();
+    expect(pageElement(fixture).querySelector('.page-header-context')).toBeNull();
     expect(fetchCurrentStudent).not.toHaveBeenCalled();
   });
 
@@ -189,7 +189,7 @@ describe('StaffDeskPage', () => {
     await clickAndSettle(fixture, buttonWithText(fixture, 'Try again'));
 
     expect(pageElement(fixture).querySelector('.alert')).toBeNull();
-    expect(textOf(fixture, '.counter-summary')).toBe('Counter 2 · Course registration');
+    expect(textOf(fixture, '.page-header-context')).toBe('Counter 2 · Course registration');
   });
 
   it('loadDesk_whenCurrentStudentFails_showsServerMessageWithTryAgain', async () => {
@@ -447,7 +447,7 @@ describe('StaffDeskPage', () => {
 
     expect(saveChosenCounter).toHaveBeenCalledWith(3);
     expect(fetchCurrentStudent).toHaveBeenCalledWith(3);
-    expect(textOf(fixture, '.counter-summary')).toBe('Counter 3 · Document requests');
+    expect(textOf(fixture, '.page-header-context')).toBe('Counter 3 · Document requests');
     expect(pageElement(fixture).querySelector('.notice')).toBeNull();
   });
 

@@ -17,6 +17,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ChosenCounterStorage } from '../../../core/services/chosen-counter-storage';
 import { StaffCounterService } from '../../../core/services/staff-counter.service';
 import { StaffDeskService } from '../../../core/services/staff-desk.service';
+import { PageHeader } from '../../../shared/page-header/page-header';
 import { CallNextPanel } from './call-next-panel/call-next-panel';
 import { CounterPickerDialog } from './counter-picker-dialog/counter-picker-dialog';
 import { CurrentStudentCard } from './current-student-card/current-student-card';
@@ -36,7 +37,7 @@ function ignoreWaitingListFailure(): void {
 
 @Component({
   selector: 'app-staff-desk-page',
-  imports: [CallNextPanel, CurrentStudentCard, CounterPickerDialog, WaitingTicketList],
+  imports: [CallNextPanel, CurrentStudentCard, CounterPickerDialog, PageHeader, WaitingTicketList],
   templateUrl: './staff-desk-page.html',
   styleUrl: './staff-desk-page.scss',
 })
@@ -65,6 +66,10 @@ export class StaffDeskPage {
   protected readonly chosenCounter = computed(() =>
     this.availableCounters().find((counter) => counter.id === this.chosenCounterId()),
   );
+  protected readonly counterSummaryText = computed(() => {
+    const counter = this.chosenCounter();
+    return counter ? `${counter.name} · ${counter.serviceName}` : null;
+  });
   protected readonly chosenServiceName = computed(() => this.chosenCounter()?.serviceName ?? '');
   protected readonly waitingCount = computed(() => this.waitingList()?.waitingCount ?? null);
   protected readonly waitingTickets = computed(() => this.waitingList()?.tickets ?? []);

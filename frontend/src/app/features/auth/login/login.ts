@@ -4,10 +4,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HOME_PATH_BY_ROLE } from '../../../core/role-routes';
 import { AuthService } from '../../../core/services/auth.service';
+import { PageHeader } from '../../../shared/page-header/page-header';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [PageHeader, ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrls: ['../auth-ticket.scss'],
 })

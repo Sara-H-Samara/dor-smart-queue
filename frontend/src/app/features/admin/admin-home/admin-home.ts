@@ -2,12 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { PageHeader } from '../../../shared/page-header/page-header';
 import { CatalogPanel } from './catalog-panel/catalog-panel';
 import { SectionOption, SectionSwitch } from './section-switch/section-switch';
 
 @Component({
   selector: 'app-admin-home',
-  imports: [CatalogPanel, SectionSwitch],
+  imports: [CatalogPanel, PageHeader, SectionSwitch],
   templateUrl: './admin-home.html',
   styleUrl: './admin-home.scss',
 })

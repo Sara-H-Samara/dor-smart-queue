@@ -1,0 +1,26 @@
+<header class="page-header">
+  <span class="wordmark" role="img" aria-label="Dor">D<i class="wordmark-o"></i>r</span>
+  @if (contextText(); as headerContextText) {
+    <span class="page-header-context">{{ headerContextText }}</span>
+  }
+  @if (secondaryActionLabel(); as actionLabel) {
+    <button
+      class="btn btn-secondary page-header-action page-header-secondary-action"
+      type="button"
+      (click)="secondaryActionRequested.emit()"
+    >
+      <app-icon iconName="desk" />
+      {{ actionLabel }}
+    </button>
+  }
+  @if (showSignOut()) {
+    <button
+      class="btn btn-secondary page-header-action page-header-sign-out"
+      type="button"
+      (click)="signOutRequested.emit()"
+    >
+      <app-icon iconName="signOut" />
+      Sign out
+    </button>
+  }
+</header>

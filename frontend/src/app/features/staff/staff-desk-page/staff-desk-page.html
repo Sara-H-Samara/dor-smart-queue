@@ -1,13 +1,10 @@
-<header class="app-header app-header-sticky">
-  <span class="wordmark" role="img" aria-label="Dor">D<i class="wordmark-o"></i>r</span>
-  <div class="header-actions">
-    @if (chosenCounter(); as counter) {
-      <span class="counter-summary"><b>{{ counter.name }}</b> · {{ counter.serviceName }}</span>
-    }
-    <button class="header-text-button" type="button" (click)="changeCounter()">Change counter</button>
-    <button class="header-text-button" type="button" (click)="signOut()">Sign out</button>
-  </div>
-</header>
+<app-page-header
+  [contextText]="counterSummaryText()"
+  secondaryActionLabel="Change counter"
+  [showSignOut]="true"
+  (secondaryActionRequested)="changeCounter()"
+  (signOutRequested)="signOut()"
+/>
 
 <main class="staff-desk-main">
   @if (actionFailureMessage(); as actionFailureText) {
