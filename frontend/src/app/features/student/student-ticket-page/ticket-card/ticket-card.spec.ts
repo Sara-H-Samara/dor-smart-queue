@@ -4,6 +4,26 @@ import { ActiveTicket } from '../../../../core/models/ticket.model';
 import { TicketCard } from './ticket-card';
 
 describe('TicketCard', () => {
+  function ticketWithStatus(status: 'WAITING' | 'CALLED', counterName: string | null): ActiveTicket {
+    return {
+      ticketCode: 'A-009',
+      serviceName: 'Registration',
+      status,
+      position: null,
+      peopleAhead: null,
+      estimatedWaitMinutes: null,
+      counterName,
+      hasOpenCounter: true,
+    };
+  }
+
+  function renderTicketCard(ticket: ActiveTicket): HTMLElement {
+    const fixture = TestBed.createComponent(TicketCard);
+    fixture.componentRef.setInput('ticket', ticket);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
   it('render_withNullPeopleAheadAndWait_showsNoCountOrEstimate', () => {
     const ticketWithoutQueuePosition: ActiveTicket = {
       ticketCode: 'A-001',
@@ -121,7 +141,7 @@ describe('TicketCard', () => {
     expect(cardElement.textContent).not.toContain('No counter is open');
   });
 
-  it('render_withCalledTicketWithoutCounterName_showsYourTurnAndGenericCounterLine', () => {
+  it('shows only "Your turn" in the heading and the stub sentence when the called ticket has no counter name', () => {
     const calledTicket: ActiveTicket = {
       ticketCode: 'A-003',
       serviceName: 'Registration',
@@ -146,7 +166,7 @@ describe('TicketCard', () => {
     expect(cardElement.textContent).not.toContain('Your place is held');
   });
 
-  it('render_withCalledTicketAndCounterName_showsCounterOnlyInHeading', () => {
+  it('shows the counter name only in the heading and the same stub sentence when the called ticket has a counter name', () => {
     const calledTicketWithCounter: ActiveTicket = {
       ticketCode: 'A-004',
       serviceName: 'Registration',
@@ -167,9 +187,36 @@ describe('TicketCard', () => {
       'Your turn: Counter 2',
     );
     expect(cardElement.querySelector('.ticket-stub')?.textContent?.trim()).toBe(
-      'Please go there now.',
+      'Please go to your counter.',
     );
-    expect(cardElement.textContent).not.toContain('Please go to your counter.');
+    expect(cardElement.textContent).not.toContain('Please go there now.');
     expect(cardElement.textContent?.match(/Counter 2/g)).toHaveLength(1);
+  });
+
+  it('shows an arrow icon before the stub sentence of a called ticket', () => {
+    const cardElement = renderTicketCard(ticketWithStatus('CALLED', 'Counter 2'));
+
+    const stubParagraph = cardElement.querySelector('.ticket-stub p');
+
+    expect(stubParagraph?.firstElementChild?.tagName.toLowerCase()).toBe('app-icon');
+    expect(stubParagraph?.querySelector('app-icon svg')).not.toBeNull();
+  });
+
+  it('hides the stub arrow from screen readers', () => {
+    const cardElement = renderTicketCard(ticketWithStatus('CALLED', null));
+
+    const arrowIcon = cardElement.querySelector('.ticket-stub p app-icon');
+
+    expect(arrowIcon?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('shows the leave button and no stub sentence while the ticket is waiting', () => {
+    const cardElement = renderTicketCard(ticketWithStatus('WAITING', null));
+
+    expect(cardElement.querySelector('.ticket-stub button')?.textContent?.trim()).toBe(
+      'Leave queue',
+    );
+    expect(cardElement.querySelector('.ticket-stub p')).toBeNull();
+    expect(cardElement.textContent).not.toContain('Please go to your counter.');
   });
 });

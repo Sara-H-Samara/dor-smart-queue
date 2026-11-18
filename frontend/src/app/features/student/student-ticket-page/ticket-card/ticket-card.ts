@@ -25,10 +25,6 @@ export class TicketCard {
     return counterName ? `Your turn: ${counterName}` : 'Your turn';
   });
 
-  protected readonly calledStubText = computed(() =>
-    this.ticket().counterName ? 'Please go there now.' : 'Please go to your counter.',
-  );
-
   protected readonly peopleAheadText = computed<string | null>(() => {
     const peopleAhead = this.ticket().peopleAhead;
     if (peopleAhead === null) {

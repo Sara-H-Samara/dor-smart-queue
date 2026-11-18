@@ -14,9 +14,25 @@
   }
 
   p {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: center;
     margin: 0;
-    font-size: var(--fs-small);
-    color: var(--color-text-muted);
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    line-height: 1.25;
+    color: var(--color-text);
+
+    app-icon {
+      font-size: var(--fs-body);
+      color: var(--color-state-called-fg);
+    }
+
+    span {
+      text-align: left;
+      text-wrap: balance;
+    }
   }
 }
 
@@ -34,5 +50,33 @@
   .state-chip {
     color: var(--color-state-called-fg);
     background: var(--color-state-called-bg);
+  }
+
+  .ticket-stub::before,
+  .ticket-stub::after {
+    position: absolute;
+    right: var(--notch-radius);
+    left: var(--notch-radius);
+    height: 2px;
+    content: '';
+    border: 0;
+  }
+
+  .ticket-stub::before {
+    top: -2px;
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--color-state-called-bg) 0 6px,
+      transparent 6px 12px
+    );
+  }
+
+  .ticket-stub::after {
+    top: 0;
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--color-state-called-fg) 0 6px,
+      transparent 6px 12px
+    );
   }
 }
