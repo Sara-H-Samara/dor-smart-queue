@@ -139,7 +139,7 @@ describe('StaffDeskPage', () => {
     fixture.detectChanges();
   }
 
-  it('loadDesk_withoutStoredCounter_opensCounterPickerAndDisablesCallNext', async () => {
+  it('opens the counter picker and disables Call next when no counter is stored', async () => {
     readChosenCounter.mockReturnValue(null);
 
     const fixture = await createPage();
@@ -152,7 +152,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector('.waiting-count')).toBeNull();
   });
 
-  it('loadDesk_withStoredCounterInList_showsCounterAndServiceInHeader', async () => {
+  it('shows the counter and service in the header when the stored counter is listed', async () => {
     const fixture = await createPage();
 
     expect(textOf(fixture, '.page-header-context')).toBe('Counter 2 · Course registration');
@@ -160,7 +160,7 @@ describe('StaffDeskPage', () => {
     expect(buttonWithText(fixture, 'Change counter')).toBeDefined();
   });
 
-  it('loadDesk_withStoredCounterMissingFromList_clearsStoredCounterAndAsksToChoose', async () => {
+  it('clears the stored counter and asks to choose one when it is not in the list', async () => {
     readChosenCounter.mockReturnValue(99);
 
     const fixture = await createPage();
@@ -172,7 +172,7 @@ describe('StaffDeskPage', () => {
     expect(fetchCurrentStudent).not.toHaveBeenCalled();
   });
 
-  it('loadDesk_whenCounterListFails_showsFailureWithTryAgain', async () => {
+  it('shows the failure with Try again when the counter list fails', async () => {
     listAvailableCounters.mockReturnValue(failingRequestWithStatus(500));
 
     const fixture = await createPage();
@@ -182,7 +182,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector('.call-next-button')).toBeNull();
   });
 
-  it('retryAfterFailure_afterFailedLoad_showsDeskAgain', async () => {
+  it('shows the desk again when the staff member retries after a failed load', async () => {
     listAvailableCounters.mockReturnValueOnce(failingRequestWithStatus(500));
     const fixture = await createPage();
 
@@ -192,7 +192,7 @@ describe('StaffDeskPage', () => {
     expect(textOf(fixture, '.page-header-context')).toBe('Counter 2 · Course registration');
   });
 
-  it('loadDesk_whenCurrentStudentFails_showsServerMessageWithTryAgain', async () => {
+  it('shows the server message with Try again when the called student fails to load', async () => {
     fetchCurrentStudent.mockReturnValue(failingRequestWithMessage(404, 'Counter not found.'));
 
     const fixture = await createPage();
@@ -201,7 +201,7 @@ describe('StaffDeskPage', () => {
     expect(buttonWithText(fixture, 'Try again')).toBeDefined();
   });
 
-  it('loadDesk_withCalledStudent_enablesServedAndNoShowAndDisablesCallNext', async () => {
+  it('enables Served and No-show and disables Call next when a student is called', async () => {
     fetchCurrentStudent.mockReturnValue(of(calledStudent));
 
     const fixture = await createPage();
@@ -212,21 +212,21 @@ describe('StaffDeskPage', () => {
     expect(buttonWithText(fixture, 'No-show')?.disabled).toBe(false);
   });
 
-  it('loadDesk_withoutCalledStudent_enablesCallNext', async () => {
+  it('enables Call next when nobody is called', async () => {
     const fixture = await createPage();
 
     expect(pageElement(fixture).querySelector<HTMLButtonElement>('.call-next-button')?.disabled).toBe(false);
     expect(buttonWithText(fixture, 'Served')).toBeUndefined();
   });
 
-  it('loadDesk_withoutCalledStudent_showsConstantIdleLine', async () => {
+  it('shows the idle line when nobody is called', async () => {
     const fixture = await createPage();
 
     expect(textOf(fixture, '.idle-ticket-message')).toBe('No student at your desk');
     expect(pageElement(fixture).textContent).not.toContain('Nobody is waiting');
   });
 
-  it('loadDesk_withWaitingStudents_showsCountLineAndWaitingRows', async () => {
+  it('shows the count line and a row for each waiting student', async () => {
     fetchWaitingList.mockReturnValue(of(twoWaitingList));
 
     const fixture = await createPage();
@@ -237,7 +237,7 @@ describe('StaffDeskPage', () => {
     expect(textOf(fixture, '.waiting-row .list-row-name')).toBe('Course registration');
   });
 
-  it('render_whenReady_ordersCurrentStudentThenCallNextThenWaitingList', async () => {
+  it('shows the called student, then Call next, then the waiting list', async () => {
     fetchWaitingList.mockReturnValue(of(twoWaitingList));
 
     const fixture = await createPage();
@@ -248,7 +248,7 @@ describe('StaffDeskPage', () => {
     expect(areaClasses).toEqual(['current-student-area', 'call-next-area', 'waiting-list-area']);
   });
 
-  it('render_withoutChosenCounter_ordersChooseCounterPromptBeforeCallNext', async () => {
+  it('shows the choose-counter prompt before Call next when no counter is chosen', async () => {
     readChosenCounter.mockReturnValue(null);
 
     const fixture = await createPage();
@@ -259,7 +259,7 @@ describe('StaffDeskPage', () => {
     expect(areaClasses).toEqual(['choose-counter current-student-area', 'call-next-area']);
   });
 
-  it('loadDesk_withEmptyWaitingList_showsZeroCountWithoutListAndKeepsCallNextEnabled', async () => {
+  it('shows a zero count and keeps Call next enabled when the waiting list is empty', async () => {
     const fixture = await createPage();
 
     expect(textOf(fixture, '.waiting-count')).toBe('0 waiting for Course registration');
@@ -267,7 +267,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector<HTMLButtonElement>('.call-next-button')?.disabled).toBe(false);
   });
 
-  it('loadDesk_whenWaitingListFails_showsNoCountLineAndNoAlert', async () => {
+  it('shows no count line and no alert when the waiting list fails to load', async () => {
     fetchWaitingList.mockReturnValue(failingRequestWithStatus(500));
 
     const fixture = await createPage();
@@ -277,7 +277,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector('.call-next-button')).not.toBeNull();
   });
 
-  it('callNextStudent_whenNobodyIsWaiting_keepsConstantIdleLineAndReloadsWaitingList', async () => {
+  it('keeps the idle line and reloads the waiting list when nobody is waiting', async () => {
     callNextStudent.mockReturnValue(of(null));
     const fixture = await createPage();
     fetchWaitingList.mockClear();
@@ -291,7 +291,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector<HTMLButtonElement>('.call-next-button')?.disabled).toBe(false);
   });
 
-  it('callNextStudent_whenStudentIsCalled_showsReloadedWaitingList', async () => {
+  it('shows the reloaded waiting list after a student is called', async () => {
     fetchWaitingList.mockReturnValue(of(twoWaitingList));
     callNextStudent.mockReturnValue(of(calledStudent));
     const fixture = await createPage();
@@ -304,7 +304,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelectorAll('.waiting-row')).toHaveLength(1);
   });
 
-  it('callNextStudent_whenStudentIsReturned_showsStudentCard', async () => {
+  it('shows the student card when a student is called', async () => {
     callNextStudent.mockReturnValue(of(calledStudent));
     const fixture = await createPage();
     fetchCurrentStudent.mockReturnValue(of(calledStudent));
@@ -316,7 +316,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector<HTMLButtonElement>('.call-next-button')?.disabled).toBe(true);
   });
 
-  it('callNextStudent_whenServerRejectsWithConflict_showsServerMessageAndReloadsDesk', async () => {
+  it('shows the server message and reloads the desk when the server answers with a conflict', async () => {
     callNextStudent.mockReturnValue(
       failingRequestWithMessage(409, 'This counter is already serving a student.'),
     );
@@ -330,7 +330,7 @@ describe('StaffDeskPage', () => {
     expect(textOf(fixture, '.ticket-code')).toBe('R-014');
   });
 
-  it('callNextStudent_whenCounterIsNotFound_clearsChosenCounterAndAsksToChoose', async () => {
+  it('clears the chosen counter and asks to choose one when the counter is not found', async () => {
     callNextStudent.mockReturnValue(failingRequestWithMessage(404, 'Counter not found.'));
     const fixture = await createPage();
     listAvailableCounters.mockReturnValue(of([counterThree]));
@@ -343,7 +343,7 @@ describe('StaffDeskPage', () => {
     expect(isCounterPickerOpen(fixture)).toBe(true);
   });
 
-  it('callNextStudent_whenServerFailsWithoutConflict_showsMessageWithoutReloading', async () => {
+  it('shows the generic message and does not reload the desk when the server fails', async () => {
     callNextStudent.mockReturnValue(failingRequestWithStatus(500));
     const fixture = await createPage();
 
@@ -354,7 +354,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector<HTMLButtonElement>('.call-next-button')?.disabled).toBe(false);
   });
 
-  it('markCurrentStudentDone_whenSucceeds_showsNobodyCalledState', async () => {
+  it('shows the idle line after a student is marked done', async () => {
     fetchCurrentStudent.mockReturnValue(of(calledStudent));
     markTicketDone.mockReturnValue(of({ ...calledStudent, status: 'DONE' }));
     const fixture = await createPage();
@@ -367,7 +367,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector<HTMLButtonElement>('.call-next-button')?.disabled).toBe(false);
   });
 
-  it('markCurrentStudentDone_whenSucceeds_reloadsWaitingList', async () => {
+  it('reloads the waiting list after a student is marked done', async () => {
     fetchCurrentStudent.mockReturnValue(of(calledStudent));
     markTicketDone.mockReturnValue(of({ ...calledStudent, status: 'DONE' }));
     fetchWaitingList.mockReturnValue(of(twoWaitingList));
@@ -381,7 +381,7 @@ describe('StaffDeskPage', () => {
     expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Course registration');
   });
 
-  it('markCurrentStudentNoShow_whenSucceeds_reloadsWaitingList', async () => {
+  it('reloads the waiting list after a student is marked as a no-show', async () => {
     fetchCurrentStudent.mockReturnValue(of(calledStudent));
     markTicketNoShow.mockReturnValue(of({ ...calledStudent, status: 'NO_SHOW' }));
     fetchWaitingList.mockReturnValue(of(twoWaitingList));
@@ -395,7 +395,7 @@ describe('StaffDeskPage', () => {
     expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Course registration');
   });
 
-  it('markCurrentStudentNoShow_whenSucceeds_sendsNoShowForTicketAndReloadsCurrentStudent', async () => {
+  it('sends the no-show for the ticket and reloads the called student', async () => {
     fetchCurrentStudent.mockReturnValue(of(calledStudent));
     markTicketNoShow.mockReturnValue(of({ ...calledStudent, status: 'NO_SHOW' }));
     const fixture = await createPage();
@@ -408,7 +408,7 @@ describe('StaffDeskPage', () => {
     expect(buttonWithText(fixture, 'No-show')).toBeUndefined();
   });
 
-  it('markCurrentStudentNoShow_whenServerRejects_showsServerMessageAndReloadsCurrentStudent', async () => {
+  it('shows the server message and reloads the called student when a no-show is rejected', async () => {
     fetchCurrentStudent.mockReturnValue(of(calledStudent));
     markTicketNoShow.mockReturnValue(
       failingRequestWithMessage(409, 'Only a called ticket can be marked as no-show.'),
@@ -423,7 +423,7 @@ describe('StaffDeskPage', () => {
     expect(textOf(fixture, '.idle-ticket-message')).toBe('No student at your desk');
   });
 
-  it('markCurrentStudentDone_whileRequestRuns_disablesAllButtons', async () => {
+  it('disables all buttons while the done request runs', async () => {
     fetchCurrentStudent.mockReturnValue(of(calledStudent));
     markTicketDone.mockReturnValue(new Subject<CalledStudent>());
     const fixture = await createPage();
@@ -435,7 +435,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector<HTMLButtonElement>('.call-next-button')?.disabled).toBe(true);
   });
 
-  it('chooseCounter_withAvailableCounter_savesIdAndLoadsCurrentStudent', async () => {
+  it('saves the counter id and loads the called student when a counter is chosen', async () => {
     readChosenCounter.mockReturnValue(null);
     const fixture = await createPage();
     fetchCurrentStudent.mockReturnValue(of(calledStudent));
@@ -451,7 +451,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector('.notice')).toBeNull();
   });
 
-  it('chooseCounter_withOtherCounter_dropsOldWaitingListAndLoadsListOfNewCounter', async () => {
+  it("drops the old waiting list and loads the new counter's list when the counter changes", async () => {
     fetchWaitingList.mockReturnValue(of(twoWaitingList));
     const fixture = await createPage();
     const waitingListOfNewCounter = new Subject<WaitingList>();
@@ -473,7 +473,7 @@ describe('StaffDeskPage', () => {
     expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Document requests');
   });
 
-  it('chooseCounter_whileOldWaitingListRequestRuns_ignoresLateAnswerOfOldCounter', async () => {
+  it("ignores a late answer for the old counter's waiting list after the counter changes", async () => {
     const waitingListOfOldCounter = new Subject<WaitingList>();
     fetchWaitingList.mockReturnValue(waitingListOfOldCounter);
     const fixture = await createPage();
@@ -495,7 +495,7 @@ describe('StaffDeskPage', () => {
 
     afterEach(() => vi.useRealTimers());
 
-    it('pollWaitingList_afterRefreshInterval_requestsListAgainAndShowsNewCount', async () => {
+    it('requests the list again and shows the new count after the refresh interval', async () => {
       fetchWaitingList.mockReturnValue(of(twoWaitingList));
       const fixture = await createPage();
       fetchWaitingList.mockReturnValue(of(oneWaitingList));
@@ -507,7 +507,7 @@ describe('StaffDeskPage', () => {
       expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Course registration');
     });
 
-    it('pollWaitingList_beforeRefreshInterval_sendsNoRequest', async () => {
+    it('sends no request before the refresh interval', async () => {
       await createPage();
 
       vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS - 1);
@@ -515,7 +515,7 @@ describe('StaffDeskPage', () => {
       expect(fetchWaitingList).toHaveBeenCalledTimes(1);
     });
 
-    it('pollWaitingList_whilePreviousRequestRuns_sendsNoSecondRequest', async () => {
+    it('sends no second request while the previous one is still running', async () => {
       await createPage();
       fetchWaitingList.mockReturnValue(new Subject<WaitingList>());
 
@@ -525,7 +525,7 @@ describe('StaffDeskPage', () => {
       expect(fetchWaitingList).toHaveBeenCalledTimes(2);
     });
 
-    it('pollWaitingList_whenRequestFails_keepsLastListAndShowsNoAlert', async () => {
+    it('keeps the last list and shows no alert when a request fails', async () => {
       fetchWaitingList.mockReturnValue(of(twoWaitingList));
       const fixture = await createPage();
       fetchWaitingList.mockReturnValue(failingRequestWithStatus(500));
@@ -538,7 +538,7 @@ describe('StaffDeskPage', () => {
       expect(pageElement(fixture).querySelector('.alert')).toBeNull();
     });
 
-    it('pollWaitingList_afterFailedRequest_triesAgainAtNextInterval', async () => {
+    it('tries again at the next interval after a failed request', async () => {
       const fixture = await createPage();
       fetchWaitingList.mockReturnValueOnce(failingRequestWithStatus(500));
       vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS);
@@ -551,7 +551,7 @@ describe('StaffDeskPage', () => {
       expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Course registration');
     });
 
-    it('pollWaitingList_whileActionRuns_sendsNoRequest', async () => {
+    it('sends no request while a staff action is running', async () => {
       fetchCurrentStudent.mockReturnValue(of(calledStudent));
       markTicketDone.mockReturnValue(new Subject<CalledStudent>());
       const fixture = await createPage();
@@ -562,7 +562,7 @@ describe('StaffDeskPage', () => {
       expect(fetchWaitingList).toHaveBeenCalledTimes(1);
     });
 
-    it('pollWaitingList_withoutChosenCounter_sendsNoRequest', async () => {
+    it('sends no request when no counter is chosen', async () => {
       readChosenCounter.mockReturnValue(null);
       await createPage();
 
@@ -571,7 +571,7 @@ describe('StaffDeskPage', () => {
       expect(fetchWaitingList).not.toHaveBeenCalled();
     });
 
-    it('pollWaitingList_whenDeskFailedToLoad_sendsNoRequest', async () => {
+    it('sends no request when the desk failed to load', async () => {
       listAvailableCounters.mockReturnValue(failingRequestWithStatus(500));
       await createPage();
 
@@ -581,7 +581,7 @@ describe('StaffDeskPage', () => {
     });
   });
 
-  it('changeCounter_whenClicked_opensPickerAndReloadsCounterList', async () => {
+  it('opens the picker and reloads the counter list when Change counter is clicked', async () => {
     const fixture = await createPage();
     listAvailableCounters.mockClear();
 
@@ -591,7 +591,7 @@ describe('StaffDeskPage', () => {
     expect(listAvailableCounters).toHaveBeenCalledTimes(1);
   });
 
-  it('changeCounter_whenCounterListFails_showsServerMessageInPicker', async () => {
+  it('shows the server message in the picker when the counter list fails', async () => {
     const fixture = await createPage();
     listAvailableCounters.mockReturnValue(failingRequestWithMessage(500, 'Something broke.'));
 
@@ -600,7 +600,7 @@ describe('StaffDeskPage', () => {
     expect(pageElement(fixture).querySelector('dialog .alert')?.textContent?.trim()).toBe('Something broke.');
   });
 
-  it('signOut_whenClicked_clearsChosenCounterAndLeavesToLogin', async () => {
+  it('clears the chosen counter and goes to the login page when Sign out is clicked', async () => {
     const fixture = await createPage();
 
     await clickAndSettle(fixture, buttonWithText(fixture, 'Sign out'));

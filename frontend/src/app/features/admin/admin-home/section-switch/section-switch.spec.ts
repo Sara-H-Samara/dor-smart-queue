@@ -22,7 +22,7 @@ describe('SectionSwitch', () => {
     return Array.from(switchElement.querySelectorAll<HTMLInputElement>('input[type="radio"]'));
   }
 
-  it('render_withTwoSections_showsBothLabelsWithFirstSelected', () => {
+  it('shows both labels with the first section selected', () => {
     fixture.detectChanges();
 
     const labels = Array.from(switchElement.querySelectorAll('label')).map((label) =>
@@ -32,7 +32,7 @@ describe('SectionSwitch', () => {
     expect(radioInputs().map((radio) => radio.checked)).toEqual([true, false]);
   });
 
-  it('clickSecondSection_withFirstSelected_updatesSelectedSection', () => {
+  it('selects the second section when its radio is clicked', () => {
     fixture.detectChanges();
 
     radioInputs()[1].click();
@@ -40,7 +40,7 @@ describe('SectionSwitch', () => {
     expect(fixture.componentInstance.selectedSection()).toBe('counters');
   });
 
-  it('render_withSelectedSection_checksOnlyThatRadio', () => {
+  it('checks only the radio of the selected section', () => {
     fixture.componentRef.setInput('selectedSection', 'counters');
 
     fixture.detectChanges();

@@ -24,7 +24,7 @@ describe('TicketCard', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('render_withNullPeopleAheadAndWait_showsNoCountOrEstimate', () => {
+  it('shows no count and no estimate when people ahead and wait time are unknown', () => {
     const ticketWithoutQueuePosition: ActiveTicket = {
       ticketCode: 'A-001',
       serviceName: 'Registration',
@@ -45,7 +45,7 @@ describe('TicketCard', () => {
     expect(cardElement.querySelector('.state-chip')?.textContent?.trim()).toBe('Waiting');
   });
 
-  it('render_withWaitingTicketAndWait_showsMinutesWithoutEstimateWordOrFooter', () => {
+  it('shows the wait in minutes without the word estimate or a footer', () => {
     const waitingTicket: ActiveTicket = {
       ticketCode: 'A-002',
       serviceName: 'Registration',
@@ -67,7 +67,7 @@ describe('TicketCard', () => {
     expect(cardElement.textContent).not.toContain('Estimates can change');
   });
 
-  it('render_waitingWithoutOpenCounter_showsNoCounterTextAndNoWaitTime', () => {
+  it('shows the no-counter text and no wait time when no counter is open', () => {
     const waitingTicketWithoutOpenCounter: ActiveTicket = {
       ticketCode: 'A-005',
       serviceName: 'Registration',
@@ -93,7 +93,7 @@ describe('TicketCard', () => {
     expect(statusElement?.querySelector('app-icon')).toBeNull();
   });
 
-  it('render_waitingWithoutOpenCounter_keepsLeaveQueueButton', () => {
+  it('shows the ticket details and the leave-queue button when no counter is open', () => {
     const waitingTicketWithoutOpenCounter: ActiveTicket = {
       ticketCode: 'A-006',
       serviceName: 'Registration',
@@ -118,7 +118,7 @@ describe('TicketCard', () => {
     );
   });
 
-  it('render_calledTicket_ignoresHasOpenCounter', () => {
+  it('ignores the open-counter flag for a called ticket', () => {
     const calledTicketWithFlagFalse: ActiveTicket = {
       ticketCode: 'A-007',
       serviceName: 'Registration',
@@ -141,7 +141,7 @@ describe('TicketCard', () => {
     expect(cardElement.textContent).not.toContain('No counter is open');
   });
 
-  it('shows only "Your turn" in the heading and the stub sentence when the called ticket has no counter name', () => {
+  it('shows only Your turn in the heading when the called ticket has no counter name', () => {
     const calledTicket: ActiveTicket = {
       ticketCode: 'A-003',
       serviceName: 'Registration',
@@ -166,7 +166,7 @@ describe('TicketCard', () => {
     expect(cardElement.textContent).not.toContain('Your place is held');
   });
 
-  it('shows the counter name only in the heading and the same stub sentence when the called ticket has a counter name', () => {
+  it('shows the counter name only in the heading when the called ticket has a counter name', () => {
     const calledTicketWithCounter: ActiveTicket = {
       ticketCode: 'A-004',
       serviceName: 'Registration',

@@ -13,7 +13,7 @@ describe('CatalogRow', () => {
     rowElement = fixture.nativeElement as HTMLElement;
   });
 
-  it('clickSwitch_withActiveItem_emitsActiveChanged', () => {
+  it('emits an active change when the switch is clicked', () => {
     const emittedEvents: unknown[] = [];
     fixture.componentInstance.activeChanged.subscribe(() => emittedEvents.push(true));
     fixture.detectChanges();
@@ -23,7 +23,7 @@ describe('CatalogRow', () => {
     expect(emittedEvents.length).toBe(1);
   });
 
-  it('clickEdit_withActiveItem_emitsEditRequested', () => {
+  it('emits an edit request when the edit button is clicked', () => {
     const emittedEvents: unknown[] = [];
     fixture.componentInstance.editRequested.subscribe(() => emittedEvents.push(true));
     fixture.detectChanges();
@@ -33,7 +33,7 @@ describe('CatalogRow', () => {
     expect(emittedEvents.length).toBe(1);
   });
 
-  it('render_whenBusy_disablesSwitchAndEditButton', () => {
+  it('disables the switch and the edit button while busy', () => {
     fixture.componentRef.setInput('isBusy', true);
 
     fixture.detectChanges();
@@ -42,7 +42,7 @@ describe('CatalogRow', () => {
     expect(rowElement.querySelector<HTMLButtonElement>('.row-icon-button')?.disabled).toBe(true);
   });
 
-  it('render_withNullTileText_showsDeskGlyphInsteadOfText', () => {
+  it('shows the desk icon instead of text when there is no tile text', () => {
     fixture.componentRef.setInput('tileText', null);
 
     fixture.detectChanges();
@@ -51,7 +51,7 @@ describe('CatalogRow', () => {
     expect(rowElement.querySelector('.notched-code-tile')?.textContent?.trim()).toBe('');
   });
 
-  it('render_withItemName_labelsEditButtonWithName', () => {
+  it('labels the edit button with Edit and the item name', () => {
     fixture.detectChanges();
 
     expect(rowElement.querySelector('.row-icon-button')?.getAttribute('aria-label')).toBe(
@@ -59,7 +59,7 @@ describe('CatalogRow', () => {
     );
   });
 
-  it('render_withRenameVerb_labelsEditButtonWithRenameAndName', () => {
+  it('labels the edit button with Rename and the item name', () => {
     fixture.componentRef.setInput('editVerb', 'Rename');
 
     fixture.detectChanges();
@@ -69,7 +69,7 @@ describe('CatalogRow', () => {
     );
   });
 
-  it('render_withInactiveItem_showsInactiveAndUncheckedSwitch', () => {
+  it('shows Inactive and an unchecked switch for an inactive item', () => {
     fixture.componentRef.setInput('item', { id: 1, name: 'Registration', active: false });
 
     fixture.detectChanges();

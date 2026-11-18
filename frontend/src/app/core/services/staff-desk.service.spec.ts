@@ -29,7 +29,7 @@ describe('StaffDeskService', () => {
 
   afterEach(() => httpTesting.verify());
 
-  it('fetchCurrentStudent_withCalledStudent_sendsGetAndReturnsStudent', () => {
+  it('sends a GET request for the called student and returns them', () => {
     let received: CalledStudent | null = null;
 
     staffDeskService.fetchCurrentStudent(2).subscribe((student) => (received = student));
@@ -40,7 +40,7 @@ describe('StaffDeskService', () => {
     expect(received).toEqual(calledStudent);
   });
 
-  it('fetchCurrentStudent_whenServerAnswersNoContent_returnsNull', () => {
+  it('returns null when the server answers with no content', () => {
     let received: CalledStudent | null = calledStudent;
 
     staffDeskService.fetchCurrentStudent(2).subscribe((student) => (received = student));
@@ -51,7 +51,7 @@ describe('StaffDeskService', () => {
     expect(received).toBeNull();
   });
 
-  it('fetchWaitingList_withCounterId_sendsGetToWaitingPathAndReturnsList', () => {
+  it('sends a GET request for the waiting list of a counter and returns it', () => {
     const waitingList: WaitingList = {
       waitingCount: 2,
       tickets: [
@@ -69,7 +69,7 @@ describe('StaffDeskService', () => {
     expect(received).toEqual(waitingList);
   });
 
-  it('callNextStudent_withCounterId_sendsPostToCallNextPath', () => {
+  it('sends a POST request to call the next student and returns them', () => {
     let received: CalledStudent | null = null;
 
     staffDeskService.callNextStudent(2).subscribe((student) => (received = student));
@@ -80,7 +80,7 @@ describe('StaffDeskService', () => {
     expect(received).toEqual(calledStudent);
   });
 
-  it('callNextStudent_whenNobodyIsWaiting_returnsNull', () => {
+  it('returns null when nobody is waiting', () => {
     let received: CalledStudent | null = calledStudent;
 
     staffDeskService.callNextStudent(2).subscribe((student) => (received = student));
@@ -91,7 +91,7 @@ describe('StaffDeskService', () => {
     expect(received).toBeNull();
   });
 
-  it('markTicketDone_withTicketId_sendsPostToDonePath', () => {
+  it('sends a POST request to mark a ticket as done', () => {
     staffDeskService.markTicketDone(14).subscribe();
 
     const request = httpTesting.expectOne(`${environment.apiUrl}/api/tickets/14/done`);
@@ -99,7 +99,7 @@ describe('StaffDeskService', () => {
     request.flush({ ...calledStudent, status: 'DONE' });
   });
 
-  it('markTicketNoShow_withTicketId_sendsPostToNoShowPath', () => {
+  it('sends a POST request to mark a ticket as a no-show', () => {
     staffDeskService.markTicketNoShow(14).subscribe();
 
     const request = httpTesting.expectOne(`${environment.apiUrl}/api/tickets/14/no-show`);

@@ -40,7 +40,7 @@ describe('CounterPickerDialog', () => {
     return pickerElement.querySelector('dialog')!.hasAttribute('open');
   }
 
-  it('open_whenCalled_opensTheDialog', () => {
+  it('opens the dialog when open is called', () => {
     fixture.detectChanges();
 
     fixture.componentInstance.open();
@@ -48,7 +48,7 @@ describe('CounterPickerDialog', () => {
     expect(isDialogOpen()).toBe(true);
   });
 
-  it('render_withCounters_listsNameAndServiceNameOfEachCounter', () => {
+  it('lists the name and service name of each counter', () => {
     fixture.componentRef.setInput('counters', [counterTwo, counterThree]);
 
     fixture.detectChanges();
@@ -63,7 +63,7 @@ describe('CounterPickerDialog', () => {
     ]);
   });
 
-  it('render_withChosenCounter_marksOnlyThatCounterAsCurrent', () => {
+  it('marks only the chosen counter as current', () => {
     fixture.componentRef.setInput('counters', [counterTwo, counterThree]);
     fixture.componentRef.setInput('chosenCounterId', 3);
 
@@ -75,7 +75,7 @@ describe('CounterPickerDialog', () => {
     expect(pickerElement.querySelectorAll('.counter-current-label').length).toBe(1);
   });
 
-  it('render_withNoCounters_showsEmptyState', () => {
+  it('shows the empty state when there are no counters', () => {
     fixture.componentRef.setInput('counters', []);
 
     fixture.detectChanges();
@@ -86,7 +86,7 @@ describe('CounterPickerDialog', () => {
     expect(counterButtons().length).toBe(0);
   });
 
-  it('render_whileLoading_showsLoadingAndNoCounterList', () => {
+  it('shows loading and no counter list while loading', () => {
     fixture.componentRef.setInput('counters', [counterTwo]);
     fixture.componentRef.setInput('isLoading', true);
 
@@ -96,7 +96,7 @@ describe('CounterPickerDialog', () => {
     expect(counterButtons().length).toBe(0);
   });
 
-  it('render_withFailureMessage_showsAlertWithoutEmptyState', () => {
+  it('shows the failure alert without the empty state', () => {
     fixture.componentRef.setInput('failureMessage', 'Could not reach the server.');
 
     fixture.detectChanges();
@@ -107,7 +107,7 @@ describe('CounterPickerDialog', () => {
     expect(pickerElement.querySelector('.empty-state')).toBeNull();
   });
 
-  it('click_onCounter_emitsCounterIdAndClosesTheDialogWithoutEmittingClosed', () => {
+  it('emits the counter id and closes the dialog without emitting closed', () => {
     const counterChosen = vi.fn();
     const closed = vi.fn();
     fixture.componentInstance.counterChosen.subscribe(counterChosen);
@@ -123,7 +123,7 @@ describe('CounterPickerDialog', () => {
     expect(isDialogOpen()).toBe(false);
   });
 
-  it('dismiss_afterAnEarlierChoice_emitsClosed', () => {
+  it('emits closed when dismissed after an earlier choice', () => {
     const closed = vi.fn();
     fixture.componentInstance.closed.subscribe(closed);
     fixture.componentRef.setInput('counters', [counterTwo]);
@@ -137,7 +137,7 @@ describe('CounterPickerDialog', () => {
     expect(closed).toHaveBeenCalledTimes(1);
   });
 
-  it('dismiss_withEscapeKey_emitsClosed', () => {
+  it('emits closed when the dialog is closed without a choice', () => {
     const closed = vi.fn();
     fixture.componentInstance.closed.subscribe(closed);
     fixture.detectChanges();
@@ -148,7 +148,7 @@ describe('CounterPickerDialog', () => {
     expect(closed).toHaveBeenCalledTimes(1);
   });
 
-  it('click_onCancel_closesTheDialogWithoutChoosingACounter', () => {
+  it('closes the dialog without choosing a counter when cancel is clicked', () => {
     const counterChosen = vi.fn();
     const closed = vi.fn();
     fixture.componentInstance.counterChosen.subscribe(counterChosen);

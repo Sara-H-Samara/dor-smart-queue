@@ -30,13 +30,13 @@ function blockStorage(storage: ReturnType<typeof stubLocalStorage>): void {
 describe('ChosenCounterStorage', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('read_withNothingSaved_returnsNull', () => {
+  it('returns null when nothing was saved', () => {
     stubLocalStorage();
 
     expect(TestBed.inject(ChosenCounterStorage).read()).toBeNull();
   });
 
-  it('read_afterSave_returnsSavedCounterId', () => {
+  it('returns the counter id that was saved', () => {
     stubLocalStorage();
     const chosenCounterStorage = TestBed.inject(ChosenCounterStorage);
 
@@ -45,7 +45,7 @@ describe('ChosenCounterStorage', () => {
     expect(chosenCounterStorage.read()).toBe(7);
   });
 
-  it('read_afterClear_returnsNull', () => {
+  it('returns null after the saved counter is cleared', () => {
     stubLocalStorage();
     const chosenCounterStorage = TestBed.inject(ChosenCounterStorage);
 
@@ -55,25 +55,28 @@ describe('ChosenCounterStorage', () => {
     expect(chosenCounterStorage.read()).toBeNull();
   });
 
-  it.each(['abc', '', '0', '-3', '2.5'])('read_withStoredValue%j_returnsNull', (storedValue) => {
-    stubLocalStorage(storedValue);
+  it.each(['abc', '', '0', '-3', '2.5'])(
+    'returns null when the stored value is %j',
+    (storedValue) => {
+      stubLocalStorage(storedValue);
 
-    expect(TestBed.inject(ChosenCounterStorage).read()).toBeNull();
-  });
+      expect(TestBed.inject(ChosenCounterStorage).read()).toBeNull();
+    },
+  );
 
-  it('read_whenStorageIsBlocked_returnsNull', () => {
+  it('returns null when the browser blocks storage', () => {
     blockStorage(stubLocalStorage());
 
     expect(TestBed.inject(ChosenCounterStorage).read()).toBeNull();
   });
 
-  it('save_whenStorageIsBlocked_doesNotThrow', () => {
+  it('does not throw when saving while the browser blocks storage', () => {
     blockStorage(stubLocalStorage());
 
     expect(() => TestBed.inject(ChosenCounterStorage).save(7)).not.toThrow();
   });
 
-  it('clear_whenStorageIsBlocked_doesNotThrow', () => {
+  it('does not throw when clearing while the browser blocks storage', () => {
     blockStorage(stubLocalStorage());
 
     expect(() => TestBed.inject(ChosenCounterStorage).clear()).not.toThrow();

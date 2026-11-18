@@ -21,7 +21,7 @@ const activeRegistration: CatalogItem = { id: 1, name: 'Registration', code: 'R'
 const inactiveRegistration: CatalogItem = { ...activeRegistration, active: false };
 const activeDocuments: CatalogItem = { id: 2, name: 'Documents', code: 'D', active: true };
 
-describe('CatalogPanel for counters', () => {
+describe('CatalogPanel with counters', () => {
   let fixture: ComponentFixture<CatalogPanel>;
   let panelElement: HTMLElement;
   let httpTesting: HttpTestingController;
@@ -78,19 +78,19 @@ describe('CatalogPanel for counters', () => {
     );
   }
 
-  it('render_withCounter_showsServiceNameAsDetailText', () => {
+  it('shows the service name as detail text for a counter', () => {
     expect(panelElement.querySelector('.list-row-detail')?.textContent?.trim()).toBe(
       'Registration',
     );
   });
 
-  it('render_withCounter_labelsPencilButtonWithEditAndName', () => {
+  it('labels the pencil button with Edit and the counter name', () => {
     expect(panelElement.querySelector('.row-icon-button')?.getAttribute('aria-label')).toBe(
       'Edit Counter 1',
     );
   });
 
-  it('openAdd_withNoActiveService_showsMessageAndKeepsDialogClosed', () => {
+  it('shows a message and keeps the dialog closed when no service is active', () => {
     clickAddCounter();
     flushNextServicesRequest([inactiveRegistration]);
 
@@ -98,7 +98,7 @@ describe('CatalogPanel for counters', () => {
     expect(showModalSpy).not.toHaveBeenCalled();
   });
 
-  it('openAdd_withOneActiveService_preselectsThatService', () => {
+  it('preselects the only active service when adding a counter', () => {
     clickAddCounter();
     flushNextServicesRequest([activeRegistration, { ...activeDocuments, active: false }]);
 
@@ -106,7 +106,7 @@ describe('CatalogPanel for counters', () => {
     expect(select?.selectedOptions[0]?.textContent?.trim()).toBe('Registration');
   });
 
-  it('openAdd_withTwoActiveServices_listsBothAndPreselectsNone', () => {
+  it('lists both active services and preselects none when adding a counter', () => {
     clickAddCounter();
     flushNextServicesRequest([activeRegistration, activeDocuments]);
 
@@ -115,7 +115,7 @@ describe('CatalogPanel for counters', () => {
     expect(select?.selectedOptions[0]?.textContent?.trim()).toBe('Choose a service');
   });
 
-  it('openAdd_calledTwiceBeforeServicesLoad_opensDialogOnce', () => {
+  it('opens the dialog once when add is clicked twice before the services load', () => {
     clickAddCounter();
     clickAddCounter();
     httpTesting
@@ -125,7 +125,7 @@ describe('CatalogPanel for counters', () => {
     expect(showModalSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('openEdit_withInactiveCurrentService_includesCurrentService', () => {
+  it('includes an inactive current service when editing a counter', () => {
     clickEditCounterOne();
     flushNextServicesRequest([inactiveRegistration, activeDocuments]);
 
@@ -138,14 +138,14 @@ describe('CatalogPanel for counters', () => {
     expect(select?.selectedOptions[0]?.textContent?.trim()).toBe('Registration (inactive)');
   });
 
-  it('openEdit_withInactiveOtherService_leavesOtherServiceOut', () => {
+  it('leaves out other inactive services when editing a counter', () => {
     clickEditCounterOne();
     flushNextServicesRequest([activeRegistration, { ...activeDocuments, active: false }]);
 
     expect(dialogOptionTexts()).toEqual(['Choose a service', 'Registration']);
   });
 
-  it('submit_withCounterEdit_callsUpdateCounterWithServiceId', () => {
+  it('sends a PUT request with the chosen service id when a counter is edited', () => {
     clickEditCounterOne();
     flushNextServicesRequest([activeRegistration, activeDocuments]);
 
@@ -158,7 +158,7 @@ describe('CatalogPanel for counters', () => {
     httpTesting.expectOne(countersUrl).flush([counterOne]);
   });
 
-  it('submit_withNewCounterAndOneActiveService_postsNameAndServiceId', () => {
+  it('sends a POST request with the name and service id for a new counter', () => {
     clickAddCounter();
     flushNextServicesRequest([activeRegistration]);
     const nameInput = panelElement.querySelector<HTMLInputElement>('dialog input');
@@ -174,7 +174,7 @@ describe('CatalogPanel for counters', () => {
     httpTesting.expectOne(countersUrl).flush([counterOne]);
   });
 
-  it('submit_withServiceMissingOnServer_showsMessageAndRefreshesLists', () => {
+  it('shows a message and refreshes the lists when the service is missing on the server', () => {
     clickEditCounterOne();
     flushNextServicesRequest([activeRegistration, activeDocuments]);
     submitDialogForm();
@@ -191,7 +191,7 @@ describe('CatalogPanel for counters', () => {
     httpTesting.expectOne(servicesUrl).flush([activeDocuments]);
   });
 
-  it('submit_withInactiveServiceRejected_showsServiceMessageAndRefreshesServices', () => {
+  it('shows the service message and refreshes the services when the server rejects it', () => {
     clickEditCounterOne();
     flushNextServicesRequest([activeRegistration, activeDocuments]);
     submitDialogForm();
@@ -208,7 +208,7 @@ describe('CatalogPanel for counters', () => {
   });
 });
 
-describe('CatalogPanel for services', () => {
+describe('CatalogPanel with services', () => {
   let fixture: ComponentFixture<CatalogPanel>;
   let panelElement: HTMLElement;
   let httpTesting: HttpTestingController;
@@ -236,13 +236,13 @@ describe('CatalogPanel for services', () => {
 
   afterEach(() => httpTesting.verify());
 
-  it('render_withService_labelsPencilButtonWithRenameAndName', () => {
+  it('labels the pencil button with Rename and the service name', () => {
     expect(panelElement.querySelector('.row-icon-button')?.getAttribute('aria-label')).toBe(
       'Rename Registration',
     );
   });
 
-  it('openEdit_withService_opensWithoutLoadingServicesAndHidesServiceSelect', () => {
+  it('opens without loading services and hides the service select', () => {
     panelElement.querySelector<HTMLButtonElement>('.row-icon-button')?.click();
     fixture.detectChanges();
 

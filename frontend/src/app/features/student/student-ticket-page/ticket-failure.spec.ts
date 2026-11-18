@@ -12,35 +12,35 @@ import {
 } from './ticket-failure';
 
 describe('isNoActiveTicket', () => {
-  it('isNoActiveTicket_withNotFoundStatus_returnsTrue', () => {
+  it('returns true for a not-found status', () => {
     expect(isNoActiveTicket(httpErrorResponseWithStatus(404))).toBe(true);
   });
 
-  it('isNoActiveTicket_withConflictStatus_returnsFalse', () => {
+  it('returns false for a conflict status', () => {
     expect(isNoActiveTicket(httpErrorResponseWithStatus(409))).toBe(false);
   });
 
-  it('isNoActiveTicket_withNonHttpError_returnsFalse', () => {
+  it('returns false for an error that is not an HTTP error', () => {
     expect(isNoActiveTicket(new Error('boom'))).toBe(false);
   });
 });
 
 describe('isConflict', () => {
-  it('isConflict_withConflictStatus_returnsTrue', () => {
+  it('returns true for a conflict status', () => {
     expect(isConflict(httpErrorResponseWithStatus(409))).toBe(true);
   });
 
-  it('isConflict_withNotFoundStatus_returnsFalse', () => {
+  it('returns false for a not-found status', () => {
     expect(isConflict(httpErrorResponseWithStatus(404))).toBe(false);
   });
 
-  it('isConflict_withNonHttpError_returnsFalse', () => {
+  it('returns false for an error that is not an HTTP error', () => {
     expect(isConflict(new Error('boom'))).toBe(false);
   });
 });
 
-describe('serverMessageOf', () => {
-  it('serverMessageOf_withMessageInBody_returnsMessage', () => {
+describe('serverMessageOf for tickets', () => {
+  it('returns the message from the response body', () => {
     const noOpenCounterError = httpErrorResponseWithMessage(
       409,
       'No counter is open for Registration right now.',
@@ -51,39 +51,39 @@ describe('serverMessageOf', () => {
     );
   });
 
-  it('serverMessageOf_withoutBody_returnsNull', () => {
+  it('returns null when the response has no body', () => {
     expect(serverMessageOf(httpErrorResponseWithStatus(409))).toBeNull();
   });
 
-  it('serverMessageOf_withBodyWithoutMessage_returnsNull', () => {
+  it('returns null when the body has no message', () => {
     const errorWithoutMessage = new HttpErrorResponse({ status: 409, error: { status: 409 } });
 
     expect(serverMessageOf(errorWithoutMessage)).toBeNull();
   });
 
-  it('serverMessageOf_withBlankMessage_returnsNull', () => {
+  it('returns null when the message is blank', () => {
     expect(serverMessageOf(httpErrorResponseWithMessage(409, '   '))).toBeNull();
   });
 
-  it('serverMessageOf_withNonHttpError_returnsNull', () => {
+  it('returns null for an error that is not an HTTP error', () => {
     expect(serverMessageOf(new Error('boom'))).toBeNull();
   });
 });
 
 describe('messageForTicketFailure', () => {
-  it('messageForTicketFailure_withServerError_returnsGenericMessage', () => {
+  it('returns the generic message for a server error', () => {
     expect(messageForTicketFailure(httpErrorResponseWithStatus(500))).toBe(
       'Something went wrong. Please try again.',
     );
   });
 
-  it('messageForTicketFailure_withNetworkFailure_returnsConnectionMessage', () => {
+  it('returns the connection message when the network fails', () => {
     expect(messageForTicketFailure(httpErrorResponseWithStatus(0))).toBe(
       'Could not reach the server. Check your connection and try again.',
     );
   });
 
-  it('messageForTicketFailure_withNonHttpError_returnsGenericMessage', () => {
+  it('returns the generic message for an error that is not an HTTP error', () => {
     expect(messageForTicketFailure(new Error('boom'))).toBe(
       'Something went wrong. Please try again.',
     );

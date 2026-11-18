@@ -87,7 +87,7 @@ describe('StudentTicketPage', () => {
     return buttons.find((button) => button.textContent?.trim() === text);
   }
 
-  it('loadMyActiveTicket_withoutTicket_showsSingleNoTicketHeading', () => {
+  it('shows one no-ticket heading when the student has no ticket', () => {
     fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
     listActiveServices.mockReturnValue(of([openService]));
 
@@ -98,7 +98,7 @@ describe('StudentTicketPage', () => {
     expect(headings[0].textContent?.trim()).toBe('You have no ticket');
   });
 
-  it('loadMyActiveTicket_withTicket_showsYourTicketHeading', () => {
+  it('shows the Your ticket heading when the student has a ticket', () => {
     fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
 
     const fixture = createPage();
@@ -106,7 +106,7 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).querySelector('h1')?.textContent?.trim()).toBe('Your ticket');
   });
 
-  it('loadMyActiveTicket_whenRequestFails_showsFailedState', () => {
+  it('shows the failed state when loading the ticket fails', () => {
     fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(500));
 
     const fixture = createPage();
@@ -115,7 +115,7 @@ describe('StudentTicketPage', () => {
     expect(buttonWithText(fixture, 'Try again')).toBeDefined();
   });
 
-  it('takeTicketForService_whenRequestFails_showsFailedStateWithoutServiceList', () => {
+  it('shows the failed state without the service list when taking a ticket fails', () => {
     fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
     listActiveServices.mockReturnValue(of([openService]));
     takeTicket.mockReturnValue(failingRequestWithStatus(500));
@@ -128,7 +128,7 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).querySelector('.service-tile')).toBeNull();
   });
 
-  it('leaveQueue_whenReloadFails_showsFailedStateWithoutTicketCard', () => {
+  it('shows the failed state without the ticket card when the reload after leaving fails', () => {
     fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
     cancelMyActiveTicket.mockReturnValue(of(undefined));
     fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(500));
@@ -141,7 +141,7 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).querySelector('app-ticket-card')).toBeNull();
   });
 
-  it('leaveQueue_whenServiceListFails_showsFailedState', () => {
+  it('shows the failed state when the service list fails after leaving the queue', () => {
     fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
     cancelMyActiveTicket.mockReturnValue(of(undefined));
     fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
@@ -157,7 +157,7 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).querySelector('app-service-tile-list')).toBeNull();
   });
 
-  it('retryAfterFailure_afterFailedLoad_showsTicketAgain', () => {
+  it('shows the ticket again when the student retries after a failed load', () => {
     fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(500));
     fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
     const fixture = createPage();
@@ -169,7 +169,7 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
   });
 
-  it('takeTicketForService_whenRequestSucceeds_showsTicketCard', () => {
+  it('shows the ticket card after a ticket is taken', () => {
     fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
     listActiveServices.mockReturnValue(of([openService]));
     takeTicket.mockReturnValue(of(takenTicket));
@@ -182,7 +182,7 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).querySelector('app-ticket-card')).not.toBeNull();
   });
 
-  it('takeTicketForService_whenConflictAndNoTicket_showsServerMessageAboveServiceList', () => {
+  it('shows the server message above the service list on a conflict without a ticket', () => {
     fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
     listActiveServices.mockReturnValueOnce(of([openService]));
     listActiveServices.mockReturnValueOnce(of([closedService]));
@@ -201,7 +201,7 @@ describe('StudentTicketPage', () => {
     );
   });
 
-  it('takeTicketForService_whenConflictAndTicketExists_showsTicketWithoutMessage', () => {
+  it('shows the ticket without a message on a conflict when the student has a ticket', () => {
     fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
     fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
     listActiveServices.mockReturnValue(of([openService]));
@@ -216,7 +216,7 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).textContent).not.toContain(NO_COUNTER_MESSAGE);
   });
 
-  it('takeTicketForService_whenNextTakeStarts_removesOldConflictMessage', () => {
+  it('removes the old conflict message when the student takes the next ticket', () => {
     fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
     listActiveServices.mockReturnValue(of([openService]));
     takeTicket.mockReturnValueOnce(failingRequestWithMessage(409, NO_COUNTER_MESSAGE));
@@ -232,7 +232,7 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
   });
 
-  it('takeTicketForService_whenConflictAndReloadFails_showsFailedStateWithoutConflictMessage', () => {
+  it('shows the service list without the conflict message when retrying after a failed reload', () => {
     fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
     fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(500));
     fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
@@ -263,7 +263,7 @@ describe('StudentTicketPage', () => {
       vi.advanceTimersByTime(TICKET_REFRESH_INTERVAL_MS);
     }
 
-    it('refreshActiveTicket_whenCounterTurnsOff_showsNoCounterNotice', () => {
+    it('shows the no-counter notice when the counter turns off', () => {
       const ticketWithoutOpenCounter: ActiveTicket = {
         ...waitingTicket,
         estimatedWaitMinutes: null,
@@ -283,7 +283,7 @@ describe('StudentTicketPage', () => {
       expect(pageElement(fixture).querySelector('[role="status"]')).toBeNull();
     });
 
-    it('refreshActiveTicket_afterConflictWithExistingTicket_showsListWithoutOldMessage', () => {
+    it('shows the service list without the old conflict message when the ticket is gone', () => {
       fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
       fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
@@ -301,7 +301,7 @@ describe('StudentTicketPage', () => {
       expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
     });
 
-    it('refreshActiveTicket_afterInterval_updatesTicketWithoutLoadingState', () => {
+    it('updates the ticket after the interval without showing the loading state', () => {
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
       fetchMyActiveTicket.mockReturnValueOnce(of({ ...waitingTicket, status: 'CALLED' }));
       const fixture = createPage();
@@ -314,7 +314,7 @@ describe('StudentTicketPage', () => {
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(2);
     });
 
-    it('refreshActiveTicket_whilePreviousRequestRuns_sendsNoNewRequest', () => {
+    it('sends no new request while the previous one is still running', () => {
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
       fetchMyActiveTicket.mockReturnValueOnce(new Subject<ActiveTicket>());
       createPage();
@@ -326,7 +326,7 @@ describe('StudentTicketPage', () => {
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(2);
     });
 
-    it('refreshActiveTicket_withoutTicket_sendsNoRequest', () => {
+    it('sends no request when the student has no ticket', () => {
       fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
       listActiveServices.mockReturnValue(of([openService]));
       createPage();
@@ -336,7 +336,7 @@ describe('StudentTicketPage', () => {
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
     });
 
-    it('refreshActiveTicket_inFailedState_sendsNoRequest', () => {
+    it('sends no request in the failed state', () => {
       fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(500));
       createPage();
 
@@ -345,7 +345,7 @@ describe('StudentTicketPage', () => {
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
     });
 
-    it('refreshActiveTicket_whenTicketIsGone_showsServiceList', () => {
+    it('shows the service list when the ticket is gone', () => {
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
       fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
       listActiveServices.mockReturnValue(of([openService]));
@@ -358,7 +358,7 @@ describe('StudentTicketPage', () => {
       expect(pageElement(fixture).querySelector('app-ticket-card')).toBeNull();
     });
 
-    it('refreshActiveTicket_whenTicketIsGone_showsLoadingUntilServicesArrive', () => {
+    it('shows loading until the services arrive when the ticket is gone', () => {
       const pendingServices = new Subject<ActiveService[]>();
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
       fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(404));
@@ -376,7 +376,7 @@ describe('StudentTicketPage', () => {
       expect(pageElement(fixture).querySelector('app-service-tile-list')).not.toBeNull();
     });
 
-    it('refreshActiveTicket_whenRequestFails_keepsTicketAndRetriesAtNextInterval', () => {
+    it('keeps the ticket and retries at the next interval when a refresh fails', () => {
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
       fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(500));
       fetchMyActiveTicket.mockReturnValueOnce(of({ ...waitingTicket, status: 'CALLED' }));
@@ -394,7 +394,7 @@ describe('StudentTicketPage', () => {
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(3);
     });
 
-    it('refreshActiveTicket_afterLeaveQueue_ignoresLateAnswer', () => {
+    it('ignores a late answer after the student leaves the queue', () => {
       const lateRefreshAnswer = new Subject<ActiveTicket>();
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
       fetchMyActiveTicket.mockReturnValueOnce(lateRefreshAnswer);
@@ -412,7 +412,7 @@ describe('StudentTicketPage', () => {
       expect(pageElement(fixture).querySelector('app-service-tile-list')).not.toBeNull();
     });
 
-    it('refreshActiveTicket_afterPageDestroyed_sendsNoRequest', () => {
+    it('sends no request after the page is destroyed', () => {
       fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
       const fixture = createPage();
 
@@ -437,7 +437,7 @@ describe('StudentTicketPage', () => {
       vi.advanceTimersByTime(SERVICE_LIST_REFRESH_INTERVAL_MS);
     }
 
-    it('refreshActiveServices_afterInterval_updatesTiles', () => {
+    it('updates the tiles after the interval', () => {
       listActiveServices.mockReturnValueOnce(of([openService]));
       listActiveServices.mockReturnValueOnce(of([closedService]));
       const fixture = createPage();
@@ -451,7 +451,7 @@ describe('StudentTicketPage', () => {
       expect(listActiveServices).toHaveBeenCalledTimes(2);
     });
 
-    it('refreshActiveServices_whilePreviousRequestRuns_sendsNoNewRequest', () => {
+    it('sends no new request while the previous one is still running', () => {
       listActiveServices.mockReturnValueOnce(of([openService]));
       listActiveServices.mockReturnValueOnce(new Subject<ActiveService[]>());
       createPage();
@@ -463,7 +463,7 @@ describe('StudentTicketPage', () => {
       expect(listActiveServices).toHaveBeenCalledTimes(2);
     });
 
-    it('refreshActiveServices_whenRequestFails_keepsListAndRetriesAtNextInterval', () => {
+    it('keeps the list and retries at the next interval when a refresh fails', () => {
       listActiveServices.mockReturnValueOnce(of([openService]));
       listActiveServices.mockReturnValueOnce(failingRequestWithStatus(500));
       listActiveServices.mockReturnValueOnce(of([closedService]));
@@ -481,7 +481,7 @@ describe('StudentTicketPage', () => {
       expect(listActiveServices).toHaveBeenCalledTimes(3);
     });
 
-    it('refreshActiveServices_whileTakingTicket_sendsNoRequest', () => {
+    it('sends no request while a ticket is being taken', () => {
       listActiveServices.mockReturnValue(of([openService]));
       takeTicket.mockReturnValue(new Subject<TakenTicket>());
       const fixture = createPage();
@@ -492,7 +492,7 @@ describe('StudentTicketPage', () => {
       expect(listActiveServices).toHaveBeenCalledTimes(1);
     });
 
-    it('refreshActiveServices_withTicket_sendsNoRequest', () => {
+    it('sends no request when the student has a ticket', () => {
       fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
       createPage();
 
@@ -501,7 +501,7 @@ describe('StudentTicketPage', () => {
       expect(listActiveServices).not.toHaveBeenCalled();
     });
 
-    it('refreshActiveServices_afterPageDestroyed_sendsNoRequest', () => {
+    it('sends no request after the page is destroyed', () => {
       listActiveServices.mockReturnValue(of([openService]));
       const fixture = createPage();
 
@@ -511,7 +511,7 @@ describe('StudentTicketPage', () => {
       expect(listActiveServices).toHaveBeenCalledTimes(1);
     });
 
-    it('refreshActiveServices_afterListReloaded_ignoresLateAnswer', () => {
+    it('ignores a late answer after the service list is reloaded', () => {
       const lateRefreshAnswer = new Subject<ActiveService[]>();
       listActiveServices.mockReturnValueOnce(of([openService]));
       listActiveServices.mockReturnValueOnce(lateRefreshAnswer);
