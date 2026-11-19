@@ -1,22 +1,10 @@
 package com.sara.backend.service;
 
-import com.sara.backend.repository.CounterRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.Set;
 
-@Service
-public class OpenCounterFinder {
+public interface OpenCounterFinder {
 
-    @Autowired
-    private CounterRepository counterRepository;
+    boolean hasOpenCounter(Long serviceId);
 
-    public boolean hasOpenCounter(Long serviceId) {
-        return findServiceIdsWithOpenCounter().contains(serviceId);
-    }
-
-    public Set<Long> findServiceIdsWithOpenCounter() {
-        return counterRepository.findIdsOfServicesWithOpenCounter();
-    }
+    Set<Long> findServiceIdsWithOpenCounter();
 }

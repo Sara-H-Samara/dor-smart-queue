@@ -2,116 +2,18 @@ package com.sara.backend.service;
 
 import com.sara.backend.dto.response.CalledTicketResponse;
 import com.sara.backend.dto.response.WaitingListResponse;
-import com.sara.backend.dto.response.WaitingTicketResponse;
-import com.sara.backend.entity.Counter;
-import com.sara.backend.entity.Ticket;
-import com.sara.backend.entity.TicketStatus;
-import com.sara.backend.repository.CounterRepository;
-import com.sara.backend.repository.TicketRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
-@Service
-public class StaffDeskService {
+public interface StaffDeskService {
 
-    private static final int WAITING_LIST_LIMIT = 20;
+    Optional<CalledTicketResponse> callNextStudent(Long counterId);
 
-    @Autowired
-    private CounterRepository counterRepository;
+    Optional<CalledTicketResponse> findCurrentStudent(Long counterId);
 
-    @Autowired
-    private TicketRepository ticketRepository;
+    WaitingListResponse listWaitingTickets(Long counterId);
 
-    @Transactional
-    public Optional<CalledTicketResponse> callNextStudent(Long counterId) {
-        Counter counter = counterRepository.findByIdWithWriteLock(counterId)
-                .orElseThrow(this::counterNotFound);
-        rejectUnavailableCounter(counter);
+    CalledTicketResponse markTicketDone(Long ticketId);
 
-        if (ticketRepository.existsByCounterIdAndStatus(counterId, TicketStatus.CALLED)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "This counter is already serving a student.");
-        }
-
-        List<Ticket> oldestWaitingTickets = ticketRepository.findOldestWaitingTicketSkippingLocked(
-                counter.getServiceType().getId(), LocalDate.now(), PageRequest.of(0, 1));
-        if (oldestWaitingTickets.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Ticket ticket = oldestWaitingTickets.get(0);
-        ticket.setStatus(TicketStatus.CALLED);
-        ticket.setCounter(counter);
-        ticket.setCalledAt(LocalDateTime.now());
-        return Optional.of(CalledTicketResponse.from(ticketRepository.save(ticket)));
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<CalledTicketResponse> findCurrentStudent(Long counterId) {
-        if (!counterRepository.existsById(counterId)) {
-            throw counterNotFound();
-        }
-        return ticketRepository.findFirstByCounterIdAndStatusOrderByCalledAtDesc(counterId, TicketStatus.CALLED)
-                .map(CalledTicketResponse::from);
-    }
-
-    @Transactional(readOnly = true)
-    public WaitingListResponse listWaitingTickets(Long counterId) {
-        Counter counter = counterRepository.findById(counterId).orElseThrow(this::counterNotFound);
-        Long serviceId = counter.getServiceType().getId();
-        LocalDate today = LocalDate.now();
-
-        long waitingCount = ticketRepository.countByServiceTypeIdAndTicketDateAndStatus(
-                serviceId, today, TicketStatus.WAITING);
-        List<WaitingTicketResponse> firstWaitingTickets = ticketRepository
-                .findByServiceTypeIdAndTicketDateAndStatusOrderByNumberAsc(
-                        serviceId, today, TicketStatus.WAITING, PageRequest.of(0, WAITING_LIST_LIMIT))
-                .stream()
-                .map(WaitingTicketResponse::from)
-                .toList();
-        return new WaitingListResponse(waitingCount, firstWaitingTickets);
-    }
-
-    @Transactional
-    public CalledTicketResponse markTicketDone(Long ticketId) {
-        return changeStatusOfCalledTicket(ticketId, TicketStatus.DONE, "Only a called ticket can be marked done.");
-    }
-
-    @Transactional
-    public CalledTicketResponse markTicketNoShow(Long ticketId) {
-        return changeStatusOfCalledTicket(
-                ticketId, TicketStatus.NO_SHOW, "Only a called ticket can be marked as no-show.");
-    }
-
-    private CalledTicketResponse changeStatusOfCalledTicket(
-            Long ticketId, TicketStatus newStatus, String rejectionMessage) {
-        Ticket ticket = ticketRepository.findByIdWithWriteLock(ticketId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ticket not found."));
-        if (!ticket.getStatus().canChangeTo(newStatus)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, rejectionMessage);
-        }
-        ticket.setStatus(newStatus);
-        return CalledTicketResponse.from(ticketRepository.save(ticket));
-    }
-
-    private ResponseStatusException counterNotFound() {
-        return new ResponseStatusException(HttpStatus.NOT_FOUND, "Counter not found.");
-    }
-
-    private void rejectUnavailableCounter(Counter counter) {
-        if (!counter.isActive()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "This counter is not active.");
-        }
-        if (!counter.getServiceType().isActive()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "The service of this counter is not active.");
-        }
-    }
+    CalledTicketResponse markTicketNoShow(Long ticketId);
 }
