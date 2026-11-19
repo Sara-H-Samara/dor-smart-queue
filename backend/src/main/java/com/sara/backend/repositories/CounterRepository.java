@@ -18,8 +18,6 @@ public interface CounterRepository extends JpaRepository<Counter, Long> {
 
     List<Counter> findAllByOrderByNameAsc();
 
-    List<Counter> findByActiveTrueOrderByNameAsc();
-
     List<Counter> findByActiveTrueAndServiceTypeActiveTrueOrderByNameAsc();
 
     @Query("select distinct c.serviceType.id from Counter c where c.active = true and c.serviceType.active = true")
