@@ -33,7 +33,7 @@ and no way to leave the office while they wait.
 Planned: Flyway migrations, Docker Compose, GitHub Actions.
 
 ## Project structure
-- `backend/`: Spring Boot server (controller, service, repository, entity, dto, security, config)
+- `backend/`: Spring Boot server (controllers, services, repositories, entities, dtos, exceptions, security, configurations)
 - `frontend/`: Angular interface
 
 ## How to run
