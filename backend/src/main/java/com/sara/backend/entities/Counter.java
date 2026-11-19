@@ -1,0 +1,33 @@
+package com.sara.backend.entities;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "counters")
+public class Counter {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String name;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "service_type_id", nullable = false)
+    private ServiceType serviceType;
+
+    public Long getId() { return id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
+
+    public ServiceType getServiceType() { return serviceType; }
+    public void setServiceType(ServiceType serviceType) { this.serviceType = serviceType; }
+}

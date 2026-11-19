@@ -1,16 +1,16 @@
 package com.sara.backend.support;
 
 import com.jayway.jsonpath.JsonPath;
-import com.sara.backend.entity.Counter;
-import com.sara.backend.entity.Role;
-import com.sara.backend.entity.ServiceType;
-import com.sara.backend.entity.Ticket;
-import com.sara.backend.entity.TicketStatus;
-import com.sara.backend.entity.User;
-import com.sara.backend.repository.CounterRepository;
-import com.sara.backend.repository.ServiceTypeRepository;
-import com.sara.backend.repository.TicketRepository;
-import com.sara.backend.repository.UserRepository;
+import com.sara.backend.entities.Counter;
+import com.sara.backend.entities.Role;
+import com.sara.backend.entities.ServiceType;
+import com.sara.backend.entities.Ticket;
+import com.sara.backend.entities.TicketStatus;
+import com.sara.backend.entities.User;
+import com.sara.backend.repositories.CounterRepository;
+import com.sara.backend.repositories.ServiceTypeRepository;
+import com.sara.backend.repositories.TicketRepository;
+import com.sara.backend.repositories.UserRepository;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;

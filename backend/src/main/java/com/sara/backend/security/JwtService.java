@@ -1,6 +1,6 @@
 package com.sara.backend.security;
 
-import com.sara.backend.entity.User;
+import com.sara.backend.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
