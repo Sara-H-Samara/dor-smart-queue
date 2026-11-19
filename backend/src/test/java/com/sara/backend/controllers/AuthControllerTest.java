@@ -5,6 +5,7 @@ import com.sara.backend.configurations.DataSeeder;
 import com.sara.backend.entities.User;
 import com.sara.backend.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Registration, login and roles")
 class AuthControllerTest {
 
     @Autowired
@@ -66,7 +68,8 @@ class AuthControllerTest {
     // ---------- Registration (US1) ----------
 
     @Test
-    void register_createsStudentWithoutReturningPassword() throws Exception {
+    @DisplayName("Registering a student never returns the password")
+    void register_withValidData_returnsStudentWithoutPassword() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -80,7 +83,8 @@ class AuthControllerTest {
     }
 
     @Test
-    void register_storesPasswordHash() throws Exception {
+    @DisplayName("A new password is stored as a hash, not as plain text")
+    void register_withValidData_storesPasswordHash() throws Exception {
         registerStudent();
 
         User saved = userRepository.findByEmail("layla@example.com").orElseThrow();
@@ -89,6 +93,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("A registered email cannot be used again, even in other letter case")
     void register_withExistingEmail_returnsConflict() throws Exception {
         registerStudent();
 
@@ -101,6 +106,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("Registration is rejected when the email is not valid")
     void register_withInvalidEmail_returnsBadRequest() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -113,6 +119,7 @@ class AuthControllerTest {
     // ---------- Login (US1) ----------
 
     @Test
+    @DisplayName("A student with correct details logs in and receives a token")
     void login_withCorrectDetails_returnsToken() throws Exception {
         registerStudent();
 
@@ -127,6 +134,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("Login fails with an incorrect password")
     void login_withWrongPassword_returnsUnauthorized() throws Exception {
         registerStudent();
 
@@ -141,12 +149,14 @@ class AuthControllerTest {
     // ---------- Token checks and roles (US2) ----------
 
     @Test
+    @DisplayName("A visitor without a token cannot see the current user")
     void me_withoutToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
+    @DisplayName("A logged-in user sees their own details")
     void me_withValidToken_returnsCurrentUser() throws Exception {
         registerStudent();
         String token = loginAndGetToken("layla@example.com", "secret123");
@@ -157,6 +167,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("A token that was changed is not accepted")
     void me_withTamperedToken_returnsUnauthorized() throws Exception {
         registerStudent();
         String token = loginAndGetToken("layla@example.com", "secret123");
@@ -166,6 +177,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("A student cannot open the admin services list")
     void adminServicesEndpoint_asStudent_returnsForbidden() throws Exception {
         registerStudent();
         String token = loginAndGetToken("layla@example.com", "secret123");
@@ -175,6 +187,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("An admin can open the admin services list")
     void adminServicesEndpoint_asAdmin_returnsOk() throws Exception {
         String token = loginAndGetToken("admin@dor.com", "admin12345");
 

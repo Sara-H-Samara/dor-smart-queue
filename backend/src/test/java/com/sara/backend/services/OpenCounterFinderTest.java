@@ -10,6 +10,7 @@ import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Finding open counters")
 class OpenCounterFinderTest {
 
     @Autowired
@@ -72,6 +74,7 @@ class OpenCounterFinderTest {
     }
 
     @Test
+    @DisplayName("An active service with an active counter has an open counter")
     void hasOpenCounter_activeCounterOfActiveService_returnsTrue() {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -80,6 +83,7 @@ class OpenCounterFinderTest {
     }
 
     @Test
+    @DisplayName("A service whose only counter is inactive has no open counter")
     void hasOpenCounter_onlyCounterInactive_returnsFalse() {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         deactivate(testHelper.createCounter("Window 1", registration));
@@ -88,6 +92,7 @@ class OpenCounterFinderTest {
     }
 
     @Test
+    @DisplayName("A service without any counter has no open counter")
     void hasOpenCounter_serviceWithoutCounters_returnsFalse() {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
 
@@ -95,6 +100,7 @@ class OpenCounterFinderTest {
     }
 
     @Test
+    @DisplayName("An active counter does not count when its service is inactive")
     void hasOpenCounter_activeCounterOfInactiveService_returnsFalse() {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -105,6 +111,7 @@ class OpenCounterFinderTest {
     }
 
     @Test
+    @DisplayName("An open counter of another service does not make this service open")
     void hasOpenCounter_openCounterOnlyInOtherService_returnsFalse() {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         ServiceType payments = testHelper.createActiveService("Payments", "P");
@@ -114,6 +121,7 @@ class OpenCounterFinderTest {
     }
 
     @Test
+    @DisplayName("Only the services that have an open counter are listed")
     void findServiceIdsWithOpenCounter_mixedServices_returnsOnlyServicesWithOpenCounter() {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         ServiceType payments = testHelper.createActiveService("Payments", "P");
@@ -129,6 +137,7 @@ class OpenCounterFinderTest {
     }
 
     @Test
+    @DisplayName("A service with two open counters is listed only once")
     void findServiceIdsWithOpenCounter_twoOpenCountersOfSameService_returnsServiceOnce() {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         testHelper.createCounter("Window 1", registration);

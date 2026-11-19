@@ -15,6 +15,7 @@ import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,6 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Active ticket of a student")
 class MyTicketControllerTest {
 
     private static final String URL = "/api/tickets/me";
@@ -138,7 +140,8 @@ class MyTicketControllerTest {
     // ---------- Tests ----------
 
     @Test
-    void noActiveTicket_returnsNotFound() throws Exception {
+    @DisplayName("A student without an active ticket gets not found")
+    void getActiveTicket_withoutActiveTicket_returnsNotFound() throws Exception {
         registerStudentAndLogin("a@example.com");
 
         me("a@example.com")
@@ -147,7 +150,8 @@ class MyTicketControllerTest {
     }
 
     @Test
-    void firstInLine_hasPositionOne() throws Exception {
+    @DisplayName("The first student in line is at position one")
+    void getActiveTicket_whenFirstInLine_returnsPositionOne() throws Exception {
         ServiceType registration = createService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
         ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
@@ -163,7 +167,8 @@ class MyTicketControllerTest {
     }
 
     @Test
-    void thirdInLine_hasPositionThree() throws Exception {
+    @DisplayName("The third student in line is at position three")
+    void getActiveTicket_whenThirdInLine_returnsPositionThree() throws Exception {
         ServiceType registration = createService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
         ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
@@ -179,7 +184,8 @@ class MyTicketControllerTest {
     }
 
     @Test
-    void calledTicket_hasNoPositionOrEstimate() throws Exception {
+    @DisplayName("A called ticket has no position and no wait estimate")
+    void getActiveTicket_withCalledTicket_returnsNoPositionOrEstimate() throws Exception {
         ServiceType registration = createService("Registration", "R");
         ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.CALLED);
 
@@ -192,6 +198,7 @@ class MyTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket of another service is not counted ahead")
     void getActiveTicket_withTicketInOtherService_doesNotCountItAhead() throws Exception {
         ServiceType registration = createService("Registration", "R");
         ServiceType documents = createService("Documents", "D");
@@ -207,6 +214,7 @@ class MyTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket from an earlier day is not counted ahead")
     void getActiveTicket_withTicketFromEarlierDay_doesNotCountItAhead() throws Exception {
         ServiceType registration = createService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -221,6 +229,7 @@ class MyTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A waiting ticket from yesterday is not an active ticket")
     void getActiveTicket_withOnlyWaitingTicketFromYesterday_returnsNotFound() throws Exception {
         ServiceType registration = createService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -232,7 +241,8 @@ class MyTicketControllerTest {
     }
 
     @Test
-    void doneTicket_isNotCountedAhead() throws Exception {
+    @DisplayName("A done ticket is not counted ahead")
+    void getActiveTicket_withDoneTicketAhead_doesNotCountItAhead() throws Exception {
         ServiceType registration = createService("Registration", "R");
         ticketFor("done@example.com", registration, 1, LocalDate.now(), TicketStatus.DONE);
         ticketFor("a@example.com", registration, 2, LocalDate.now(), TicketStatus.WAITING);
@@ -244,6 +254,7 @@ class MyTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A waiting ticket with an open counter shows a wait estimate")
     void getActiveTicket_waitingWithOpenCounter_hasOpenCounterTrue() throws Exception {
         ServiceType registration = createService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -256,6 +267,7 @@ class MyTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A waiting ticket with no open counter has no wait estimate")
     void getActiveTicket_waitingWithoutOpenCounter_hasOpenCounterFalseAndNoEstimate() throws Exception {
         ServiceType registration = createService("Registration", "R");
         Counter window = testHelper.createCounter("Window 1", registration);
@@ -273,6 +285,7 @@ class MyTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A called ticket always shows an open counter")
     void getActiveTicket_calledTicket_hasOpenCounterTrue() throws Exception {
         ServiceType registration = createService("Registration", "R");
         ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.CALLED);
@@ -284,6 +297,7 @@ class MyTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket of a deactivated service shows no open counter")
     void getActiveTicket_serviceDeactivated_hasOpenCounterFalse() throws Exception {
         ServiceType registration = createService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -298,12 +312,14 @@ class MyTicketControllerTest {
     }
 
     @Test
-    void withoutToken_getsUnauthorized() throws Exception {
+    @DisplayName("A visitor without a token cannot see an active ticket")
+    void getActiveTicket_withoutToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(get(URL)).andExpect(status().isUnauthorized());
     }
 
     @Test
-    void staff_getsForbidden() throws Exception {
+    @DisplayName("Staff cannot see a student ticket")
+    void getActiveTicket_asStaff_returnsForbidden() throws Exception {
         mockMvc.perform(get(URL).header("Authorization", "Bearer " + staffToken()))
                 .andExpect(status().isForbidden());
     }

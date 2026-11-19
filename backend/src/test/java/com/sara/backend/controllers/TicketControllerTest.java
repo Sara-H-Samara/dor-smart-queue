@@ -15,6 +15,7 @@ import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,6 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Taking a ticket")
 class TicketControllerTest {
 
     private static final String URL = "/api/tickets";
@@ -148,6 +150,7 @@ class TicketControllerTest {
     // ---------- Taking tickets ----------
 
     @Test
+    @DisplayName("The first student of a service gets ticket number one")
     void takeTicket_firstStudent_returnsCreatedWithFirstCode() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         testHelper.createCounter("Window 1", registration);
@@ -163,6 +166,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("The second student of a service gets the next number")
     void takeTicket_secondStudentSameService_returnsNextNumber() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         testHelper.createCounter("Window 1", registration);
@@ -176,6 +180,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("Every service starts its own ticket numbers at one")
     void takeTicket_differentService_restartsNumberingAtOne() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         ServiceType documents = createService("Documents", "D", true);
@@ -192,6 +197,7 @@ class TicketControllerTest {
     // ---------- One active ticket per student ----------
 
     @Test
+    @DisplayName("A student cannot take a second ticket while one is waiting")
     void takeTicket_whileStudentHasWaitingTicket_returnsConflict() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         ServiceType documents = createService("Documents", "D", true);
@@ -207,6 +213,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("A student can take a new ticket after the last one is done")
     void takeTicket_afterServed_returnsCreated() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         testHelper.createCounter("Window 1", registration);
@@ -223,6 +230,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("A student can take a new ticket after cancelling the last one")
     void takeTicket_afterCancelled_returnsCreated() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         testHelper.createCounter("Window 1", registration);
@@ -239,6 +247,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("A waiting ticket from yesterday does not stop a new ticket today")
     void takeTicket_withWaitingTicketFromYesterday_returnsCreatedAndKeepsOldTicketWaiting() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         testHelper.createCounter("Window 1", registration);
@@ -254,6 +263,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("A called ticket from yesterday does not stop a new ticket today")
     void takeTicket_withCalledTicketFromYesterday_returnsCreatedAndKeepsOldTicketCalled() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         testHelper.createCounter("Window 1", registration);
@@ -269,6 +279,7 @@ class TicketControllerTest {
     // ---------- Service problems and validation ----------
 
     @Test
+    @DisplayName("A ticket cannot be taken for an inactive service")
     void takeTicket_inactiveService_returnsBadRequest() throws Exception {
         ServiceType closed = createService("Closed", "C", false);
 
@@ -278,6 +289,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket cannot be taken when the service has no counter")
     void takeTicket_serviceWithoutCounter_returnsConflict() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
 
@@ -289,6 +301,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket cannot be taken when the only counter is inactive")
     void takeTicket_onlyCounterInactive_returnsConflictWithServiceName() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         Counter window = testHelper.createCounter("Window 1", registration);
@@ -301,6 +314,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket can be taken again after the counter is activated")
     void takeTicket_afterCounterReactivated_returnsCreated() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
         Counter window = testHelper.createCounter("Window 1", registration);
@@ -318,12 +332,14 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket cannot be taken for a service that does not exist")
     void takeTicket_unknownService_returnsNotFound() throws Exception {
         take(registerStudentAndLogin("a@example.com"), 999999L)
                 .andExpect(status().isNotFound());
     }
 
     @Test
+    @DisplayName("A ticket cannot be taken without a service")
     void takeTicket_missingServiceId_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + registerStudentAndLogin("a@example.com"))
@@ -335,6 +351,7 @@ class TicketControllerTest {
     // ---------- Access control ----------
 
     @Test
+    @DisplayName("A visitor without a token cannot take a ticket")
     void takeTicket_withoutToken_returnsUnauthorized() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
 
@@ -345,6 +362,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @DisplayName("Staff and admins cannot take a ticket")
     void takeTicket_asStaffOrAdmin_returnsForbidden() throws Exception {
         ServiceType registration = createService("Registration", "R", true);
 
@@ -355,6 +373,7 @@ class TicketControllerTest {
     // ---------- Concurrency ----------
 
     @Test
+    @DisplayName("Students who take a ticket at the same time get different, consecutive numbers")
     void takeTicket_concurrentStudents_returnsUniqueConsecutiveNumbers() throws Exception {
         int students = 5;
         ServiceType registration = createService("Registration", "R", true);

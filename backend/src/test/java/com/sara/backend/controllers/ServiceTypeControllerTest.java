@@ -10,6 +10,7 @@ import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Admin services")
 class ServiceTypeControllerTest {
 
     private static final String URL = "/api/admin/services";
@@ -115,7 +117,8 @@ class ServiceTypeControllerTest {
     // ---------- Admin: list, create, rename, toggle ----------
 
     @Test
-    void admin_canListServices() throws Exception {
+    @DisplayName("An admin sees all services sorted by name")
+    void listServices_asAdmin_returnsServicesSortedByName() throws Exception {
         String token = adminToken();
         create(token, "Fees", "F");
         create(token, "Admissions", "A");
@@ -128,7 +131,8 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void admin_canCreateService() throws Exception {
+    @DisplayName("An admin can create a service")
+    void createService_asAdmin_returnsCreated() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -140,7 +144,8 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void admin_canRenameService() throws Exception {
+    @DisplayName("An admin can rename a service")
+    void renameService_asAdmin_returnsNewName() throws Exception {
         String token = adminToken();
         long id = create(token, "Fees", "F");
 
@@ -154,7 +159,8 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void admin_canDeactivateAndReactivate() throws Exception {
+    @DisplayName("An admin can deactivate a service and activate it again")
+    void deactivateAndReactivateService_asAdmin_returnsOk() throws Exception {
         String token = adminToken();
         long id = create(token, "Fees", "F");
 
@@ -176,6 +182,7 @@ class ServiceTypeControllerTest {
     // ---------- Access control ----------
 
     @Test
+    @DisplayName("A student cannot use any admin service endpoint")
     void student_onAnyAdminEndpoint_returnsForbidden() throws Exception {
         String token = registerStudentAndLogin();
 
@@ -199,6 +206,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A visitor without a token cannot use any admin service endpoint")
     void withoutToken_onAnyAdminEndpoint_returnsUnauthorized() throws Exception {
         mockMvc.perform(get(URL))
                 .andExpect(status().isUnauthorized());
@@ -219,6 +227,7 @@ class ServiceTypeControllerTest {
     // ---------- Duplicates ----------
 
     @Test
+    @DisplayName("A service name cannot be used twice")
     void create_withDuplicateName_returnsConflict() throws Exception {
         String token = adminToken();
         create(token, "Fees", "F");
@@ -231,6 +240,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service name counts as used even in another letter case")
     void create_withDuplicateNameInDifferentCase_returnsConflict() throws Exception {
         String token = adminToken();
         create(token, "Fees", "F");
@@ -243,6 +253,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service can be renamed to its own name")
     void rename_toSameName_returnsOk() throws Exception {
         String token = adminToken();
         long id = create(token, "Fees", "F");
@@ -256,6 +267,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service cannot take the name of another service")
     void rename_toAnotherRecordsName_returnsConflict() throws Exception {
         String token = adminToken();
         create(token, "Fees", "F");
@@ -269,6 +281,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service code cannot be used twice")
     void create_withDuplicateCode_returnsConflict() throws Exception {
         String token = adminToken();
         create(token, "Fees", "F");
@@ -281,6 +294,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service code counts as used even in another letter case")
     void create_withDuplicateCodeInDifferentCase_returnsConflict() throws Exception {
         String token = adminToken();
         create(token, "Fees", "F");
@@ -293,7 +307,8 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void rename_keepsTheSameCode() throws Exception {
+    @DisplayName("Renaming a service does not change its code")
+    void renameService_afterCreate_keepsSameCode() throws Exception {
         String token = adminToken();
         long id = create(token, "Fees", "F");
 
@@ -309,6 +324,7 @@ class ServiceTypeControllerTest {
     // ---------- Unknown id ----------
 
     @Test
+    @DisplayName("Renaming a service that does not exist gives not found")
     void rename_unknownId_returnsNotFound() throws Exception {
         mockMvc.perform(put(URL + "/999999")
                         .header("Authorization", "Bearer " + adminToken())
@@ -318,6 +334,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("Changing the active state of a service that does not exist gives not found")
     void setActive_unknownId_returnsNotFound() throws Exception {
         mockMvc.perform(patch(URL + "/999999/active")
                         .header("Authorization", "Bearer " + adminToken())
@@ -329,6 +346,7 @@ class ServiceTypeControllerTest {
     // ---------- Validation ----------
 
     @Test
+    @DisplayName("A service name cannot be empty")
     void create_withBlankName_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
@@ -338,6 +356,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service name cannot be longer than 100 characters")
     void create_withTooLongName_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
@@ -347,6 +366,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service cannot be renamed to an empty name")
     void rename_withBlankName_returnsBadRequest() throws Exception {
         String token = adminToken();
         long id = create(token, "Fees", "F");
@@ -359,6 +379,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service cannot be renamed to a name longer than 100 characters")
     void rename_withTooLongName_returnsBadRequest() throws Exception {
         String token = adminToken();
         long id = create(token, "Fees", "F");
@@ -371,7 +392,8 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void create_savesCodeInUpperCase() throws Exception {
+    @DisplayName("A service code typed in lower case is saved in upper case")
+    void createService_withLowerCaseCode_savesCodeInUpperCase() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -381,6 +403,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service code can have two letters")
     void create_withTwoLetterCode_returnsCreated() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
@@ -391,6 +414,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service code cannot have three letters")
     void create_withThreeLetterCode_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
@@ -400,6 +424,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service code cannot contain a digit")
     void create_withDigitInCode_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
@@ -409,6 +434,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service code cannot be empty")
     void create_withBlankCode_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + adminToken())
@@ -418,7 +444,8 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    void list_containsTheCode() throws Exception {
+    @DisplayName("The service list shows the code of each service")
+    void listServices_afterCreate_includesCode() throws Exception {
         String token = adminToken();
         create(token, "Fees", "F");
 
@@ -430,7 +457,8 @@ class ServiceTypeControllerTest {
     // ---------- Deactivating keeps the row ----------
 
     @Test
-    void deactivate_keepsRecordInAdminList() throws Exception {
+    @DisplayName("A deactivated service stays in the admin list")
+    void deactivateService_asAdmin_keepsRecordInList() throws Exception {
         String token = adminToken();
         long id = create(token, "Fees", "F");
 
@@ -449,6 +477,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service cannot be deactivated while a student is called at its counter")
     void setActive_withFalseWhileCounterHasCalledTicket_returnsConflictAndKeepsServiceActive() throws Exception {
         ServiceType service = testHelper.createActiveService("Fees", "F");
         Counter counter = testHelper.createCounter("Counter 1", service);
@@ -466,6 +495,7 @@ class ServiceTypeControllerTest {
     }
 
     @Test
+    @DisplayName("A service can be deactivated when the called student is at another service")
     void setActive_withFalseWhenCalledTicketIsAtCounterOfAnotherService_returnsOk() throws Exception {
         ServiceType service = testHelper.createActiveService("Fees", "F");
         ServiceType otherService = testHelper.createActiveService("Registration", "R");

@@ -12,6 +12,7 @@ import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Cancelling a ticket")
 class CancelTicketControllerTest {
 
     private static final String MY_TICKET_URL = "/api/tickets/me";
@@ -82,6 +84,7 @@ class CancelTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A student can cancel a waiting ticket")
     void cancelTicket_withWaitingTicket_returnsNoContentAndRemovesActiveTicket() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         String token = testHelper.registerStudentAndLogin("a@example.com");
@@ -96,6 +99,7 @@ class CancelTicketControllerTest {
     }
 
     @Test
+    @DisplayName("After a cancel, a new ticket gets the next number")
     void cancelTicket_thenTakeTicket_returnsNextNumber() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -119,6 +123,7 @@ class CancelTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A student cannot cancel a ticket that is already called")
     void cancelTicket_withCalledTicket_returnsConflict() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         String token = testHelper.registerStudentAndLogin("a@example.com");
@@ -131,6 +136,7 @@ class CancelTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A waiting ticket from yesterday is not cancelled")
     void cancelTicket_withWaitingTicketFromYesterday_returnsNotFoundAndKeepsTicketWaiting() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         String token = testHelper.registerStudentAndLogin("a@example.com");
@@ -143,6 +149,7 @@ class CancelTicketControllerTest {
     }
 
     @Test
+    @DisplayName("A student without an active ticket has nothing to cancel")
     void cancelTicket_withoutActiveTicket_returnsNotFound() throws Exception {
         String token = testHelper.registerStudentAndLogin("a@example.com");
 
@@ -150,16 +157,19 @@ class CancelTicketControllerTest {
     }
 
     @Test
+    @DisplayName("Staff cannot cancel a student ticket")
     void cancelTicket_asStaff_returnsForbidden() throws Exception {
         cancelMyTicket(testHelper.loginAsNewStaff()).andExpect(status().isForbidden());
     }
 
     @Test
+    @DisplayName("An admin cannot cancel a student ticket")
     void cancelTicket_asAdmin_returnsForbidden() throws Exception {
         cancelMyTicket(testHelper.loginAsAdmin()).andExpect(status().isForbidden());
     }
 
     @Test
+    @DisplayName("A visitor without a token cannot cancel a ticket")
     void cancelTicket_withoutToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(post(CANCEL_MY_TICKET_URL)).andExpect(status().isUnauthorized());
     }
