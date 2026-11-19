@@ -12,6 +12,7 @@ import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Staff desk")
 class StaffDeskControllerTest {
 
     private static final String MY_TICKET_URL = "/api/tickets/me";
@@ -97,6 +99,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("Calling next gives the oldest waiting ticket")
     void callNext_withWaitingTickets_returnsOldestWaitingTicket() throws Exception {
         Ticket oldest = waitingTicketFor("a@example.com", 1);
         waitingTicketFor("b@example.com", 2);
@@ -110,6 +113,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("Calling next saves the counter and the call time on the ticket")
     void callNext_withWaitingTickets_recordsCounterAndCalledAt() throws Exception {
         Ticket oldest = waitingTicketFor("a@example.com", 1);
 
@@ -122,11 +126,13 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("Calling next with no waiting ticket gives no content")
     void callNext_withNoWaitingTicket_returnsNoContent() throws Exception {
         testHelper.callNext(staffToken, deskOne.getId()).andExpect(status().isNoContent());
     }
 
     @Test
+    @DisplayName("A ticket of another service is not called")
     void callNext_withTicketOfAnotherService_ignoresIt() throws Exception {
         ServiceType payments = testHelper.createActiveService("Payments", "P");
         testHelper.registerStudentAndLogin("a@example.com");
@@ -136,6 +142,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket from an earlier day is not called")
     void callNext_withTicketFromEarlierDay_ignoresIt() throws Exception {
         testHelper.registerStudentAndLogin("a@example.com");
         testHelper.createTicketOnDateForRegisteredStudent(
@@ -145,6 +152,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A cancelled ticket is skipped")
     void callNext_withCancelledTicket_skipsIt() throws Exception {
         testHelper.registerStudentAndLogin("a@example.com");
         testHelper.createTicketForRegisteredStudent("a@example.com", registration, 1, TicketStatus.CANCELLED);
@@ -156,11 +164,13 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("Calling next at a counter that does not exist gives not found")
     void callNext_withUnknownCounter_returnsNotFound() throws Exception {
         testHelper.callNext(staffToken, UNKNOWN_ID).andExpect(status().isNotFound());
     }
 
     @Test
+    @DisplayName("An inactive counter cannot call next")
     void callNext_withInactiveCounter_returnsConflict() throws Exception {
         Ticket waiting = waitingTicketFor("a@example.com", 1);
         deskOne.setActive(false);
@@ -172,6 +182,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A counter of an inactive service cannot call next")
     void callNext_withInactiveService_returnsConflict() throws Exception {
         Ticket waiting = waitingTicketFor("a@example.com", 1);
         registration.setActive(false);
@@ -183,6 +194,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A counter that already serves a student cannot call next")
     void callNext_whenCounterAlreadyHasCalledStudent_returnsConflict() throws Exception {
         calledTicketFor("a@example.com", 1);
         Ticket waiting = waitingTicketFor("b@example.com", 2);
@@ -193,6 +205,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A student cannot call next")
     void callNext_asStudent_returnsForbidden() throws Exception {
         String studentToken = testHelper.registerStudentAndLogin("a@example.com");
 
@@ -200,17 +213,20 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("An admin cannot call next")
     void callNext_asAdmin_returnsForbidden() throws Exception {
         testHelper.callNext(testHelper.loginAsAdmin(), deskOne.getId()).andExpect(status().isForbidden());
     }
 
     @Test
+    @DisplayName("A visitor without a token cannot call next")
     void callNext_withoutToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(post("/api/counters/{counterId}/call-next", deskOne.getId()))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
+    @DisplayName("The current student of a counter is the student with the called ticket")
     void currentStudent_withCalledTicket_returnsCalledTicket() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
 
@@ -225,6 +241,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A counter with no called ticket has no current student")
     void currentStudent_withNoCalledTicket_returnsNoContent() throws Exception {
         waitingTicketFor("a@example.com", 1);
 
@@ -232,6 +249,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket called at another counter is not the current student")
     void currentStudent_withCalledTicketAtAnotherCounter_returnsNoContent() throws Exception {
         calledTicketFor("a@example.com", 1);
         Counter deskTwo = testHelper.createCounter("Desk 2", registration);
@@ -240,6 +258,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("After the ticket is marked done, there is no current student")
     void currentStudent_afterMarkDone_returnsNoContent() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
         testHelper.markDone(staffToken, called.getId()).andExpect(status().isOk());
@@ -248,6 +267,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("After the ticket is marked as no show, there is no current student")
     void currentStudent_afterMarkNoShow_returnsNoContent() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
         testHelper.markNoShow(staffToken, called.getId()).andExpect(status().isOk());
@@ -256,6 +276,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket called on an earlier day is still the current student")
     void currentStudent_withCalledTicketFromEarlierDay_returnsCalledTicket() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
         called.setTicketDate(LocalDate.now().minusDays(1));
@@ -267,6 +288,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("An inactive counter still shows its current student")
     void currentStudent_withInactiveCounter_returnsCalledTicket() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
         deskOne.setActive(false);
@@ -278,6 +300,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("The current student of a counter that does not exist gives not found")
     void currentStudent_withUnknownCounter_returnsNotFound() throws Exception {
         testHelper.getCurrentStudent(staffToken, UNKNOWN_ID)
                 .andExpect(status().isNotFound())
@@ -285,6 +308,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A student cannot see the current student of a counter")
     void currentStudent_asStudent_returnsForbidden() throws Exception {
         String studentToken = testHelper.registerStudentAndLogin("a@example.com");
 
@@ -292,18 +316,21 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("An admin cannot see the current student of a counter")
     void currentStudent_asAdmin_returnsForbidden() throws Exception {
         testHelper.getCurrentStudent(testHelper.loginAsAdmin(), deskOne.getId())
                 .andExpect(status().isForbidden());
     }
 
     @Test
+    @DisplayName("A visitor without a token cannot see the current student")
     void currentStudent_withoutToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(get("/api/counters/{counterId}/current", deskOne.getId()))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
+    @DisplayName("A called ticket can be marked done")
     void markDone_withCalledTicket_returnsDone() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
 
@@ -315,6 +342,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A waiting ticket cannot be marked done")
     void markDone_withWaitingTicket_returnsConflict() throws Exception {
         Ticket waiting = waitingTicketFor("a@example.com", 1);
 
@@ -324,6 +352,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A done ticket cannot be marked done again")
     void markDone_withDoneTicket_returnsConflict() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
         testHelper.markDone(staffToken, called.getId()).andExpect(status().isOk());
@@ -332,6 +361,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A cancelled ticket cannot be marked done")
     void markDone_withCancelledTicket_returnsConflict() throws Exception {
         testHelper.registerStudentAndLogin("a@example.com");
         Ticket cancelled = testHelper.createTicketForRegisteredStudent(
@@ -341,11 +371,13 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket that does not exist cannot be marked done")
     void markDone_withUnknownTicket_returnsNotFound() throws Exception {
         testHelper.markDone(staffToken, UNKNOWN_ID).andExpect(status().isNotFound());
     }
 
     @Test
+    @DisplayName("A called ticket can be marked as no show")
     void markNoShow_withCalledTicket_returnsNoShow() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
 
@@ -357,6 +389,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A waiting ticket cannot be marked as no show")
     void markNoShow_withWaitingTicket_returnsConflict() throws Exception {
         Ticket waiting = waitingTicketFor("a@example.com", 1);
 
@@ -366,6 +399,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A done ticket cannot be marked as no show")
     void markNoShow_withDoneTicket_returnsConflict() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
         testHelper.markDone(staffToken, called.getId()).andExpect(status().isOk());
@@ -376,11 +410,13 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket that does not exist cannot be marked as no show")
     void markNoShow_withUnknownTicket_returnsNotFound() throws Exception {
         testHelper.markNoShow(staffToken, UNKNOWN_ID).andExpect(status().isNotFound());
     }
 
     @Test
+    @DisplayName("A student cannot mark a ticket done")
     void markDone_asStudent_returnsForbidden() throws Exception {
         String studentToken = testHelper.registerStudentAndLogin("a@example.com");
         Ticket called = testHelper.createCalledTicketForRegisteredStudent(
@@ -392,12 +428,14 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A visitor without a token cannot mark a ticket done")
     void markDone_withoutToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(post("/api/tickets/{ticketId}/done", UNKNOWN_ID))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
+    @DisplayName("A student cannot mark a ticket as no show")
     void markNoShow_asStudent_returnsForbidden() throws Exception {
         String studentToken = testHelper.registerStudentAndLogin("a@example.com");
         Ticket called = testHelper.createCalledTicketForRegisteredStudent(
@@ -409,12 +447,14 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A visitor without a token cannot mark a ticket as no show")
     void markNoShow_withoutToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(post("/api/tickets/{ticketId}/no-show", UNKNOWN_ID))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
+    @DisplayName("A student with a called ticket sees the counter name")
     void getMyTicket_whenCalled_returnsCounterName() throws Exception {
         String studentToken = testHelper.registerStudentAndLogin("a@example.com");
         testHelper.createTicketForRegisteredStudent("a@example.com", registration, 1, TicketStatus.WAITING);
@@ -427,6 +467,7 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A student with a waiting ticket sees no counter name")
     void getMyTicket_whenWaiting_returnsNoCounterName() throws Exception {
         String studentToken = testHelper.registerStudentAndLogin("a@example.com");
         testHelper.createTicketForRegisteredStudent("a@example.com", registration, 1, TicketStatus.WAITING);

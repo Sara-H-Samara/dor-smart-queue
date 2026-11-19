@@ -11,6 +11,7 @@ import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Waiting list for staff")
 class StaffWaitingListControllerTest {
 
     private static final String STUDENT_EMAIL = "student@example.com";
@@ -86,6 +88,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("Waiting tickets are listed in queue order")
     void listWaitingTickets_withWaitingTickets_returnsThemInQueueOrder() throws Exception {
         createWaitingTicket(registration, 2);
         createWaitingTicket(registration, 1);
@@ -101,6 +104,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("Only the first twenty waiting tickets are listed, the count shows all")
     void listWaitingTickets_withMoreThanTwentyWaiting_returnsFirstTwentyAndFullCount() throws Exception {
         for (int number = 1; number <= WAITING_LIST_LIMIT + 5; number++) {
             createWaitingTicket(registration, number);
@@ -115,6 +119,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("With no waiting tickets, the list is empty")
     void listWaitingTickets_withNoWaitingTickets_returnsEmptyListAndZeroCount() throws Exception {
         testHelper.getWaitingList(staffToken, deskOne.getId())
                 .andExpect(status().isOk())
@@ -123,6 +128,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("Tickets that are not waiting are left out")
     void listWaitingTickets_withCalledDoneNoShowAndCancelledTickets_leavesThemOut() throws Exception {
         testHelper.createCalledTicketForRegisteredStudent(STUDENT_EMAIL, registration, 1, deskOne);
         testHelper.createTicketForRegisteredStudent(STUDENT_EMAIL, registration, 2, TicketStatus.DONE);
@@ -138,6 +144,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("Tickets from an earlier day are left out")
     void listWaitingTickets_withTicketsOfEarlierDay_leavesThemOutOfListAndCount() throws Exception {
         testHelper.createTicketOnDateForRegisteredStudent(
                 STUDENT_EMAIL, registration, 1, LocalDate.now().minusDays(1), TicketStatus.WAITING);
@@ -150,6 +157,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("Tickets of another service are left out")
     void listWaitingTickets_withTicketsOfOtherService_leavesThemOut() throws Exception {
         ServiceType documents = testHelper.createActiveService("Documents", "D");
         createWaitingTicket(documents, 1);
@@ -162,6 +170,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("A ticket that was called is no longer in the list")
     void listWaitingTickets_afterCallNext_noLongerListsTheCalledTicket() throws Exception {
         createWaitingTicket(registration, 1);
         createWaitingTicket(registration, 2);
@@ -176,6 +185,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("An inactive counter still shows its queue")
     void listWaitingTickets_forInactiveCounter_returnsQueue() throws Exception {
         deskOne.setActive(false);
         counterRepository.save(deskOne);
@@ -188,6 +198,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("A counter of an inactive service still shows its queue")
     void listWaitingTickets_forInactiveService_returnsQueue() throws Exception {
         ServiceType archive = testHelper.createInactiveService("Archive", "A");
         Counter archiveDesk = testHelper.createCounter("Desk 2", archive);
@@ -200,6 +211,7 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("A counter that does not exist gives not found with a message")
     void listWaitingTickets_forUnknownCounter_returnsNotFoundWithMessage() throws Exception {
         testHelper.getWaitingList(staffToken, UNKNOWN_ID)
                 .andExpect(status().isNotFound())
@@ -207,7 +219,8 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
-    void listWaitingTickets_returnsOnlyDocumentedFields() throws Exception {
+    @DisplayName("The list shows only the fields from the documentation")
+    void listWaitingTickets_asStaff_returnsOnlyDocumentedFields() throws Exception {
         createWaitingTicket(registration, 1);
 
         testHelper.getWaitingList(staffToken, deskOne.getId())
@@ -221,16 +234,19 @@ class StaffWaitingListControllerTest {
     }
 
     @Test
+    @DisplayName("A student cannot see the waiting list")
     void listWaitingTickets_asStudent_returnsForbidden() throws Exception {
         testHelper.getWaitingList(studentToken, deskOne.getId()).andExpect(status().isForbidden());
     }
 
     @Test
+    @DisplayName("An admin cannot see the waiting list")
     void listWaitingTickets_asAdmin_returnsForbidden() throws Exception {
         testHelper.getWaitingList(testHelper.loginAsAdmin(), deskOne.getId()).andExpect(status().isForbidden());
     }
 
     @Test
+    @DisplayName("A visitor without a token cannot see the waiting list")
     void listWaitingTickets_withoutToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(get("/api/counters/{counterId}/waiting", deskOne.getId()))
                 .andExpect(status().isUnauthorized());

@@ -13,6 +13,7 @@ import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,6 +40,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Staff desk actions at the same time")
 class StaffDeskConcurrencyTest {
 
     private static final int ROUNDS = 20;
@@ -145,6 +147,7 @@ class StaffDeskConcurrencyTest {
     }
 
     @Test
+    @DisplayName("Two counters that call next at the same time get different tickets")
     void callNext_fromTwoCountersAtOnce_returnsTwoDifferentTickets() throws Exception {
         for (int round = 0; round < ROUNDS; round++) {
             ticketRepository.deleteAll();
@@ -164,6 +167,7 @@ class StaffDeskConcurrencyTest {
     }
 
     @Test
+    @DisplayName("With one waiting ticket, only one of two counters gets it")
     void callNext_fromTwoCountersAtOnceWithOneWaitingTicket_returnsOneTicketAndOneNoContent() throws Exception {
         for (int round = 0; round < ROUNDS; round++) {
             ticketRepository.deleteAll();
@@ -179,6 +183,7 @@ class StaffDeskConcurrencyTest {
     }
 
     @Test
+    @DisplayName("A counter cannot call two tickets at the same time")
     void callNext_twiceOnSameCounterAtOnce_returnsOneTicketAndOneConflict() throws Exception {
         for (int round = 0; round < ROUNDS; round++) {
             ticketRepository.deleteAll();
@@ -195,6 +200,7 @@ class StaffDeskConcurrencyTest {
     }
 
     @Test
+    @DisplayName("Calling and cancelling the same ticket at once ends in one state")
     void callNextAndCancel_atOnceOnSameTicket_endWithOneConsistentState() throws Exception {
         for (int round = 0; round < ROUNDS; round++) {
             ticketRepository.deleteAll();
@@ -221,6 +227,7 @@ class StaffDeskConcurrencyTest {
     }
 
     @Test
+    @DisplayName("Marking a ticket done twice at once works only the first time")
     void markDone_twiceAtOnce_returnsOneOkAndOneConflict() throws Exception {
         for (int round = 0; round < ROUNDS; round++) {
             ticketRepository.deleteAll();

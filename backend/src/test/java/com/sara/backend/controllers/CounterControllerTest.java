@@ -11,6 +11,7 @@ import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Admin counters")
 class CounterControllerTest {
 
     private static final String URL = "/api/admin/counters";
@@ -88,6 +90,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("An admin sees all counters with their service")
     void listCounters_asAdmin_returnsCountersWithService() throws Exception {
         String token = testHelper.loginAsAdmin();
         createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -103,6 +106,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("An admin can create a counter for an active service")
     void createCounter_withActiveService_returnsCreatedWithServiceIdAndServiceName() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
@@ -117,6 +121,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot be created without a service")
     void createCounter_withoutServiceId_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
@@ -126,6 +131,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot be created for a service that does not exist")
     void createCounter_withUnknownServiceId_returnsNotFound() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
@@ -135,6 +141,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot be created for an inactive service")
     void createCounter_withInactiveService_returnsBadRequest() throws Exception {
         ServiceType inactiveService = testHelper.createInactiveService("Archive", "A");
 
@@ -146,6 +153,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("An admin can rename a counter")
     void updateCounter_withNewName_returnsUpdatedName() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -160,6 +168,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("An admin can move a counter to another active service")
     void updateCounter_withAnotherActiveService_returnsNewService() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -175,6 +184,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot be updated without a service")
     void updateCounter_withoutServiceId_returnsBadRequest() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -187,6 +197,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot be moved to a service that does not exist")
     void updateCounter_withUnknownServiceId_returnsNotFound() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -199,6 +210,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot be moved to an inactive service")
     void updateCounter_withDifferentInactiveService_returnsBadRequest() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -212,6 +224,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter can stay with its service even when that service is inactive")
     void updateCounter_keepingCurrentInactiveService_returnsOk() throws Exception {
         ServiceType inactiveService = testHelper.createInactiveService("Archive", "A");
         long id = testHelper.createCounter("Counter 1", inactiveService).getId();
@@ -226,6 +239,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("An admin can deactivate a counter and activate it again")
     void setActive_withFalseThenTrue_returnsUpdatedActive() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -246,6 +260,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A student cannot use any admin counter endpoint")
     void adminEndpoints_asStudent_returnForbidden() throws Exception {
         String token = testHelper.registerStudentAndLogin("layla@example.com");
 
@@ -269,6 +284,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A visitor without a token cannot use any admin counter endpoint")
     void adminEndpoints_withoutToken_returnUnauthorized() throws Exception {
         mockMvc.perform(get(URL))
                 .andExpect(status().isUnauthorized());
@@ -287,6 +303,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter name cannot be used twice")
     void createCounter_withDuplicateName_returnsConflict() throws Exception {
         String token = testHelper.loginAsAdmin();
         createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -299,6 +316,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter name counts as used even in another letter case")
     void createCounter_withDuplicateNameInDifferentCase_returnsConflict() throws Exception {
         String token = testHelper.loginAsAdmin();
         createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -311,6 +329,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter can be updated with its own name")
     void updateCounter_withSameName_returnsOk() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -324,6 +343,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot take the name of another counter")
     void updateCounter_withAnotherCountersName_returnsConflict() throws Exception {
         String token = testHelper.loginAsAdmin();
         createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -337,6 +357,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("Updating a counter that does not exist gives not found")
     void updateCounter_withUnknownId_returnsNotFound() throws Exception {
         mockMvc.perform(put(URL + "/999999")
                         .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
@@ -346,6 +367,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("Changing the active state of a counter that does not exist gives not found")
     void setActive_withUnknownId_returnsNotFound() throws Exception {
         mockMvc.perform(patch(URL + "/999999/active")
                         .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
@@ -355,6 +377,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter name cannot be empty")
     void createCounter_withBlankName_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
@@ -364,6 +387,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter name cannot be longer than 100 characters")
     void createCounter_withTooLongName_returnsBadRequest() throws Exception {
         mockMvc.perform(post(URL)
                         .header("Authorization", "Bearer " + testHelper.loginAsAdmin())
@@ -373,6 +397,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot be renamed to an empty name")
     void updateCounter_withBlankName_returnsBadRequest() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -385,6 +410,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot be renamed to a name longer than 100 characters")
     void updateCounter_withTooLongName_returnsBadRequest() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -397,6 +423,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A deactivated counter stays in the admin list")
     void setActive_withFalse_keepsCounterInAdminList() throws Exception {
         String token = testHelper.loginAsAdmin();
         long id = createCounterAsAdmin(token, "Counter 1", activeService.getId());
@@ -424,6 +451,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot be deactivated while a student is called at it")
     void setActive_withFalseWhileTicketIsCalled_returnsConflictAndKeepsCounterActive() throws Exception {
         Counter counter = testHelper.createCounter("Counter 1", activeService);
         testHelper.registerStudentAndLogin("layla@example.com");
@@ -440,6 +468,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter can be deactivated when it has no called ticket")
     void setActive_withFalseWithOnlyWaitingAndDoneTickets_returnsOk() throws Exception {
         Counter counter = testHelper.createCounter("Counter 1", activeService);
         testHelper.registerStudentAndLogin("layla@example.com");
@@ -450,6 +479,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("An inactive counter can be activated even if a student is still called at it")
     void setActive_withTrueWhileTicketIsCalled_returnsOk() throws Exception {
         Counter counter = testHelper.createCounter("Counter 1", activeService);
         counter.setActive(false);
@@ -461,6 +491,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter cannot change its service while a student is called at it")
     void updateCounter_withAnotherServiceWhileTicketIsCalled_returnsConflictAndKeepsService() throws Exception {
         Counter counter = testHelper.createCounter("Counter 1", activeService);
         ServiceType otherService = testHelper.createActiveService("Fees", "F");
@@ -479,6 +510,7 @@ class CounterControllerTest {
     }
 
     @Test
+    @DisplayName("A counter can be renamed while a student is called at it")
     void updateCounter_withNewNameWhileTicketIsCalled_returnsOk() throws Exception {
         Counter counter = testHelper.createCounter("Counter 1", activeService);
         testHelper.registerStudentAndLogin("layla@example.com");

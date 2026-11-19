@@ -13,6 +13,7 @@ import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,6 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Public waiting room")
 class WaitingRoomControllerTest {
 
     private static final String WAITING_ROOM_URL = "/api/public/queue-status";
@@ -81,18 +83,21 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("Anyone can open the waiting room without logging in")
     void showWaitingRoom_withoutToken_returnsOk() throws Exception {
         mockMvc.perform(get(WAITING_ROOM_URL))
                 .andExpect(status().isOk());
     }
 
     @Test
+    @DisplayName("An invalid token does not block the waiting room")
     void showWaitingRoom_withInvalidToken_returnsOk() throws Exception {
         mockMvc.perform(get(WAITING_ROOM_URL).header("Authorization", "Bearer not-a-real-token"))
                 .andExpect(status().isOk());
     }
 
     @Test
+    @DisplayName("A counter shows the code of the ticket it is serving")
     void showWaitingRoom_withCalledTicket_returnsCounterWithTicketCode() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         Counter window = testHelper.createCounter("Window 1", registration);
@@ -107,6 +112,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("A counter that serves nobody has no ticket code")
     void showWaitingRoom_counterWithoutCalledTicket_returnsNullTicketCode() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -118,6 +124,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("An inactive counter is hidden")
     void showWaitingRoom_withInactiveCounter_hidesIt() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -132,6 +139,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("Counters and waiting tickets of an inactive service are hidden")
     void showWaitingRoom_withInactiveService_hidesItsCountersAndWaitingTickets() throws Exception {
         ServiceType archive = testHelper.createInactiveService("Archive", "A");
         testHelper.createCounter("Archive window", archive);
@@ -145,6 +153,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("Counters are listed in the order they were created")
     void showWaitingRoom_withCountersCreatedInOrder_returnsThemSortedById() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         testHelper.createCounter("Counter 2", registration);
@@ -157,6 +166,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("Only the three oldest waiting tickets are listed, the rest are counted")
     void showWaitingRoom_withFiveWaitingTicketsInTwoServices_returnsFirstThreeOldestFirst() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         ServiceType documents = testHelper.createActiveService("Documents", "D");
@@ -178,6 +188,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("With three waiting tickets or fewer, the count of more waiting is zero")
     void showWaitingRoom_withThreeOrFewerWaitingTickets_returnsZeroMoreWaiting() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         testHelper.createTicketForRegisteredStudent(STUDENT_EMAIL, registration, 1, TicketStatus.WAITING);
@@ -190,6 +201,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("Only waiting tickets are listed as next")
     void showWaitingRoom_withTicketsInEveryStatus_listsOnlyWaitingTicketsAsNext() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         Counter window = testHelper.createCounter("Window 1", registration);
@@ -207,6 +219,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("Tickets from yesterday are ignored")
     void showWaitingRoom_withTicketsOfYesterday_ignoresThem() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         Counter window = testHelper.createCounter("Window 1", registration);
@@ -223,6 +236,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("A counter shows the ticket it called last")
     void showWaitingRoom_counterWithTwoCalledTickets_showsNewestCall() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         Counter window = testHelper.createCounter("Window 1", registration);
@@ -242,6 +256,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("With no counters, all lists are empty")
     void showWaitingRoom_withNoCounters_returnsEmptyLists() throws Exception {
         testHelper.createActiveService("Registration", "R");
 
@@ -253,6 +268,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("The waiting room shows no personal data")
     void showWaitingRoom_withCalledAndWaitingTickets_returnsOnlySafeFields() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         Counter window = testHelper.createCounter("Window 1", registration);
@@ -274,6 +290,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("A counter that serves nobody still has a ticket code field")
     void showWaitingRoom_counterWithoutCalledTicket_keepsTicketCodeKeyWithNull() throws Exception {
         ServiceType registration = testHelper.createActiveService("Registration", "R");
         testHelper.createCounter("Window 1", registration);
@@ -287,18 +304,21 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("A sub path of the waiting room needs a token")
     void showWaitingRoom_withSubPathAndNoToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(get(WAITING_ROOM_URL + "/anything"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
+    @DisplayName("Posting to the waiting room needs a token")
     void showWaitingRoom_withPostMethodAndNoToken_returnsUnauthorized() throws Exception {
         mockMvc.perform(post(WAITING_ROOM_URL))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
+    @DisplayName("The current student of a counter needs a token")
     void getCurrentStudent_withoutToken_returnsUnauthorized() throws Exception {
         Counter window = testHelper.createCounter("Window 1", testHelper.createActiveService("Registration", "R"));
 
@@ -307,6 +327,7 @@ class WaitingRoomControllerTest {
     }
 
     @Test
+    @DisplayName("The waiting list of a counter needs a token")
     void getWaitingList_withoutToken_returnsUnauthorized() throws Exception {
         Counter window = testHelper.createCounter("Window 1", testHelper.createActiveService("Registration", "R"));
 

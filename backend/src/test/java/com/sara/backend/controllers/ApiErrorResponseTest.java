@@ -10,6 +10,7 @@ import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DisplayName("Error responses of the API")
 class ApiErrorResponseTest {
 
     private static final long UNKNOWN_ID = 999999L;
@@ -80,6 +82,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
+    @DisplayName("A counter that is busy cannot call the next ticket")
     void callNext_counterAlreadyServing_returnsConflictWithCounterBusyMessage() throws Exception {
         testHelper.registerStudentAndLogin("a@example.com");
         testHelper.createCalledTicketForRegisteredStudent("a@example.com", registration, 1, deskOne);
@@ -92,6 +95,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
+    @DisplayName("Finishing a ticket that does not exist gives a clear not found message")
     void markDone_unknownTicket_returnsNotFoundWithTicketNotFoundMessage() throws Exception {
         testHelper.markDone(staffToken, UNKNOWN_ID)
                 .andExpect(status().isNotFound())
@@ -101,6 +105,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
+    @DisplayName("The error for an invalid counter names the invalid fields")
     void createCounter_blankName_returnsBadRequestWithFieldNamesMessage() throws Exception {
         mockMvc.perform(post(ADMIN_COUNTERS_URL)
                         .header("Authorization", "Bearer " + adminToken)
@@ -112,6 +117,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
+    @DisplayName("A request body that is not valid JSON is rejected with a fixed message")
     void createCounter_malformedJson_returnsBadRequestWithFixedMessage() throws Exception {
         mockMvc.perform(post(ADMIN_COUNTERS_URL)
                         .header("Authorization", "Bearer " + adminToken)
@@ -122,6 +128,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
+    @DisplayName("A logged-in user who opens a path that does not exist gets a not found error")
     void getUnknownPath_authenticatedUser_returnsNotFound() throws Exception {
         mockMvc.perform(get("/api/does-not-exist").header("Authorization", "Bearer " + staffToken))
                 .andExpect(status().isNotFound())
@@ -130,6 +137,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
+    @DisplayName("Calling next with a GET request is not allowed")
     void getCallNext_wrongMethod_returnsMethodNotAllowed() throws Exception {
         mockMvc.perform(get("/api/counters/{counterId}/call-next", deskOne.getId())
                         .header("Authorization", "Bearer " + staffToken))
@@ -139,6 +147,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
+    @DisplayName("A plain text body is rejected when the counter endpoint needs JSON")
     void createCounter_plainTextBody_returnsUnsupportedMediaType() throws Exception {
         mockMvc.perform(post(ADMIN_COUNTERS_URL)
                         .header("Authorization", "Bearer " + adminToken)
@@ -150,6 +159,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
+    @DisplayName("An error response has only a status, an error, a message and a timestamp")
     void markDone_unknownTicket_returnsExactlyFourFields() throws Exception {
         testHelper.markDone(staffToken, UNKNOWN_ID)
                 .andExpect(jsonPath("$.length()").value(4))
