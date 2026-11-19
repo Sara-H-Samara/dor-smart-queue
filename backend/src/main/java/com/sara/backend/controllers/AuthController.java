@@ -8,7 +8,6 @@ import com.sara.backend.dtos.responses.UserResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,10 +26,5 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
-    }
-
-    @GetMapping("/me")
-    public UserResponse me(Authentication authentication) {
-        return authService.me(authentication.getName());
     }
 }

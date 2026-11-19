@@ -149,30 +149,12 @@ class AuthControllerTest {
     // ---------- Token checks and roles (US2) ----------
 
     @Test
-    @DisplayName("A visitor without a token cannot see the current user")
-    void me_withoutToken_returnsUnauthorized() throws Exception {
-        mockMvc.perform(get("/api/auth/me"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("A logged-in user sees their own details")
-    void me_withValidToken_returnsCurrentUser() throws Exception {
-        registerStudent();
-        String token = loginAndGetToken("layla@example.com", "secret123");
-
-        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("layla@example.com"));
-    }
-
-    @Test
     @DisplayName("A token that was changed is not accepted")
-    void me_withTamperedToken_returnsUnauthorized() throws Exception {
+    void listActiveServices_withTamperedToken_returnsUnauthorized() throws Exception {
         registerStudent();
         String token = loginAndGetToken("layla@example.com", "secret123");
 
-        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token + "x"))
+        mockMvc.perform(get("/api/services").header("Authorization", "Bearer " + token + "x"))
                 .andExpect(status().isUnauthorized());
     }
 
