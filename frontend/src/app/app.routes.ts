@@ -1,16 +1,19 @@
 import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
+import { loggedOutOnlyGuard } from './core/guards/logged-out-only.guard';
 import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
   {
     path: 'login',
+    canActivate: [loggedOutOnlyGuard],
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
     path: 'register',
+    canActivate: [loggedOutOnlyGuard],
     loadComponent: () => import('./features/auth/register/register').then((m) => m.Register),
   },
   {
