@@ -14,7 +14,6 @@ public record ActiveTicketResponse(
         boolean hasOpenCounter
 ) {
 
-    /** Builds the response for a WAITING ticket. Without an open counter there is no wait estimate. */
     public static ActiveTicketResponse forWaitingTicket(
             Ticket ticket, int peopleAhead, int minutesPerPerson, boolean hasOpenCounter) {
         int position = peopleAhead + 1;
@@ -29,7 +28,6 @@ public record ActiveTicketResponse(
                 hasOpenCounter);
     }
 
-    /** Builds the response for a CALLED ticket: no queue information applies. */
     public static ActiveTicketResponse forCalledTicket(Ticket ticket) {
         return new ActiveTicketResponse(
                 TicketResponse.formatTicketCode(ticket),

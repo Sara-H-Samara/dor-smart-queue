@@ -76,7 +76,6 @@ class TicketControllerTest {
 
     @BeforeEach
     void deleteAllTestData() {
-        // Tickets first: they reference users and services.
         ticketRepository.deleteAll();
         counterRepository.deleteAll();
         serviceTypeRepository.deleteAll();
@@ -88,11 +87,8 @@ class TicketControllerTest {
 
     @AfterEach
     void deleteAllTickets() {
-        // Other test classes do not clear tickets, so leave none behind.
         ticketRepository.deleteAll();
     }
-
-    // ---------- Helpers ----------
 
     private String loginAndGetToken(String email, String password) throws Exception {
         String body = mockMvc.perform(post("/api/auth/login")
@@ -147,8 +143,6 @@ class TicketControllerTest {
                 .content(body(serviceId)));
     }
 
-    // ---------- Taking tickets ----------
-
     @Test
     @DisplayName("The first student of a service gets ticket number one")
     void takeTicket_firstStudent_returnsCreatedWithFirstCode() throws Exception {
@@ -193,8 +187,6 @@ class TicketControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.ticketCode").value("D-001"));
     }
-
-    // ---------- One active ticket per student ----------
 
     @Test
     @DisplayName("A student cannot take a second ticket while one is waiting")
@@ -276,8 +268,6 @@ class TicketControllerTest {
         assertEquals(TicketStatus.CALLED, ticketRepository.findById(yesterdayTicket.getId()).orElseThrow().getStatus());
     }
 
-    // ---------- Service problems and validation ----------
-
     @Test
     @DisplayName("A ticket cannot be taken for an inactive service")
     void takeTicket_inactiveService_returnsBadRequest() throws Exception {
@@ -348,8 +338,6 @@ class TicketControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ---------- Access control ----------
-
     @Test
     @DisplayName("A visitor without a token cannot take a ticket")
     void takeTicket_withoutToken_returnsUnauthorized() throws Exception {
@@ -369,8 +357,6 @@ class TicketControllerTest {
         take(staffToken(), registration.getId()).andExpect(status().isForbidden());
         take(adminToken(), registration.getId()).andExpect(status().isForbidden());
     }
-
-    // ---------- Concurrency ----------
 
     @Test
     @DisplayName("Students who take a ticket at the same time get different, consecutive numbers")

@@ -25,10 +25,8 @@ import java.util.List;
 @Service
 public class TicketServiceImpl implements TicketService {
 
-    // Release 1 uses a fixed estimate; Release 2 will use real service times.
     private static final int ESTIMATED_MINUTES_PER_PERSON = 5;
 
-    // WAITING and CALLED = the ticket is still active.
     private static final List<TicketStatus> ACTIVE_STATUSES = List.of(TicketStatus.WAITING, TicketStatus.CALLED);
 
     @Autowired
@@ -48,7 +46,6 @@ public class TicketServiceImpl implements TicketService {
     public TicketResponse takeTicket(String email, TakeTicketRequest request) {
         Long serviceId = request.serviceId();
 
-        // Lock order is always: student first, then service (avoids deadlocks).
         Long studentId = findStudentIdOrThrow(email);
         User student = userRepository.findByIdWithWriteLock(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."));

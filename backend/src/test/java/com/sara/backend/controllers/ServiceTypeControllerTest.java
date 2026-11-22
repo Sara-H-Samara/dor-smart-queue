@@ -73,8 +73,6 @@ class ServiceTypeControllerTest {
                 mockMvc, userRepository, serviceTypeRepository, ticketRepository, counterRepository, passwordEncoder);
     }
 
-    // ---------- Helpers ----------
-
     private String loginAndGetToken(String email, String password) throws Exception {
         String body = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -116,8 +114,6 @@ class ServiceTypeControllerTest {
                 .andReturn().getResponse().getContentAsString();
         return ((Number) JsonPath.read(body, "$.id")).longValue();
     }
-
-    // ---------- Admin: list, create, rename, toggle ----------
 
     @Test
     @DisplayName("An admin sees all services sorted by name")
@@ -182,8 +178,6 @@ class ServiceTypeControllerTest {
                 .andExpect(jsonPath("$.active").value(true));
     }
 
-    // ---------- Access control ----------
-
     @Test
     @DisplayName("A student cannot use any admin service endpoint")
     void student_onAnyAdminEndpoint_returnsForbidden() throws Exception {
@@ -226,8 +220,6 @@ class ServiceTypeControllerTest {
                         .content("{\"active\":false}"))
                 .andExpect(status().isUnauthorized());
     }
-
-    // ---------- Duplicates ----------
 
     @Test
     @DisplayName("A service name cannot be used twice")
@@ -324,8 +316,6 @@ class ServiceTypeControllerTest {
                 .andExpect(jsonPath("$.code").value("F"));
     }
 
-    // ---------- Unknown id ----------
-
     @Test
     @DisplayName("Renaming a service that does not exist gives not found")
     void rename_unknownId_returnsNotFound() throws Exception {
@@ -345,8 +335,6 @@ class ServiceTypeControllerTest {
                         .content("{\"active\":false}"))
                 .andExpect(status().isNotFound());
     }
-
-    // ---------- Validation ----------
 
     @Test
     @DisplayName("A service name cannot be empty")
@@ -456,8 +444,6 @@ class ServiceTypeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].code").value("F"));
     }
-
-    // ---------- Deactivating keeps the row ----------
 
     @Test
     @DisplayName("A deactivated service stays in the admin list")

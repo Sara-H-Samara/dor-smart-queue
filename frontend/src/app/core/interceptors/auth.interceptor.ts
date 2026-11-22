@@ -16,14 +16,12 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const isOurApiRequest = request.url.startsWith(`${environment.apiUrl}/api/`);
   const isTokenFreeEndpoint = ENDPOINTS_WITHOUT_TOKEN.some((path) => request.url.endsWith(path));
 
-  // Add the Bearer token only to our own API calls, never to login or register.
   if (!token || !isOurApiRequest || isTokenFreeEndpoint) {
     return next(request);
   }
 
   return next(request.clone({ setHeaders: { Authorization: `Bearer ${token}` } })).pipe(
     catchError((error: unknown) => {
-      // 401 means the token is rejected or expired, so sign out and go to login.
       if (error instanceof HttpErrorResponse && error.status === 401) {
         authService.logout();
         router.navigate(['/login']);

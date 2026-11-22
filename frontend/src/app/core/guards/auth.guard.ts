@@ -6,6 +6,5 @@ import { AuthService } from '../services/auth.service';
 export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  // Not signed in: redirect to /login.
   return authService.isLoggedIn() ? true : router.createUrlTree(['/login']);
 };

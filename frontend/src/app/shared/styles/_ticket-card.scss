@@ -5,8 +5,8 @@
 }
 
 .ticket {
-  --notch-radius: 14px; /* notch radius */
-  --stub-height: 108px; /* stub height */
+  --notch-radius: 14px;
+  --stub-height: 108px;
 
   position: relative;
   overflow: hidden;
@@ -33,7 +33,6 @@
   padding: 0 var(--space-5);
 }
 
-/* The perforation, between the fields and the button. */
 .ticket-stub::before {
   content: "";
   position: absolute;

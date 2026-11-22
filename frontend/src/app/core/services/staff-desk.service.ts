@@ -5,7 +5,6 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CalledStudent, WaitingList } from '../models/staff-desk.model';
 
-/** The server answers 204 when there is no student, which arrives here as null. */
 @Injectable({ providedIn: 'root' })
 export class StaffDeskService {
   private readonly http = inject(HttpClient);

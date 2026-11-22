@@ -1,6 +1,5 @@
 @use '../../../../../shared/styles/modal-dialog';
 
-/* Catalog dialog (add and edit): native <dialog>, styled with the shared tokens. */
 .catalog-dialog {
   @include modal-dialog.modal-dialog-shell;
 
