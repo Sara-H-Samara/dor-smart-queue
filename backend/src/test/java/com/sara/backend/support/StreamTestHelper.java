@@ -74,6 +74,17 @@ public class StreamTestHelper {
         assertNull(stream.awaitEvent(NO_EVENT_WAIT_MILLIS));
     }
 
+    public void assertConfigurationChangedReceivedOnceByEveryAudience(OpenStreams streams)
+            throws InterruptedException {
+        for (OpenStreamConnection stream : streams.all()) {
+            assertEquals(CONFIGURATION_CHANGED_EVENT, stream.awaitEvent(EVENT_WAIT_MILLIS));
+        }
+        Thread.sleep(NO_EVENT_WAIT_MILLIS);
+        for (OpenStreamConnection stream : streams.all()) {
+            assertNull(stream.awaitEvent(0));
+        }
+    }
+
     public int fetchStatusCode(int port, String path, Duration timeout) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(uri(port, path)).timeout(timeout).GET().build();
         return httpClient.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
@@ -94,7 +105,12 @@ public class StreamTestHelper {
         queueStreamRegistry.findAllEmitters().forEach(queueStreamRegistry::remove);
     }
 
-    public void closeAllStreams() {
+    public void close() {
+        closeAllStreams();
+        httpClient.close();
+    }
+
+    private void closeAllStreams() {
         openConnections.forEach(OpenStreamConnection::close);
         openConnections.clear();
         queueStreamRegistry.findAllEmitters().forEach(SseEmitter::complete);

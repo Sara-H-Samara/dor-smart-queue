@@ -1,7 +1,6 @@
 package com.sara.backend.streams;
 
 import com.sara.backend.BackendApplication;
-import com.sara.backend.support.OpenStreamConnection;
 import com.sara.backend.support.StreamTestHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,6 +9,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import java.time.Duration;
 
+import static com.sara.backend.support.StreamTestHelper.PUBLIC_STREAM_PATH;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Stream shutdown")
@@ -25,15 +25,14 @@ class StreamShutdownTest {
                 .run();
         int port = context.getEnvironment().getProperty("local.server.port", Integer.class);
         StreamTestHelper streamTestHelper = new StreamTestHelper(context.getBean(QueueStreamRegistry.class));
-        OpenStreamConnection firstPublicStream = streamTestHelper.openStream(port, "/api/public/queue-stream");
-        OpenStreamConnection secondPublicStream = streamTestHelper.openStream(port, "/api/public/queue-stream");
+        streamTestHelper.openStream(port, PUBLIC_STREAM_PATH);
+        streamTestHelper.openStream(port, PUBLIC_STREAM_PATH);
 
         long closeStartedAt = System.nanoTime();
         context.close();
         Duration closeTime = Duration.ofNanos(System.nanoTime() - closeStartedAt);
 
-        firstPublicStream.close();
-        secondPublicStream.close();
+        streamTestHelper.close();
         assertTrue(closeTime.compareTo(LONGEST_ACCEPTED_CLOSE_TIME) < 0,
                 "Closing the context took " + closeTime.toSeconds() + " seconds with open streams.");
     }

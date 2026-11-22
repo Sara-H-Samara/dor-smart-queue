@@ -105,7 +105,7 @@ class TicketStreamEventsTest {
 
     @AfterEach
     void closeOpenStreams() {
-        streamTestHelper.closeAllStreams();
+        streamTestHelper.close();
     }
 
     @Test

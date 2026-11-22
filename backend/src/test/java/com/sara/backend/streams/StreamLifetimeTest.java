@@ -20,6 +20,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static com.sara.backend.support.StreamTestHelper.ADMIN_STREAM_PATH;
+import static com.sara.backend.support.StreamTestHelper.EVENT_WAIT_MILLIS;
+import static com.sara.backend.support.StreamTestHelper.PUBLIC_STREAM_PATH;
+import static com.sara.backend.support.StreamTestHelper.READY_EVENT;
+import static com.sara.backend.support.StreamTestHelper.STAFF_STREAM_PATH;
+import static com.sara.backend.support.StreamTestHelper.STUDENT_STREAM_PATH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,13 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Stream lifetime on a real server")
 class StreamLifetimeTest {
 
-    private static final String PUBLIC_STREAM_PATH = "/api/public/queue-stream";
-    private static final String STUDENT_STREAM_PATH = "/api/tickets/me/stream";
-    private static final String STAFF_STREAM_PATH = "/api/staff/stream";
-    private static final String ADMIN_STREAM_PATH = "/api/admin/stream";
-    private static final String READY_EVENT = "event:ready\ndata:{}";
     private static final long STREAM_END_WAIT_MILLIS = 8000;
-    private static final long EVENT_WAIT_MILLIS = 5000;
 
     @LocalServerPort
     private int port;
@@ -89,7 +89,7 @@ class StreamLifetimeTest {
 
     @AfterEach
     void closeOpenStreams() {
-        streamTestHelper.closeAllStreams();
+        streamTestHelper.close();
     }
 
     @Test

@@ -24,6 +24,11 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import static com.sara.backend.support.StreamTestHelper.ADMIN_STREAM_PATH;
+import static com.sara.backend.support.StreamTestHelper.PUBLIC_STREAM_PATH;
+import static com.sara.backend.support.StreamTestHelper.READY_EVENT;
+import static com.sara.backend.support.StreamTestHelper.STAFF_STREAM_PATH;
+import static com.sara.backend.support.StreamTestHelper.STUDENT_STREAM_PATH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
@@ -39,11 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Queue streams")
 class QueueStreamControllerTest {
 
-    private static final String PUBLIC_STREAM_PATH = "/api/public/queue-stream";
-    private static final String STUDENT_STREAM_PATH = "/api/tickets/me/stream";
-    private static final String STAFF_STREAM_PATH = "/api/staff/stream";
-    private static final String ADMIN_STREAM_PATH = "/api/admin/stream";
-    private static final String READY_EVENT = "event:ready\ndata:{}\n\n";
+    private static final String READY_EVENT_AS_WRITTEN = READY_EVENT + "\n\n";
 
     @Autowired
     private MockMvc mockMvc;
@@ -69,6 +70,7 @@ class QueueStreamControllerTest {
     @Autowired
     private QueueStreamRegistry queueStreamRegistry;
 
+    private StreamTestHelper streamTestHelper;
     private String studentToken;
     private String staffToken;
     private String adminToken;
@@ -80,6 +82,7 @@ class QueueStreamControllerTest {
         serviceTypeRepository.deleteAll();
         userRepository.deleteAll();
         dataSeeder.run();
+        streamTestHelper = new StreamTestHelper(queueStreamRegistry);
         TicketTestHelper testHelper = new TicketTestHelper(
                 mockMvc, userRepository, serviceTypeRepository, ticketRepository, counterRepository, passwordEncoder);
         studentToken = testHelper.registerStudentAndLogin("student@example.com");
@@ -89,7 +92,7 @@ class QueueStreamControllerTest {
 
     @AfterEach
     void closeOpenStreams() {
-        new StreamTestHelper(queueStreamRegistry).removeAllEmitters();
+        streamTestHelper.close();
     }
 
     @Test
@@ -101,7 +104,7 @@ class QueueStreamControllerTest {
                 .andExpect(header().string("X-Accel-Buffering", "no"))
                 .andReturn();
 
-        assertEquals(READY_EVENT, result.getResponse().getContentAsString());
+        assertEquals(READY_EVENT_AS_WRITTEN,result.getResponse().getContentAsString());
     }
 
     @Test
@@ -154,7 +157,7 @@ class QueueStreamControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
                 .andReturn();
 
-        assertEquals(READY_EVENT, result.getResponse().getContentAsString());
+        assertEquals(READY_EVENT_AS_WRITTEN,result.getResponse().getContentAsString());
     }
 
     @Test
@@ -185,7 +188,7 @@ class QueueStreamControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
                 .andReturn();
 
-        assertEquals(READY_EVENT, result.getResponse().getContentAsString());
+        assertEquals(READY_EVENT_AS_WRITTEN,result.getResponse().getContentAsString());
     }
 
     @Test
@@ -216,7 +219,7 @@ class QueueStreamControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
                 .andReturn();
 
-        assertEquals(READY_EVENT, result.getResponse().getContentAsString());
+        assertEquals(READY_EVENT_AS_WRITTEN,result.getResponse().getContentAsString());
     }
 
     @Test

@@ -9,7 +9,6 @@ import com.sara.backend.repositories.CounterRepository;
 import com.sara.backend.repositories.ServiceTypeRepository;
 import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.repositories.UserRepository;
-import com.sara.backend.support.OpenStreamConnection;
 import com.sara.backend.support.OpenStreams;
 import com.sara.backend.support.StreamTestHelper;
 import com.sara.backend.support.TicketTestHelper;
@@ -25,9 +24,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
-
-import static com.sara.backend.support.StreamTestHelper.CONFIGURATION_CHANGED_EVENT;
 import static com.sara.backend.support.StreamTestHelper.EVENT_WAIT_MILLIS;
 import static com.sara.backend.support.StreamTestHelper.TICKET_CHANGED_EVENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -99,7 +95,7 @@ class StaffDeskStreamEventsTest {
 
     @AfterEach
     void closeOpenStreams() {
-        streamTestHelper.closeAllStreams();
+        streamTestHelper.close();
     }
 
     @Test
@@ -130,7 +126,7 @@ class StaffDeskStreamEventsTest {
         ticketTestHelper.callNext(staffToken, deskOne.getId()).andExpect(status().isNoContent());
         queueChangeAnnouncer.announceConfigurationChanged();
 
-        assertOnlyConfigurationChangedReceived(streams);
+        streamTestHelper.assertConfigurationChangedReceivedOnceByEveryAudience(streams);
     }
 
     @Test
@@ -141,7 +137,7 @@ class StaffDeskStreamEventsTest {
         ticketTestHelper.callNext(staffToken, deskOne.getId()).andExpect(status().isConflict());
         queueChangeAnnouncer.announceConfigurationChanged();
 
-        assertOnlyConfigurationChangedReceived(streams);
+        streamTestHelper.assertConfigurationChangedReceivedOnceByEveryAudience(streams);
     }
 
     @Test
@@ -176,7 +172,7 @@ class StaffDeskStreamEventsTest {
         ticketTestHelper.markDone(staffToken, waitingTicket.getId()).andExpect(status().isConflict());
         queueChangeAnnouncer.announceConfigurationChanged();
 
-        assertOnlyConfigurationChangedReceived(streams);
+        streamTestHelper.assertConfigurationChangedReceivedOnceByEveryAudience(streams);
     }
 
     @Test
@@ -211,15 +207,7 @@ class StaffDeskStreamEventsTest {
         ticketTestHelper.markNoShow(staffToken, waitingTicket.getId()).andExpect(status().isConflict());
         queueChangeAnnouncer.announceConfigurationChanged();
 
-        assertOnlyConfigurationChangedReceived(streams);
-    }
-
-    private void assertOnlyConfigurationChangedReceived(OpenStreams streams) {
-        for (OpenStreamConnection stream : List.of(
-                streams.publicStream(), streams.studentStream(), streams.staffStream(), streams.adminStream())) {
-            assertEquals(CONFIGURATION_CHANGED_EVENT, stream.awaitEvent(EVENT_WAIT_MILLIS));
-            streamTestHelper.assertNoEventReceived(stream);
-        }
+        streamTestHelper.assertConfigurationChangedReceivedOnceByEveryAudience(streams);
     }
 
     private OpenStreams openStreamOfEveryAudience() throws Exception {
