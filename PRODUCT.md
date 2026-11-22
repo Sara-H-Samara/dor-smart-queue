@@ -8,8 +8,8 @@ web
 
 ## Users
 
-- **Students (primary):** on their phones, in short and often stressed visits to a university Student Affairs office. They register, log in, and (planned) take a ticket and wait. Mobile web first.
-- **Staff (secondary, planned screen):** at desks, serving students one at a time.
+- **Students (primary):** on their phones, in short and often stressed visits to a university Student Affairs office. They register, log in, take a ticket, see their place and estimated wait, and leave the queue. Mobile web first.
+- **Staff (secondary):** at desks, serving students one at a time.
 - **Admin (secondary):** configures services and counters.
 
 ## Product Purpose
@@ -18,28 +18,31 @@ Dor is a digital queue for a university Student Affairs office. Paper queue numb
 
 ## Positioning
 
-Honest remote waiting plus conflict-free calling: students see a real position and an estimated wait, so they can leave and come back; staff dispatch guarantees two desks never receive the same student. Both are planned, not yet built.
+Honest remote waiting plus conflict-free calling: students see a real position and an estimated wait, so they can leave and come back; staff dispatch guarantees two desks never receive the same student. Both are built in Release 1.
 
 ## Operating Context
 
-A university Student Affairs office with several services (for example course registration and document requests) and several counters per service. Tickets show a service code plus a three-digit number, for example R-001, D-001, numbered per service per day. Students use phones; staff use desk screens; a waiting-room screen is planned.
+A university Student Affairs office with several services (for example course registration and document requests) and several counters per service. Tickets show a service code plus a three-digit number, for example R-001, D-001, numbered per service per day. Students use phones; staff use desk screens; a public waiting-room screen shows who is served now.
 
 ## Capabilities and Constraints
 
-**Built today:**
+**Built in Release 1:**
 - Login and registration (name, email, password; email unique; password 8 to 72 characters).
 - Role-based redirects after login (student, staff, admin).
-- Admin screen for managing services and counters.
+- Take a ticket: one active ticket (waiting or called) at a time per student, and only when the service has an open counter.
+- Student ticket screen: position, estimated wait (a fixed 5 minutes per person), called state with the counter name, leave the queue.
+- Staff desk: choose a counter, call next, see the current student and the waiting list, mark done or no-show.
+- Admin screen: create, edit, turn on and turn off services and counters.
+- Waiting screen at `/waiting-room` (no login) showing who is served at each open counter and the next tickets.
+- Automatic refresh every 5 seconds on the student ticket screen, the waiting list of the staff desk and the waiting screen. The admin screen does not refresh by itself.
 
 **Planned (not built; do not present as existing):**
-- Student ticket flow: take a ticket, see position and estimated wait, leave the queue.
-- Staff desk: choose a counter, call next, mark served or no-show.
-- Waiting-room screen showing who is served now and who is next.
-- Automatic refresh every few seconds; live updates, early alerts and statistics arrive in Release 2.
+- Live updates, early alerts and statistics (Release 2).
+- Admin user management from the screen (Release 2).
 
-**Technical:** Angular frontend; Java 21 Spring Boot backend with Spring Security (JWT); PostgreSQL. Planned, not set up yet: Flyway migrations, Docker Compose, GitHub Actions. Staff and admin accounts are seeded in the database in Sprint 1; admin role assignment from the UI comes in Sprint 2.
+**Technical:** Angular frontend; Java 21 Spring Boot backend with Spring Security (JWT); PostgreSQL. Planned, not set up yet: Flyway migrations, Docker Compose, GitHub Actions. Staff and admin accounts are seeded in the database. Admin user management from the screen is planned for Release 2.
 
-**Terminology:** service, counter, ticket; ticket states WAITING, CALLED, CANCELLED, plus served and no-show outcomes.
+**Terminology:** service, counter, ticket; ticket states WAITING, CALLED, DONE, NO_SHOW, CANCELLED.
 
 ## Evidence on Hand
 
