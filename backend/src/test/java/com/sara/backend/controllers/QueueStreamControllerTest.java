@@ -7,6 +7,7 @@ import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.streams.QueueChangeKind;
 import com.sara.backend.streams.QueueStreamRegistry;
+import com.sara.backend.support.StreamTestHelper;
 import com.sara.backend.support.TicketTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,8 +89,7 @@ class QueueStreamControllerTest {
 
     @AfterEach
     void closeOpenStreams() {
-        queueStreamRegistry.findEmittersFor(QueueChangeKind.CONFIGURATION_CHANGED)
-                .forEach(queueStreamRegistry::remove);
+        new StreamTestHelper(queueStreamRegistry).removeAllEmitters();
     }
 
     @Test

@@ -18,15 +18,20 @@ public class QueueStreamHeartbeat {
 
     private final QueueStreamRegistry queueStreamRegistry;
     private final QueueStreamSender queueStreamSender;
+    private final QueueStreamSendExecutor queueStreamSendExecutor;
     private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(task -> {
         Thread heartbeatThread = new Thread(task, "queue-stream-heartbeat");
         heartbeatThread.setDaemon(true);
         return heartbeatThread;
     });
 
-    public QueueStreamHeartbeat(QueueStreamRegistry queueStreamRegistry, QueueStreamSender queueStreamSender) {
+    public QueueStreamHeartbeat(
+            QueueStreamRegistry queueStreamRegistry,
+            QueueStreamSender queueStreamSender,
+            QueueStreamSendExecutor queueStreamSendExecutor) {
         this.queueStreamRegistry = queueStreamRegistry;
         this.queueStreamSender = queueStreamSender;
+        this.queueStreamSendExecutor = queueStreamSendExecutor;
     }
 
     @PostConstruct
@@ -42,7 +47,8 @@ public class QueueStreamHeartbeat {
     }
 
     public void sendHeartbeatToAllStreams() {
-        queueStreamRegistry.findAllEmitters().forEach(queueStreamSender::sendHeartbeat);
+        queueStreamRegistry.findAllEmitters().forEach(emitter ->
+                queueStreamSendExecutor.execute(() -> queueStreamSender.sendHeartbeat(emitter)));
     }
 
     private void sendHeartbeatAndKeepSchedule() {
