@@ -21,7 +21,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -465,6 +468,19 @@ class CounterControllerTest {
                 .andExpect(jsonPath("$.message").value("Finish the called student first."));
 
         assertTrue(counterRepository.findById(counter.getId()).orElseThrow().isActive());
+    }
+
+    @Test
+    @DisplayName("A counter can be deactivated when its called ticket is from an earlier day")
+    void updateActive_forCounterWithCalledTicketFromEarlierDay_deactivatesCounter() throws Exception {
+        Counter counter = testHelper.createCounter("Counter 1", activeService);
+        testHelper.registerStudentAndLogin("layla@example.com");
+        testHelper.createCalledTicketOnDateForRegisteredStudent(
+                "layla@example.com", activeService, 1, counter, LocalDate.now().minusDays(1));
+
+        patchActive(testHelper.loginAsAdmin(), counter.getId(), false, 200);
+
+        assertFalse(counterRepository.findById(counter.getId()).orElseThrow().isActive());
     }
 
     @Test

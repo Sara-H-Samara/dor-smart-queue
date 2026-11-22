@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -97,7 +98,8 @@ public class ServiceTypeServiceImpl implements ServiceTypeService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found."));
         if (!request.active()) {
             lockCountersOfService(id);
-            if (ticketRepository.existsByCounterServiceTypeIdAndStatus(id, TicketStatus.CALLED)) {
+            if (ticketRepository.existsByCounterServiceTypeIdAndTicketDateAndStatus(
+                    id, LocalDate.now(), TicketStatus.CALLED)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Finish the called student first.");
             }
         }

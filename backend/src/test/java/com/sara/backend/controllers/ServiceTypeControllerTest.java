@@ -20,6 +20,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -474,6 +477,24 @@ class ServiceTypeControllerTest {
                 .andExpect(jsonPath("$[0].id").value(id))
                 .andExpect(jsonPath("$[0].name").value("Fees"))
                 .andExpect(jsonPath("$[0].active").value(false));
+    }
+
+    @Test
+    @DisplayName("A service can be deactivated when the called ticket at its counter is from an earlier day")
+    void updateActive_forServiceWithCalledTicketFromEarlierDay_deactivatesService() throws Exception {
+        ServiceType service = testHelper.createActiveService("Fees", "F");
+        Counter counter = testHelper.createCounter("Counter 1", service);
+        testHelper.registerStudentAndLogin("layla@example.com");
+        testHelper.createCalledTicketOnDateForRegisteredStudent(
+                "layla@example.com", service, 1, counter, LocalDate.now().minusDays(1));
+
+        mockMvc.perform(patch(URL + "/" + service.getId() + "/active")
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
+                .andExpect(status().isOk());
+
+        assertFalse(serviceTypeRepository.findById(service.getId()).orElseThrow().isActive());
     }
 
     @Test
