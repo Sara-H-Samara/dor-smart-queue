@@ -105,7 +105,6 @@ export class CatalogPanel implements OnInit {
     });
   }
 
-  /** Runs when the dialog closes by any route, including the Esc key. */
   protected onDialogClosed(): void {
     this.dialogOpen.set(false);
     this.dialogMode.set('add');

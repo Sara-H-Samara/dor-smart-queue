@@ -9,7 +9,6 @@ export interface CatalogFormValue {
   serviceId?: number;
 }
 
-/** Modal form for adding or editing a catalog item. The parent owns the API calls. */
 @Component({
   selector: 'app-catalog-form-dialog',
   imports: [ReactiveFormsModule],
@@ -30,7 +29,6 @@ export class CatalogFormDialog {
 
   readonly submitted = output<CatalogFormValue>();
   readonly closed = output<void>();
-  /** The user typed in the code field (the parent clears its server error). */
   readonly codeEdited = output<void>();
 
   private readonly dialogElement = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
@@ -57,7 +55,6 @@ export class CatalogFormDialog {
     return this.serviceControl.invalid && (this.serviceControl.touched || this.submitAttempted());
   }
 
-  /** Opens the dialog; an initial name pre-fills the field and is selected. */
   open(initialValue: Partial<CatalogFormValue> = {}): void {
     if (initialValue.name !== undefined) {
       this.nameControl.setValue(initialValue.name);
@@ -76,7 +73,6 @@ export class CatalogFormDialog {
     this.reset();
   }
 
-  /** Runs when the dialog closes by any route, including the Esc key. */
   protected onDialogClose(): void {
     this.reset();
     this.closed.emit();
