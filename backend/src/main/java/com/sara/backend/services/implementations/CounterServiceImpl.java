@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -90,7 +91,8 @@ public class CounterServiceImpl implements CounterService {
     }
 
     private void rejectWhileStudentIsCalled(Counter counter) {
-        if (ticketRepository.existsByCounterIdAndStatus(counter.getId(), TicketStatus.CALLED)) {
+        if (ticketRepository.existsByCounterIdAndTicketDateAndStatus(
+                counter.getId(), LocalDate.now(), TicketStatus.CALLED)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Finish the called student first.");
         }
     }

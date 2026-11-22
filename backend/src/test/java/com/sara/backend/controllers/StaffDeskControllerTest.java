@@ -142,6 +142,19 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("A called ticket from an earlier day does not block calling today's waiting ticket")
+    void callNext_withCalledTicketFromEarlierDay_callsTodaysWaitingTicket() throws Exception {
+        testHelper.registerStudentAndLogin("a@example.com");
+        testHelper.createCalledTicketOnDateForRegisteredStudent(
+                "a@example.com", registration, 1, deskOne, LocalDate.now().minusDays(1));
+        Ticket waiting = waitingTicketFor("b@example.com", 2);
+
+        testHelper.callNext(staffToken, deskOne.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(waiting.getId()));
+    }
+
+    @Test
     @DisplayName("A ticket from an earlier day is not called")
     void callNext_withTicketFromEarlierDay_ignoresIt() throws Exception {
         testHelper.registerStudentAndLogin("a@example.com");
@@ -276,15 +289,13 @@ class StaffDeskControllerTest {
     }
 
     @Test
-    @DisplayName("A ticket called on an earlier day is still the current student")
-    void currentStudent_withCalledTicketFromEarlierDay_returnsCalledTicket() throws Exception {
+    @DisplayName("A ticket called on an earlier day is ignored and is not the current student")
+    void currentStudent_withCalledTicketFromEarlierDay_returnsNoContent() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
         called.setTicketDate(LocalDate.now().minusDays(1));
         ticketRepository.save(called);
 
-        testHelper.getCurrentStudent(staffToken, deskOne.getId())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(called.getId()));
+        testHelper.getCurrentStudent(staffToken, deskOne.getId()).andExpect(status().isNoContent());
     }
 
     @Test
@@ -333,6 +344,20 @@ class StaffDeskControllerTest {
     @DisplayName("A called ticket can be marked done")
     void markDone_withCalledTicket_returnsDone() throws Exception {
         Ticket called = calledTicketFor("a@example.com", 1);
+
+        testHelper.markDone(staffToken, called.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DONE"));
+
+        assertEquals(TicketStatus.DONE, statusInDatabase(called));
+    }
+
+    @Test
+    @DisplayName("A called ticket from an earlier day can still be marked done")
+    void markDone_withCalledTicketFromEarlierDay_returnsOk() throws Exception {
+        testHelper.registerStudentAndLogin("a@example.com");
+        Ticket called = testHelper.createCalledTicketOnDateForRegisteredStudent(
+                "a@example.com", registration, 1, deskOne, LocalDate.now().minusDays(1));
 
         testHelper.markDone(staffToken, called.getId())
                 .andExpect(status().isOk())

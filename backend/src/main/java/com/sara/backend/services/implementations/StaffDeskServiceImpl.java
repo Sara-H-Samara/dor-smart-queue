@@ -39,7 +39,8 @@ public class StaffDeskServiceImpl implements StaffDeskService {
                 .orElseThrow(this::counterNotFound);
         rejectUnavailableCounter(counter);
 
-        if (ticketRepository.existsByCounterIdAndStatus(counterId, TicketStatus.CALLED)) {
+        if (ticketRepository.existsByCounterIdAndTicketDateAndStatus(
+                counterId, LocalDate.now(), TicketStatus.CALLED)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This counter is already serving a student.");
         }
 
@@ -62,7 +63,8 @@ public class StaffDeskServiceImpl implements StaffDeskService {
         if (!counterRepository.existsById(counterId)) {
             throw counterNotFound();
         }
-        return ticketRepository.findFirstByCounterIdAndStatusOrderByCalledAtDesc(counterId, TicketStatus.CALLED)
+        return ticketRepository.findFirstByCounterIdAndTicketDateAndStatusOrderByCalledAtDesc(
+                        counterId, LocalDate.now(), TicketStatus.CALLED)
                 .map(CalledTicketResponse::from);
     }
 

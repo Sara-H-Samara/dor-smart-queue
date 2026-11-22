@@ -24,11 +24,13 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     Optional<Ticket> findFirstByStudentIdAndTicketDateAndStatusIn(
             Long studentId, LocalDate ticketDate, Collection<TicketStatus> statuses);
 
-    boolean existsByCounterIdAndStatus(Long counterId, TicketStatus status);
+    boolean existsByCounterIdAndTicketDateAndStatus(Long counterId, LocalDate ticketDate, TicketStatus status);
 
-    boolean existsByCounterServiceTypeIdAndStatus(Long serviceId, TicketStatus status);
+    boolean existsByCounterServiceTypeIdAndTicketDateAndStatus(
+            Long serviceId, LocalDate ticketDate, TicketStatus status);
 
-    Optional<Ticket> findFirstByCounterIdAndStatusOrderByCalledAtDesc(Long counterId, TicketStatus status);
+    Optional<Ticket> findFirstByCounterIdAndTicketDateAndStatusOrderByCalledAtDesc(
+            Long counterId, LocalDate ticketDate, TicketStatus status);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from Ticket t where t.id = :id")
