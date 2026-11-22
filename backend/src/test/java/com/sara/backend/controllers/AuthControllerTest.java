@@ -45,8 +45,6 @@ class AuthControllerTest {
         dataSeeder.run();
     }
 
-    // ---------- Helpers ----------
-
     private void registerStudent() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -64,8 +62,6 @@ class AuthControllerTest {
                 .andReturn().getResponse().getContentAsString();
         return JsonPath.read(body, "$.token");
     }
-
-    // ---------- Registration (US1) ----------
 
     @Test
     @DisplayName("Registering a student never returns the password")
@@ -116,8 +112,6 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ---------- Login (US1) ----------
-
     @Test
     @DisplayName("A student with correct details logs in and receives a token")
     void login_withCorrectDetails_returnsToken() throws Exception {
@@ -146,8 +140,6 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ---------- Token checks and roles (US2) ----------
-
     @Test
     @DisplayName("A token that was changed is not accepted")
     void listActiveServices_withTamperedToken_returnsUnauthorized() throws Exception {
@@ -173,7 +165,6 @@ class AuthControllerTest {
     void adminServicesEndpoint_asAdmin_returnsOk() throws Exception {
         String token = loginAndGetToken("admin@dor.com", "admin12345");
 
-        // The admin services endpoint exists now, so an admin gets 200 (not 401 and not 403).
         mockMvc.perform(get("/api/admin/services").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
     }

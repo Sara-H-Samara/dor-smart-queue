@@ -77,11 +77,8 @@ class MyTicketControllerTest {
 
     @AfterEach
     void deleteAllTickets() {
-        // Other test classes do not clear tickets, so leave none behind.
         ticketRepository.deleteAll();
     }
-
-    // ---------- Helpers ----------
 
     private String loginAndGetToken(String email, String password) throws Exception {
         String body = mockMvc.perform(post("/api/auth/login")
@@ -136,8 +133,6 @@ class MyTicketControllerTest {
     private ResultActions me(String email) throws Exception {
         return mockMvc.perform(get(URL).header("Authorization", "Bearer " + loginAndGetToken(email, "secret123")));
     }
-
-    // ---------- Tests ----------
 
     @Test
     @DisplayName("A student without an active ticket gets not found")
