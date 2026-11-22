@@ -1,9 +1,9 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { SessionExpiryHandler } from '../live-updates/session-expiry-handler';
 import { AuthService } from '../services/auth.service';
 import { WAITING_ROOM_PATH } from '../services/waiting-room.service';
 
@@ -11,7 +11,7 @@ const ENDPOINTS_WITHOUT_TOKEN = ['/api/auth/login', '/api/auth/register', WAITIN
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
-  const router = inject(Router);
+  const sessionExpiryHandler = inject(SessionExpiryHandler);
   const token = authService.getToken();
   const isOurApiRequest = request.url.startsWith(`${environment.apiUrl}/api/`);
   const isTokenFreeEndpoint = ENDPOINTS_WITHOUT_TOKEN.some((path) => request.url.endsWith(path));
@@ -23,8 +23,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   return next(request.clone({ setHeaders: { Authorization: `Bearer ${token}` } })).pipe(
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse && error.status === 401) {
-        authService.logout();
-        router.navigate(['/login']);
+        sessionExpiryHandler.endSessionAndShowLogin();
       }
       return throwError(() => error);
     }),
