@@ -5,6 +5,7 @@ Dor is a digital queue for a university Student Affairs office. Paper queue numb
 ## Features of Release 1
 
 **Student**
+
 - Register and log in.
 - Take one ticket per day for a service. The ticket code looks like `R-001` and is numbered per service per day. A ticket can only be taken when the service has an open counter.
 - See how many people are ahead and an estimated wait (a fixed 5 minutes per person).
@@ -12,16 +13,19 @@ Dor is a digital queue for a university Student Affairs office. Paper queue numb
 - Leave the queue while the ticket is still waiting.
 
 **Staff**
+
 - Choose a counter.
 - Call the next student.
 - See the current student and the waiting list (the first 20 tickets).
 - Mark the current student as done or no-show.
 
 **Admin**
+
 - Create, edit, turn on and turn off services (a name and a code of 1 or 2 letters).
 - Create, edit, turn on and turn off counters. Each counter belongs to one service.
 
 **Waiting screen** (`/waiting-room`, no login)
+
 - Shows who is being served at each open counter.
 - Shows the next 3 tickets and how many more are waiting.
 - Built for a TV screen.
@@ -32,11 +36,11 @@ All screens refresh by asking the server every 5 seconds.
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Angular 22 (standalone components, signals), Vitest |
-| Backend | Java 21, Spring Boot 4.1.2, Spring Security with JWT |
-| Database | PostgreSQL |
+| Layer    | Technology                                           |
+| -------- | ---------------------------------------------------- |
+| Frontend | Angular 22 (standalone components, signals), Vitest  |
+| Backend  | Java 21, Spring Boot 4.1.2, Spring Security with JWT |
+| Database | PostgreSQL                                           |
 
 Not yet in the project: Flyway migrations, Docker Compose, GitHub Actions. The tables are created automatically by Hibernate (`ddl-auto=update`).
 
@@ -70,12 +74,12 @@ cp backend/src/main/resources/application.properties.example backend/src/main/re
 
 Set these environment variables before you start the backend:
 
-| Name | Meaning |
-|---|---|
-| `JWT_SECRET` | Secret that signs the login tokens. It must be Base64. |
-| `JWT_EXPIRATION_MINUTES` | How long a login token is valid, in minutes. |
-| `ADMIN_PASSWORD` | Password of the seeded admin account. |
-| `STAFF_PASSWORD` | Password of the seeded staff account. |
+| Name                     | Meaning                                                |
+| ------------------------ | ------------------------------------------------------ |
+| `JWT_SECRET`             | Secret that signs the login tokens. It must be Base64. |
+| `JWT_EXPIRATION_MINUTES` | How long a login token is valid, in minutes.           |
+| `ADMIN_PASSWORD`         | Password of the seeded admin account.                  |
+| `STAFF_PASSWORD`         | Password of the seeded staff account.                  |
 
 To make a Base64 secret:
 
@@ -137,8 +141,8 @@ npm test
 
 ## Test accounts
 
-| Role | Email |
-|---|---|
+| Role  | Email           |
+| ----- | --------------- |
 | Admin | `admin@dor.com` |
 | Staff | `staff@dor.com` |
 
@@ -164,12 +168,12 @@ frontend/src/app/
 
 ## API overview
 
-| Who | Endpoints |
-|---|---|
-| Public | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/public/queue-status` |
-| Student | `GET /api/services`, `POST /api/tickets`, `GET /api/tickets/me`, `POST /api/tickets/me/cancel` |
-| Staff | `GET /api/counters`, `POST /api/counters/{id}/call-next`, `GET /api/counters/{id}/current`, `GET /api/counters/{id}/waiting`, `POST /api/tickets/{id}/done`, `POST /api/tickets/{id}/no-show` |
-| Admin | `GET /api/counters`, and `GET`, `POST`, `PUT /{id}`, `PATCH /{id}/active` on `/api/admin/services` and `/api/admin/counters` |
+| Who     | Endpoints                                                                                                                                                                                     |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public  | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/public/queue-status`                                                                                                             |
+| Student | `GET /api/services`, `POST /api/tickets`, `GET /api/tickets/me`, `POST /api/tickets/me/cancel`                                                                                                |
+| Staff   | `GET /api/counters`, `POST /api/counters/{id}/call-next`, `GET /api/counters/{id}/current`, `GET /api/counters/{id}/waiting`, `POST /api/tickets/{id}/done`, `POST /api/tickets/{id}/no-show` |
+| Admin   | `GET /api/counters`, and `GET`, `POST`, `PUT /{id}`, `PATCH /{id}/active` on `/api/admin/services` and `/api/admin/counters`                                                                  |
 
 Protected endpoints need the header `Authorization: Bearer <token>`. See [API.md](API.md) for every endpoint with examples.
 
@@ -186,14 +190,38 @@ Protected endpoints need the header `Authorization: Bearer <token>`. See [API.md
 
 ## Screenshots
 
-| Screen | File |
-|---|---|
-| Login | `screenshots/login.png` |
-| Student: ticket waiting | `screenshots/student-waiting.png` |
-| Student: ticket called | `screenshots/student-called.png` |
-| Staff desk | `screenshots/staff-desk.png` |
-| Admin: services and counters | `screenshots/admin.png` |
-| Waiting screen | `screenshots/waiting-screen.png` |
+| Screen                       | File                              |
+| ---------------------------- | --------------------------------- |
+| Login                        | `screenshots/login.png`           |
+| Student: ticket waiting      | `screenshots/student-waiting.png` |
+| Student: ticket called       | `screenshots/student-called.png`  |
+| Staff desk                   | `screenshots/staff-desk.png`      |
+| Admin: services and counters | `screenshots/admin.png`           |
+| Waiting screen               | `screenshots/waiting-screen.png`  |
+
+### Login
+
+![Login screen with email and password fields](screenshots/login.png)
+
+### Student: ticket waiting
+
+![Student screen showing a waiting ticket with position and estimated wait](screenshots/student-waiting.png)
+
+### Student: ticket called
+
+![Student screen showing a called ticket with the counter name](screenshots/student-called.png)
+
+### Staff desk
+
+![Staff desk with the current student and the waiting list](screenshots/staff-desk.png)
+
+### Admin: services and counters
+
+![Admin screen for managing services and counters](screenshots/admin.png)
+
+### Waiting screen
+
+![Public waiting screen with counters and next tickets](screenshots/waiting-screen.png)
 
 ## License
 
