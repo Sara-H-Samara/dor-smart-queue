@@ -12,6 +12,7 @@ import com.sara.backend.repositories.ServiceTypeRepository;
 import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.services.OpenCounterFinder;
 import com.sara.backend.services.ServiceTypeService;
+import com.sara.backend.streams.QueueChangeAnnouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -37,6 +38,9 @@ public class ServiceTypeServiceImpl implements ServiceTypeService {
 
     @Autowired
     private OpenCounterFinder openCounterFinder;
+
+    @Autowired
+    private QueueChangeAnnouncer queueChangeAnnouncer;
 
     @Override
     public List<ServiceTypeResponse> list() {
@@ -70,7 +74,9 @@ public class ServiceTypeServiceImpl implements ServiceTypeService {
         serviceType.setName(name);
         serviceType.setCode(code);
         try {
-            return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
+            ServiceType createdServiceType = serviceTypeRepository.save(serviceType);
+            queueChangeAnnouncer.announceConfigurationChanged();
+            return ServiceTypeResponse.from(createdServiceType);
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Service name or code already exists.");
         }
@@ -88,7 +94,9 @@ public class ServiceTypeServiceImpl implements ServiceTypeService {
         }
 
         serviceType.setName(name);
-        return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
+        ServiceType renamedServiceType = serviceTypeRepository.save(serviceType);
+        queueChangeAnnouncer.announceConfigurationChanged();
+        return ServiceTypeResponse.from(renamedServiceType);
     }
 
     @Override
@@ -104,7 +112,9 @@ public class ServiceTypeServiceImpl implements ServiceTypeService {
             }
         }
         serviceType.setActive(request.active());
-        return ServiceTypeResponse.from(serviceTypeRepository.save(serviceType));
+        ServiceType updatedServiceType = serviceTypeRepository.save(serviceType);
+        queueChangeAnnouncer.announceConfigurationChanged();
+        return ServiceTypeResponse.from(updatedServiceType);
     }
 
     private void lockCountersOfService(Long serviceId) {

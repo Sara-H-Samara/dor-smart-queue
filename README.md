@@ -168,12 +168,12 @@ frontend/src/app/
 
 ## API overview
 
-| Who     | Endpoints                                                                                                                                                                                     |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public  | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/public/queue-status`                                                                                                             |
-| Student | `GET /api/services`, `POST /api/tickets`, `GET /api/tickets/me`, `POST /api/tickets/me/cancel`                                                                                                |
-| Staff   | `GET /api/counters`, `POST /api/counters/{id}/call-next`, `GET /api/counters/{id}/current`, `GET /api/counters/{id}/waiting`, `POST /api/tickets/{id}/done`, `POST /api/tickets/{id}/no-show` |
-| Admin   | `GET /api/counters`, and `GET`, `POST`, `PUT /{id}`, `PATCH /{id}/active` on `/api/admin/services` and `/api/admin/counters`                                                                  |
+| Who     | Endpoints                                                                                                                                                                                                              |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public  | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/public/queue-status`, `GET /api/public/queue-stream`                                                                                                      |
+| Student | `GET /api/services`, `POST /api/tickets`, `GET /api/tickets/me`, `POST /api/tickets/me/cancel`, `GET /api/tickets/me/stream`                                                                                           |
+| Staff   | `GET /api/counters`, `POST /api/counters/{id}/call-next`, `GET /api/counters/{id}/current`, `GET /api/counters/{id}/waiting`, `POST /api/tickets/{id}/done`, `POST /api/tickets/{id}/no-show`, `GET /api/staff/stream` |
+| Admin   | `GET /api/counters`, `GET /api/admin/stream`, and `GET`, `POST`, `PUT /{id}`, `PATCH /{id}/active` on `/api/admin/services` and `/api/admin/counters`                                                                  |
 
 Protected endpoints need the header `Authorization: Bearer <token>`. See [API.md](API.md) for every endpoint with examples.
 
@@ -185,7 +185,10 @@ Protected endpoints need the header `Authorization: Bearer <token>`. See [API.md
 - There is no end-of-day close. Tickets belong to a date, and old waiting tickets are simply ignored the next day.
 - "Today" is the date of the server, so the server time zone decides when the ticket numbers start again.
 - The estimated wait is a fixed 5 minutes per person.
-- Refreshing is by asking the server every 5 seconds, only on the student ticket screen, the waiting screen and the staff waiting list. Nothing is live.
+- Refreshing is by asking the server every 5 seconds, only on the student ticket screen, the waiting screen and the staff waiting list. The server can already send live updates (see [API.md](API.md#live-updates)), but the screens do not use them yet.
+- Live updates have no limit on the number of open streams, in total or for one user.
+- Live updates work with one server only. The open streams are kept in the memory of that server, so a second server would not tell the screens connected to the first.
+- A live stream sends only a signal that something changed. The screen must ask the server for the data. Events that came while a screen was disconnected are not sent again.
 - There is no user management on the screen. Staff and admin accounts come only from the seed.
 
 ## Screenshots

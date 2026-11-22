@@ -58,17 +58,18 @@ A ticket code is the service code, a dash and the number with three digits, for 
 
 ## Endpoints
 
-21 endpoints in total.
+25 endpoints in total.
 
-### Public (3)
+### Public (4)
 
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/api/auth/register` | Create a student account |
 | POST | `/api/auth/login` | Get a token |
 | GET | `/api/public/queue-status` | Data for the waiting screen |
+| GET | `/api/public/queue-stream` | Live updates for the waiting screen |
 
-### Student (4)
+### Student (5)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -76,8 +77,9 @@ A ticket code is the service code, a dash and the number with three digits, for 
 | POST | `/api/tickets` | Take a ticket |
 | GET | `/api/tickets/me` | Show my active ticket |
 | POST | `/api/tickets/me/cancel` | Cancel my waiting ticket |
+| GET | `/api/tickets/me/stream` | Live updates for the student screen |
 
-### Staff (6)
+### Staff (7)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -87,11 +89,13 @@ A ticket code is the service code, a dash and the number with three digits, for 
 | GET | `/api/counters/{counterId}/waiting` | List waiting tickets of the counter's service |
 | POST | `/api/tickets/{ticketId}/done` | Mark a called ticket done |
 | POST | `/api/tickets/{ticketId}/no-show` | Mark a called ticket as no-show |
+| GET | `/api/staff/stream` | Live updates for the staff desk |
 
-### Admin (8)
+### Admin (9)
 
 | Method | Path | Purpose |
 |---|---|---|
+| GET | `/api/admin/stream` | Live updates for the admin screen |
 | GET | `/api/admin/services` | List all services |
 | POST | `/api/admin/services` | Create a service |
 | PUT | `/api/admin/services/{id}` | Rename a service |
@@ -434,6 +438,68 @@ Request:
 Response `200`: the counter.
 
 Errors: `400` invalid fields, `404` `Counter not found.`, `409` `Finish the called student first.` (when turning off while a student is called at the counter)
+
+## Live updates
+
+The server can tell a screen when the queue changes, so the screen does not need to ask again and again. It uses server-sent events: one long GET request that stays open and receives small events. The polling endpoints above still work and are not changed.
+
+| Path | Who | Gets |
+|---|---|---|
+| `GET /api/public/queue-stream` | Anyone, no token | `ticket-changed`, `configuration-changed` |
+| `GET /api/tickets/me/stream` | `STUDENT` | `ticket-changed`, `configuration-changed` |
+| `GET /api/staff/stream` | `STAFF` | `ticket-changed`, `configuration-changed` |
+| `GET /api/admin/stream` | `ADMIN` | `configuration-changed` only |
+
+### How to connect
+
+Send `Accept: text/event-stream`. For the three protected streams, also send `Authorization: Bearer <token>`. The browser `EventSource` cannot send this header, so use `fetch` and read the response body as a stream.
+
+Response `200` with `Content-Type: text/event-stream` and the header `X-Accel-Buffering: no`.
+
+Errors: `401` for no token or an invalid token, `403` for a valid token with the wrong role. For example, an admin token on `/api/staff/stream` returns `403`.
+
+The token is checked only when the stream opens.
+
+### Events
+
+| Event | When it is sent | Sent to |
+|---|---|---|
+| `ready` | Right after the stream opens | The screen that connected |
+| `ticket-changed` | After a ticket was taken, cancelled, called, marked done or marked no-show | Public, student and staff streams |
+| `configuration-changed` | After an admin created, renamed, turned on or turned off a service, or created, changed, turned on or turned off a counter | All four streams |
+
+Every event has the data `{}`. An event only says that something changed. It has no names, ticket codes or numbers, and it does not say which ticket or service changed.
+
+```
+event:ticket-changed
+data:{}
+
+```
+
+Every connected student stream and staff stream gets every `ticket-changed` event, not only the one of the student or counter that changed.
+
+Every 25 seconds the server also sends a comment line (`:heartbeat`) to keep the connection open. A comment line is not an event.
+
+### What the screen does
+
+After `ready` and after every event, the screen asks for the data it needs with a normal request:
+
+| Screen | Request |
+|---|---|
+| Waiting screen | `GET /api/public/queue-status` |
+| Student ticket | `GET /api/tickets/me`, and `GET /api/services` after `configuration-changed` |
+| Staff desk | `GET /api/counters/{counterId}/current` and `GET /api/counters/{counterId}/waiting`, and `GET /api/counters` after `configuration-changed` |
+| Admin | `GET /api/admin/services` and `GET /api/admin/counters` |
+
+The screen must ask again after every `ready`. Events that came while the screen was not connected are not sent again.
+
+### When events are sent
+
+An event is sent only after the change is saved in the database. A request that fails sends nothing. This includes `400`, `404` and `409` answers, and `call-next` when nobody is waiting (`204`).
+
+### How long a stream stays open
+
+The server closes each stream after 10 minutes. The screen must open a new stream, with a valid token for the protected streams, and ask for the data again after `ready`. The server also closes all streams when it stops.
 
 ## Known limitations
 

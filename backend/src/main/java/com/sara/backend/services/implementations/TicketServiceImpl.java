@@ -12,6 +12,7 @@ import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.services.OpenCounterFinder;
 import com.sara.backend.services.TicketService;
+import com.sara.backend.streams.QueueChangeAnnouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,9 @@ public class TicketServiceImpl implements TicketService {
 
     @Autowired
     private OpenCounterFinder openCounterFinder;
+
+    @Autowired
+    private QueueChangeAnnouncer queueChangeAnnouncer;
 
     @Override
     @Transactional
@@ -75,7 +79,9 @@ public class TicketServiceImpl implements TicketService {
         ticket.setStatus(TicketStatus.WAITING);
 
         try {
-            return TicketResponse.from(ticketRepository.saveAndFlush(ticket));
+            Ticket savedTicket = ticketRepository.saveAndFlush(ticket);
+            queueChangeAnnouncer.announceTicketChanged();
+            return TicketResponse.from(savedTicket);
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Please try again.");
         }
@@ -113,6 +119,7 @@ public class TicketServiceImpl implements TicketService {
 
         ticket.setStatus(TicketStatus.CANCELLED);
         ticketRepository.save(ticket);
+        queueChangeAnnouncer.announceTicketChanged();
     }
 
     private Long findStudentIdOrThrow(String email) {

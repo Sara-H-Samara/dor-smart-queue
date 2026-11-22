@@ -143,6 +143,18 @@ public class TicketTestHelper {
         return ticketRepository.save(ticket);
     }
 
+    public ResultActions takeTicket(String token, Long serviceId) throws Exception {
+        return mockMvc.perform(post("/api/tickets")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"serviceId\":%d}".formatted(serviceId)));
+    }
+
+    public ResultActions cancelMyTicket(String token) throws Exception {
+        return mockMvc.perform(post("/api/tickets/me/cancel")
+                .header("Authorization", "Bearer " + token));
+    }
+
     public ResultActions callNext(String token, Long counterId) throws Exception {
         return mockMvc.perform(post("/api/counters/{counterId}/call-next", counterId)
                 .header("Authorization", "Bearer " + token));

@@ -11,6 +11,7 @@ import com.sara.backend.repositories.CounterRepository;
 import com.sara.backend.repositories.ServiceTypeRepository;
 import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.services.CounterService;
+import com.sara.backend.streams.QueueChangeAnnouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,9 @@ public class CounterServiceImpl implements CounterService {
 
     @Autowired
     private TicketRepository ticketRepository;
+
+    @Autowired
+    private QueueChangeAnnouncer queueChangeAnnouncer;
 
     @Override
     public List<CounterResponse> list() {
@@ -56,7 +60,9 @@ public class CounterServiceImpl implements CounterService {
         Counter counter = new Counter();
         counter.setName(name);
         counter.setServiceType(serviceType);
-        return CounterResponse.from(counterRepository.save(counter));
+        Counter createdCounter = counterRepository.save(counter);
+        queueChangeAnnouncer.announceConfigurationChanged();
+        return CounterResponse.from(createdCounter);
     }
 
     @Override
@@ -76,7 +82,9 @@ public class CounterServiceImpl implements CounterService {
 
         counter.setName(name);
         counter.setServiceType(serviceType);
-        return CounterResponse.from(counterRepository.save(counter));
+        Counter updatedCounter = counterRepository.save(counter);
+        queueChangeAnnouncer.announceConfigurationChanged();
+        return CounterResponse.from(updatedCounter);
     }
 
     @Override
@@ -87,7 +95,9 @@ public class CounterServiceImpl implements CounterService {
             rejectWhileStudentIsCalled(counter);
         }
         counter.setActive(request.active());
-        return CounterResponse.from(counterRepository.save(counter));
+        Counter switchedCounter = counterRepository.save(counter);
+        queueChangeAnnouncer.announceConfigurationChanged();
+        return CounterResponse.from(switchedCounter);
     }
 
     private void rejectWhileStudentIsCalled(Counter counter) {
