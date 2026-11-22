@@ -171,7 +171,7 @@ frontend/src/app/
 | Staff | `GET /api/counters`, `POST /api/counters/{id}/call-next`, `GET /api/counters/{id}/current`, `GET /api/counters/{id}/waiting`, `POST /api/tickets/{id}/done`, `POST /api/tickets/{id}/no-show` |
 | Admin | `GET /api/counters`, and `GET`, `POST`, `PUT /{id}`, `PATCH /{id}/active` on `/api/admin/services` and `/api/admin/counters` |
 
-Protected endpoints need the header `Authorization: Bearer <token>`. The full list will be in `API.md`.
+Protected endpoints need the header `Authorization: Bearer <token>`. See [API.md](API.md) for every endpoint with examples.
 
 ## Known limitations
 
