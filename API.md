@@ -16,6 +16,7 @@ Roles: `STUDENT`, `STAFF`, `ADMIN`. A new account made with register is always a
 |---|---|
 | No token, or an invalid token | `401` |
 | Valid token, wrong role | `403` |
+| Valid token, but the user no longer exists (student ticket endpoints) | `401` with the message `User not found.` |
 
 ## Errors
 

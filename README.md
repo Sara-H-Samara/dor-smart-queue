@@ -7,7 +7,7 @@ Dor is a digital queue for a university Student Affairs office. Paper queue numb
 **Student**
 
 - Register and log in.
-- Take one ticket per day for a service. The ticket code looks like `R-001` and is numbered per service per day. A ticket can only be taken when the service has an open counter.
+- Take a ticket for a service. A student can have only one active ticket (waiting or called) at a time. After it is done, no-show or cancelled, the student can take another. The ticket code looks like `R-001` and is numbered per service per day. A ticket can only be taken when the service has an open counter.
 - See how many people are ahead and an estimated wait (a fixed 5 minutes per person).
 - See when the ticket is called and which counter to go to.
 - Leave the queue while the ticket is still waiting.
@@ -30,7 +30,7 @@ Dor is a digital queue for a university Student Affairs office. Paper queue numb
 - Shows the next 3 tickets and how many more are waiting.
 - Built for a TV screen.
 
-All screens refresh by asking the server every 5 seconds.
+The student ticket screen and the waiting screen refresh by asking the server every 5 seconds. The staff desk refreshes only its waiting list every 5 seconds. The admin, login and register screens do not refresh by themselves.
 
 **Planned for Release 2:** live updates, early alerts, statistics, and admin user management (changing roles from the screen).
 
@@ -185,7 +185,7 @@ Protected endpoints need the header `Authorization: Bearer <token>`. See [API.md
 - There is no end-of-day close. Tickets belong to a date, and old waiting tickets are simply ignored the next day.
 - "Today" is the date of the server, so the server time zone decides when the ticket numbers start again.
 - The estimated wait is a fixed 5 minutes per person.
-- Screens refresh every 5 seconds. They are not live.
+- Refreshing is by asking the server every 5 seconds, only on the student ticket screen, the waiting screen and the staff waiting list. Nothing is live.
 - There is no user management on the screen. Staff and admin accounts come only from the seed.
 
 ## Screenshots
