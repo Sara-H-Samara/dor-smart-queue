@@ -1,31 +1,18 @@
-/*
- * Dor design foundation.
- * Source: the approved design reference (dor-design-reference.html).
- *
- * Rules:
- * - One system font stack, 4 text sizes (34, 22, 17, 14 px) plus the ticket number, 2 weights (400, 700).
- * - Light is the default; dark follows prefers-color-scheme.
- * - Every text and control color pair is checked for WCAG 2.2 AA (4.5:1 text, 3:1 controls and borders).
- * - The old variable names (--bg, --surface, --text, ...) stay as aliases so existing screens keep working.
- */
-
 :root {
   color-scheme: light dark;
 
-  /* ---- Typography ---- */
   --font-family: -apple-system, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
-  --fs-large-title: 2.125rem; /* 34px */
-  --fs-title: 1.375rem; /* 22px */
-  --fs-body: 1.0625rem; /* 17px */
-  --fs-small: 0.875rem; /* 14px */
-  --fs-ticket-number: 5.5rem; /* 88px, the only size above the four */
+  --fs-large-title: 2.125rem;
+  --fs-title: 1.375rem;
+  --fs-body: 1.0625rem;
+  --fs-small: 0.875rem;
+  --fs-ticket-number: 5.5rem;
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-bold: 700;
   --lh-tight: 1.15;
   --lh-body: 1.4;
 
-  /* ---- Spacing scale (4px base) ---- */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -41,34 +28,29 @@
   --page-width-admin: calc(56rem + var(--page-gutter) * 2);
   --page-width-desk: 66.5rem;
 
-  /* ---- Radii ---- */
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-pill: 999px;
 
-  /* ---- Sizing ---- */
-  --control-height: 3rem; /* 48px, above the 24px minimum target size */
+  --control-height: 3rem;
   --control-height-sm: 2.25rem;
   --focus-width: 2px;
   --focus-offset: 2px;
 
-  /* ---- Color: surfaces and text (light) ---- */
   --color-bg: #f4f2ec;
   --color-surface: #ffffff;
   --color-text: #1a1a1c;
   --color-text-muted: #5f5f64;
-  --color-border-strong: #7a7a7e; /* inputs and outlined controls, at least 3:1 */
-  --color-separator: rgba(60, 60, 67, 0.18); /* decorative hairlines only */
+  --color-border-strong: #7a7a7e;
+  --color-separator: rgba(60, 60, 67, 0.18);
 
-  /* ---- Color: brand and actions (light) ---- */
-  --color-brand: #1b45b8; /* primary button background */
+  --color-brand: #1b45b8;
   --color-brand-hover: #153a9c;
   --color-on-brand: #ffffff;
-  --color-link: #1b45b8; /* links, quiet buttons, focus ring */
+  --color-link: #1b45b8;
   --color-danger: #b3261e;
 
-  /* ---- Color: admin tiles, switch and segmented control (light) ---- */
   --color-tile-bg: #e3eafb;
   --color-tile-fg: #17399a;
   --color-switch-on: #1d7a34;
@@ -76,7 +58,6 @@
   --color-segment-track: #e8e6df;
   --color-segment-active: #ffffff;
 
-  /* ---- Color: ticket states (light), text on tint ---- */
   --color-state-waiting-bg: #ffefc7;
   --color-state-waiting-fg: #6f3e00;
   --color-state-called-bg: #d6f2dd;
@@ -88,11 +69,9 @@
   --color-state-called-solid: #14733a;
   --color-state-called-on-solid: #ffffff;
 
-  /* ---- Elevation ---- */
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.05);
-  --color-overlay: rgb(0 0 0 / 0.5); /* dims the page behind modal dialogs */
+  --color-overlay: rgb(0 0 0 / 0.5);
 
-  /* ---- Motion ---- */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --duration-base: 0.18s;
 
@@ -161,7 +140,7 @@
 
 body {
   margin: 0;
-  min-height: 100vh; /* fallback */
+  min-height: 100vh;
   min-height: 100dvh;
   font-family: var(--font-family);
   font-size: var(--fs-body);
@@ -197,12 +176,10 @@ h2 {
   line-height: 1.25;
 }
 
-/* ---- Layout ---- */
-
 .auth-page {
   display: grid;
   place-items: center;
-  min-height: 100vh; /* fallback */
+  min-height: 100vh;
   min-height: 100dvh;
   padding: var(--space-5);
 }
@@ -220,8 +197,6 @@ h2 {
   margin: 0 0 var(--space-5);
   color: var(--color-text-muted);
 }
-
-/* ---- Fields ---- */
 
 .field {
   display: flex;
@@ -273,8 +248,6 @@ textarea {
   color: var(--color-danger);
 }
 
-/* ---- Messages ---- */
-
 .alert {
   margin: 0 0 var(--space-4);
   padding: var(--space-3) var(--space-4);
@@ -293,8 +266,6 @@ textarea {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
 }
-
-/* ---- Buttons: primary (.btn), secondary (.btn-secondary), quiet (.btn-quiet) ---- */
 
 .btn {
   display: inline-flex;
@@ -365,8 +336,6 @@ textarea {
     min-height: 2.75rem;
   }
 }
-
-/* ---- Focus: 2px ring on every focusable element ---- */
 
 :focus-visible {
   outline: var(--focus-width) solid var(--color-link);
