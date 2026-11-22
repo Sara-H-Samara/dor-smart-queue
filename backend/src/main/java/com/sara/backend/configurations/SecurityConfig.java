@@ -1,6 +1,7 @@
 package com.sara.backend.configurations;
 
 import com.sara.backend.security.JwtAuthenticationFilter;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,9 +40,12 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(requests -> requests
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/public/queue-status").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/public/queue-status", "/api/public/queue-stream")
+                        .permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/staff/stream").hasRole("STAFF")
                         .requestMatchers(HttpMethod.POST,
                                 "/api/counters/*/call-next", "/api/tickets/*/done", "/api/tickets/*/no-show")
                         .hasRole("STAFF")
