@@ -9,6 +9,7 @@ import com.sara.backend.entities.TicketStatus;
 import com.sara.backend.repositories.CounterRepository;
 import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.services.StaffDeskService;
+import com.sara.backend.streams.QueueChangeAnnouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,9 @@ public class StaffDeskServiceImpl implements StaffDeskService {
     @Autowired
     private TicketRepository ticketRepository;
 
+    @Autowired
+    private QueueChangeAnnouncer queueChangeAnnouncer;
+
     @Override
     @Transactional
     public Optional<CalledTicketResponse> callNextStudent(Long counterId) {
@@ -54,7 +58,9 @@ public class StaffDeskServiceImpl implements StaffDeskService {
         ticket.setStatus(TicketStatus.CALLED);
         ticket.setCounter(counter);
         ticket.setCalledAt(LocalDateTime.now());
-        return Optional.of(CalledTicketResponse.from(ticketRepository.save(ticket)));
+        Ticket calledTicket = ticketRepository.save(ticket);
+        queueChangeAnnouncer.announceTicketChanged();
+        return Optional.of(CalledTicketResponse.from(calledTicket));
     }
 
     @Override
@@ -107,7 +113,9 @@ public class StaffDeskServiceImpl implements StaffDeskService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, rejectionMessage);
         }
         ticket.setStatus(newStatus);
-        return CalledTicketResponse.from(ticketRepository.save(ticket));
+        Ticket changedTicket = ticketRepository.save(ticket);
+        queueChangeAnnouncer.announceTicketChanged();
+        return CalledTicketResponse.from(changedTicket);
     }
 
     private ResponseStatusException counterNotFound() {

@@ -7,6 +7,7 @@ import com.sara.backend.repositories.ServiceTypeRepository;
 import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.support.OpenStreamConnection;
+import com.sara.backend.support.OpenStreams;
 import com.sara.backend.support.StreamTestHelper;
 import com.sara.backend.support.TicketTestHelper;
 import com.zaxxer.hikari.HikariDataSource;
@@ -27,8 +28,12 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.sara.backend.support.StreamTestHelper.CONFIGURATION_CHANGED_EVENT;
+import static com.sara.backend.support.StreamTestHelper.EVENT_WAIT_MILLIS;
+import static com.sara.backend.support.StreamTestHelper.PUBLIC_STREAM_PATH;
+import static com.sara.backend.support.StreamTestHelper.STUDENT_STREAM_PATH;
+import static com.sara.backend.support.StreamTestHelper.TICKET_CHANGED_EVENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -37,15 +42,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Ticket changes on a real server")
 class TicketStreamEventsTest {
 
-    private static final String PUBLIC_STREAM_PATH = "/api/public/queue-stream";
-    private static final String STUDENT_STREAM_PATH = "/api/tickets/me/stream";
-    private static final String STAFF_STREAM_PATH = "/api/staff/stream";
-    private static final String ADMIN_STREAM_PATH = "/api/admin/stream";
-    private static final String READY_EVENT = "event:ready\ndata:{}";
-    private static final String TICKET_CHANGED_EVENT = "event:ticket-changed\ndata:{}";
-    private static final String CONFIGURATION_CHANGED_EVENT = "event:configuration-changed\ndata:{}";
-    private static final long EVENT_WAIT_MILLIS = 5000;
-    private static final long NO_EVENT_WAIT_MILLIS = 300;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final int STREAMS_BEYOND_POOL_SIZE = 5;
 
@@ -118,9 +114,7 @@ class TicketStreamEventsTest {
 
         ticketTestHelper.takeTicket(studentToken, registration.getId()).andExpect(status().isCreated());
 
-        assertEquals(TICKET_CHANGED_EVENT, streams.publicStream().awaitEvent(EVENT_WAIT_MILLIS));
-        assertEquals(TICKET_CHANGED_EVENT, streams.studentStream().awaitEvent(EVENT_WAIT_MILLIS));
-        assertEquals(TICKET_CHANGED_EVENT, streams.staffStream().awaitEvent(EVENT_WAIT_MILLIS));
+        streamTestHelper.assertTicketChangedReceivedByPublicStudentAndStaff(streams);
     }
 
     @Test
@@ -130,7 +124,7 @@ class TicketStreamEventsTest {
         ticketTestHelper.takeTicket(studentToken, registration.getId()).andExpect(status().isCreated());
 
         assertEquals(TICKET_CHANGED_EVENT, streams.publicStream().awaitEvent(EVENT_WAIT_MILLIS));
-        assertNull(streams.adminStream().awaitEvent(NO_EVENT_WAIT_MILLIS));
+        streamTestHelper.assertNoEventReceived(streams.adminStream());
     }
 
     @Test
@@ -140,9 +134,7 @@ class TicketStreamEventsTest {
 
         ticketTestHelper.cancelMyTicket(studentToken).andExpect(status().isNoContent());
 
-        assertEquals(TICKET_CHANGED_EVENT, streams.publicStream().awaitEvent(EVENT_WAIT_MILLIS));
-        assertEquals(TICKET_CHANGED_EVENT, streams.studentStream().awaitEvent(EVENT_WAIT_MILLIS));
-        assertEquals(TICKET_CHANGED_EVENT, streams.staffStream().awaitEvent(EVENT_WAIT_MILLIS));
+        streamTestHelper.assertTicketChangedReceivedByPublicStudentAndStaff(streams);
     }
 
     @Test
@@ -153,7 +145,7 @@ class TicketStreamEventsTest {
         ticketTestHelper.cancelMyTicket(studentToken).andExpect(status().isNoContent());
 
         assertEquals(TICKET_CHANGED_EVENT, streams.publicStream().awaitEvent(EVENT_WAIT_MILLIS));
-        assertNull(streams.adminStream().awaitEvent(NO_EVENT_WAIT_MILLIS));
+        streamTestHelper.assertNoEventReceived(streams.adminStream());
     }
 
     @Test
@@ -164,12 +156,11 @@ class TicketStreamEventsTest {
         ticketTestHelper.takeTicket(studentToken, registration.getId()).andExpect(status().isConflict());
         queueChangeAnnouncer.announceConfigurationChanged();
 
-        assertEquals(CONFIGURATION_CHANGED_EVENT, streams.publicStream().awaitEvent(EVENT_WAIT_MILLIS));
-        assertNull(streams.publicStream().awaitEvent(NO_EVENT_WAIT_MILLIS));
-        assertEquals(CONFIGURATION_CHANGED_EVENT, streams.studentStream().awaitEvent(EVENT_WAIT_MILLIS));
-        assertNull(streams.studentStream().awaitEvent(NO_EVENT_WAIT_MILLIS));
-        assertEquals(CONFIGURATION_CHANGED_EVENT, streams.staffStream().awaitEvent(EVENT_WAIT_MILLIS));
-        assertNull(streams.staffStream().awaitEvent(NO_EVENT_WAIT_MILLIS));
+        for (OpenStreamConnection stream :
+                List.of(streams.publicStream(), streams.studentStream(), streams.staffStream())) {
+            assertEquals(CONFIGURATION_CHANGED_EVENT, stream.awaitEvent(EVENT_WAIT_MILLIS));
+            streamTestHelper.assertNoEventReceived(stream);
+        }
     }
 
     @Test
@@ -177,8 +168,8 @@ class TicketStreamEventsTest {
         int streamCount = databasePoolSize() + STREAMS_BEYOND_POOL_SIZE;
         List<OpenStreamConnection> openStreams = new ArrayList<>();
         for (int streamNumber = 0; streamNumber < streamCount; streamNumber++) {
-            openStreams.add(openAndConfirmReady(PUBLIC_STREAM_PATH, null));
-            openStreams.add(openAndConfirmReady(STUDENT_STREAM_PATH, studentToken));
+            openStreams.add(streamTestHelper.openReadyStream(port, PUBLIC_STREAM_PATH));
+            openStreams.add(streamTestHelper.openReadyStream(port, STUDENT_STREAM_PATH, studentToken));
         }
 
         assertEquals(200, streamTestHelper.fetchStatusCode(port, "/api/public/queue-status", REQUEST_TIMEOUT));
@@ -194,26 +185,6 @@ class TicketStreamEventsTest {
     }
 
     private OpenStreams openStreamOfEveryAudience() throws Exception {
-        return new OpenStreams(
-                openAndConfirmReady(PUBLIC_STREAM_PATH, null),
-                openAndConfirmReady(STUDENT_STREAM_PATH, studentToken),
-                openAndConfirmReady(STAFF_STREAM_PATH, staffToken),
-                openAndConfirmReady(ADMIN_STREAM_PATH, adminToken));
-    }
-
-    private OpenStreamConnection openAndConfirmReady(String path, String token) throws Exception {
-        OpenStreamConnection connection = token == null
-                ? streamTestHelper.openStream(port, path)
-                : streamTestHelper.openStream(port, path, token);
-        assertEquals(200, connection.statusCode());
-        assertEquals(READY_EVENT, connection.awaitEvent(EVENT_WAIT_MILLIS));
-        return connection;
-    }
-
-    private record OpenStreams(
-            OpenStreamConnection publicStream,
-            OpenStreamConnection studentStream,
-            OpenStreamConnection staffStream,
-            OpenStreamConnection adminStream) {
+        return streamTestHelper.openReadyStreamOfEveryAudience(port, studentToken, staffToken, adminToken);
     }
 }
