@@ -112,6 +112,14 @@ class QueueStreamControllerTest {
     }
 
     @Test
+    void streamPublicQueue_withDefaultSettings_opensStreamThatLastsTenMinutes() throws Exception {
+        openStreamWithoutToken(PUBLIC_STREAM_PATH).andExpect(request().asyncStarted());
+
+        SseEmitter openEmitter = queueStreamRegistry.findEmittersFor(QueueChangeKind.TICKET_CHANGED).get(0);
+        assertEquals(600_000L, openEmitter.getTimeout());
+    }
+
+    @Test
     void streamMyTicket_withoutToken_returnsUnauthorized() throws Exception {
         openStreamWithoutToken(STUDENT_STREAM_PATH).andExpect(status().isUnauthorized());
     }
@@ -155,6 +163,11 @@ class QueueStreamControllerTest {
     }
 
     @Test
+    void streamStaffDesk_withInvalidToken_returnsUnauthorized() throws Exception {
+        openStream(STAFF_STREAM_PATH, "not-a-valid-token").andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void streamStaffDesk_asStudent_returnsForbidden() throws Exception {
         openStream(STAFF_STREAM_PATH, studentToken).andExpect(status().isForbidden());
     }
@@ -178,6 +191,11 @@ class QueueStreamControllerTest {
     @Test
     void streamAdminChanges_withoutToken_returnsUnauthorized() throws Exception {
         openStreamWithoutToken(ADMIN_STREAM_PATH).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void streamAdminChanges_withInvalidToken_returnsUnauthorized() throws Exception {
+        openStream(ADMIN_STREAM_PATH, "not-a-valid-token").andExpect(status().isUnauthorized());
     }
 
     @Test

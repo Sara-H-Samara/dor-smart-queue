@@ -58,6 +58,18 @@ class QueueStreamRegistryTest {
     }
 
     @Test
+    void findAllEmitters_withEmittersOfAllAudiences_returnsAllOfThem() {
+        SseEmitter publicEmitter = registerEmitter(StreamAudience.PUBLIC);
+        SseEmitter studentEmitter = registerEmitter(StreamAudience.STUDENT);
+        SseEmitter staffEmitter = registerEmitter(StreamAudience.STAFF);
+        SseEmitter adminEmitter = registerEmitter(StreamAudience.ADMIN);
+
+        assertEquals(
+                Set.of(publicEmitter, studentEmitter, staffEmitter, adminEmitter),
+                Set.copyOf(queueStreamRegistry.findAllEmitters()));
+    }
+
+    @Test
     void findEmittersFor_twoEmittersOfSameAudience_returnsBoth() {
         registerEmitter(StreamAudience.PUBLIC);
         registerEmitter(StreamAudience.PUBLIC);

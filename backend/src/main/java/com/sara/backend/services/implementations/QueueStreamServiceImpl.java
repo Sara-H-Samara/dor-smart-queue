@@ -4,22 +4,24 @@ import com.sara.backend.services.QueueStreamService;
 import com.sara.backend.streams.QueueStreamRegistry;
 import com.sara.backend.streams.QueueStreamSender;
 import com.sara.backend.streams.StreamAudience;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
-import java.time.Duration;
 
 @Service
 public class QueueStreamServiceImpl implements QueueStreamService {
 
-    private static final Duration STREAM_LIFETIME = Duration.ofMinutes(10);
-
     private final QueueStreamRegistry queueStreamRegistry;
     private final QueueStreamSender queueStreamSender;
+    private final long streamLifetimeMillis;
 
-    public QueueStreamServiceImpl(QueueStreamRegistry queueStreamRegistry, QueueStreamSender queueStreamSender) {
+    public QueueStreamServiceImpl(
+            QueueStreamRegistry queueStreamRegistry,
+            QueueStreamSender queueStreamSender,
+            @Value("${dor.streams.lifetime-millis:600000}") long streamLifetimeMillis) {
         this.queueStreamRegistry = queueStreamRegistry;
         this.queueStreamSender = queueStreamSender;
+        this.streamLifetimeMillis = streamLifetimeMillis;
     }
 
     @Override
@@ -43,7 +45,7 @@ public class QueueStreamServiceImpl implements QueueStreamService {
     }
 
     private SseEmitter openStream(StreamAudience audience) {
-        SseEmitter emitter = new SseEmitter(STREAM_LIFETIME.toMillis());
+        SseEmitter emitter = new SseEmitter(streamLifetimeMillis);
         emitter.onCompletion(() -> queueStreamRegistry.remove(emitter));
         emitter.onTimeout(() -> queueStreamRegistry.remove(emitter));
         emitter.onError(streamError -> queueStreamRegistry.remove(emitter));

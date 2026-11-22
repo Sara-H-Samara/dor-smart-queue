@@ -29,6 +29,12 @@ public class QueueStreamRegistry {
         emittersByAudience.values().forEach(emitters -> emitters.remove(emitter));
     }
 
+    public List<SseEmitter> findAllEmitters() {
+        return emittersByAudience.values().stream()
+                .flatMap(Set::stream)
+                .toList();
+    }
+
     public List<SseEmitter> findEmittersFor(QueueChangeKind kind) {
         return Arrays.stream(StreamAudience.values())
                 .filter(audience -> audience.receives(kind))
