@@ -2,15 +2,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Subject, of } from 'rxjs';
 
+import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import { ActiveService } from '../../../core/models/active-service.model';
 import { ActiveTicket, TakenTicket } from '../../../core/models/ticket.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { StudentCatalogService } from '../../../core/services/student-catalog.service';
 import { TicketService } from '../../../core/services/ticket.service';
+import { FakeLiveUpdateService } from '../../../testing/fake-live-update-service';
 import { failingRequestWithMessage, failingRequestWithStatus } from '../../../testing/http-failure';
-import { SERVICE_LIST_REFRESH_INTERVAL_MS } from './service-list-refresh';
 import { StudentTicketPage } from './student-ticket-page';
-import { TICKET_REFRESH_INTERVAL_MS } from './ticket-refresh';
 
 const NO_COUNTER_MESSAGE = 'No counter is open for Registration right now.';
 
@@ -49,12 +49,14 @@ describe('StudentTicketPage', () => {
   let takeTicket: ReturnType<typeof vi.fn>;
   let cancelMyActiveTicket: ReturnType<typeof vi.fn>;
   let listActiveServices: ReturnType<typeof vi.fn>;
+  let fakeLiveUpdateService: FakeLiveUpdateService;
 
   beforeEach(() => {
     fetchMyActiveTicket = vi.fn();
     takeTicket = vi.fn();
     cancelMyActiveTicket = vi.fn();
     listActiveServices = vi.fn();
+    fakeLiveUpdateService = new FakeLiveUpdateService();
 
     TestBed.configureTestingModule({
       providers: [
@@ -63,6 +65,7 @@ describe('StudentTicketPage', () => {
           useValue: { fetchMyActiveTicket, takeTicket, cancelMyActiveTicket },
         },
         { provide: StudentCatalogService, useValue: { listActiveServices } },
+        { provide: LiveUpdateService, useValue: fakeLiveUpdateService },
         { provide: AuthService, useValue: { fullName: () => 'Sara Samara', logout: vi.fn() } },
         { provide: Router, useValue: { navigateByUrl: vi.fn() } },
       ],
@@ -77,6 +80,11 @@ describe('StudentTicketPage', () => {
 
   function pageElement(fixture: ComponentFixture<StudentTicketPage>): HTMLElement {
     return fixture.nativeElement as HTMLElement;
+  }
+
+  function requestRefresh(fixture: ComponentFixture<StudentTicketPage>): void {
+    fakeLiveUpdateService.liveUpdateWatch.requestRefresh();
+    fixture.detectChanges();
   }
 
   function buttonWithText(
@@ -250,18 +258,29 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
   });
 
-  describe('automatic refresh', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
+  describe('live refresh', () => {
     afterEach(() => {
       vi.useRealTimers();
     });
 
-    function advanceOneRefreshInterval(): void {
-      vi.advanceTimersByTime(TICKET_REFRESH_INTERVAL_MS);
-    }
+    it('watches the student stream', () => {
+      fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
+
+      createPage();
+
+      expect(fakeLiveUpdateService.watchedLiveStreams).toEqual(['student']);
+    });
+
+    it('does not load anything again by itself over time', () => {
+      vi.useFakeTimers();
+      fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
+      createPage();
+
+      vi.advanceTimersByTime(60000);
+
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
+      expect(listActiveServices).not.toHaveBeenCalled();
+    });
 
     it('shows the no-counter notice when the counter turns off', () => {
       const ticketWithoutOpenCounter: ActiveTicket = {
@@ -274,8 +293,7 @@ describe('StudentTicketPage', () => {
       const fixture = createPage();
       expect(pageElement(fixture).textContent).toContain('About 10 min');
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(pageElement(fixture).textContent).toContain('No counter is open right now');
       expect(pageElement(fixture).textContent).toContain('Your place is kept.');
@@ -294,53 +312,76 @@ describe('StudentTicketPage', () => {
       fixture.detectChanges();
       expect(pageElement(fixture).querySelector('app-ticket-card')).not.toBeNull();
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(pageElement(fixture).querySelector('app-service-tile-list')).not.toBeNull();
       expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
     });
 
-    it('updates the ticket after the interval without showing the loading state', () => {
+    it('updates the ticket after a refresh request without showing the loading state', () => {
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
       fetchMyActiveTicket.mockReturnValueOnce(of({ ...waitingTicket, status: 'CALLED' }));
       const fixture = createPage();
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(pageElement(fixture).textContent).toContain('Your turn');
       expect(pageElement(fixture).querySelector('[role="status"]')).toBeNull();
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(2);
     });
 
-    it('sends no new request while the previous one is still running', () => {
+    it('uses only the newest answer when refreshes are requested close together', () => {
+      const slowAnswer = new Subject<ActiveTicket>();
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
-      fetchMyActiveTicket.mockReturnValueOnce(new Subject<ActiveTicket>());
-      createPage();
+      fetchMyActiveTicket.mockReturnValueOnce(slowAnswer);
+      fetchMyActiveTicket.mockReturnValueOnce(of({ ...waitingTicket, status: 'CALLED' }));
+      const fixture = createPage();
 
-      advanceOneRefreshInterval();
-      advanceOneRefreshInterval();
-      advanceOneRefreshInterval();
+      requestRefresh(fixture);
+      requestRefresh(fixture);
+      slowAnswer.next(waitingTicket);
+      fixture.detectChanges();
 
-      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(2);
+      expect(pageElement(fixture).textContent).toContain('Your turn');
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(3);
     });
 
-    it('sends no request when the student has no ticket', () => {
+    it('does not ask for the ticket when the student has no ticket', () => {
       fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
       listActiveServices.mockReturnValue(of([openService]));
-      createPage();
+      const fixture = createPage();
 
-      advanceOneRefreshInterval();
+      requestRefresh(fixture);
 
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
     });
 
     it('sends no request in the failed state', () => {
       fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(500));
-      createPage();
+      const fixture = createPage();
 
-      advanceOneRefreshInterval();
+      requestRefresh(fixture);
+
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
+      expect(listActiveServices).not.toHaveBeenCalled();
+    });
+
+    it('sends no request while the ticket is being left', () => {
+      fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
+      cancelMyActiveTicket.mockReturnValue(new Subject<void>());
+      const fixture = createPage();
+      buttonWithText(fixture, 'Leave queue')?.click();
+
+      requestRefresh(fixture);
+
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends no request when the ticket is already finished', () => {
+      fetchMyActiveTicket.mockReturnValue(of({ ...waitingTicket, status: 'DONE' }));
+      const fixture = createPage();
+
+      requestRefresh(fixture);
 
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
     });
@@ -351,8 +392,7 @@ describe('StudentTicketPage', () => {
       listActiveServices.mockReturnValue(of([openService]));
       const fixture = createPage();
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(pageElement(fixture).querySelector('app-service-tile-list')).not.toBeNull();
       expect(pageElement(fixture).querySelector('app-ticket-card')).toBeNull();
@@ -365,8 +405,7 @@ describe('StudentTicketPage', () => {
       listActiveServices.mockReturnValue(pendingServices);
       const fixture = createPage();
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
       expect(pageElement(fixture).querySelector('[role="status"]')).not.toBeNull();
 
       pendingServices.next([openService]);
@@ -376,19 +415,17 @@ describe('StudentTicketPage', () => {
       expect(pageElement(fixture).querySelector('app-service-tile-list')).not.toBeNull();
     });
 
-    it('keeps the ticket and retries at the next interval when a refresh fails', () => {
+    it('keeps the ticket and refreshes again at the next request when a refresh fails', () => {
       fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
       fetchMyActiveTicket.mockReturnValueOnce(failingRequestWithStatus(500));
       fetchMyActiveTicket.mockReturnValueOnce(of({ ...waitingTicket, status: 'CALLED' }));
       const fixture = createPage();
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
       expect(pageElement(fixture).querySelector('app-ticket-card')).not.toBeNull();
       expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(pageElement(fixture).textContent).toContain('Your turn');
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(3);
@@ -402,7 +439,7 @@ describe('StudentTicketPage', () => {
       cancelMyActiveTicket.mockReturnValue(of(undefined));
       listActiveServices.mockReturnValue(of([openService]));
       const fixture = createPage();
-      advanceOneRefreshInterval();
+      requestRefresh(fixture);
 
       buttonWithText(fixture, 'Leave queue')?.click();
       lateRefreshAnswer.next(waitingTicket);
@@ -417,65 +454,57 @@ describe('StudentTicketPage', () => {
       const fixture = createPage();
 
       fixture.destroy();
-      advanceOneRefreshInterval();
+      fakeLiveUpdateService.liveUpdateWatch.requestRefresh();
 
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('service list refresh', () => {
+  describe('live refresh of the service list', () => {
     beforeEach(() => {
-      vi.useFakeTimers();
       fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
     });
 
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    function advanceOneServiceListRefreshInterval(): void {
-      vi.advanceTimersByTime(SERVICE_LIST_REFRESH_INTERVAL_MS);
-    }
-
-    it('updates the tiles after the interval', () => {
+    it('updates the tiles after a refresh request', () => {
       listActiveServices.mockReturnValueOnce(of([openService]));
       listActiveServices.mockReturnValueOnce(of([closedService]));
       const fixture = createPage();
       expect(pageElement(fixture).textContent).not.toContain('No counter open right now');
 
-      advanceOneServiceListRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(pageElement(fixture).textContent).toContain('No counter open right now');
       expect(pageElement(fixture).querySelector('[role="status"]')).toBeNull();
       expect(listActiveServices).toHaveBeenCalledTimes(2);
     });
 
-    it('sends no new request while the previous one is still running', () => {
+    it('uses only the newest answer when refreshes are requested close together', () => {
+      const slowAnswer = new Subject<ActiveService[]>();
       listActiveServices.mockReturnValueOnce(of([openService]));
-      listActiveServices.mockReturnValueOnce(new Subject<ActiveService[]>());
-      createPage();
+      listActiveServices.mockReturnValueOnce(slowAnswer);
+      listActiveServices.mockReturnValueOnce(of([closedService]));
+      const fixture = createPage();
 
-      advanceOneServiceListRefreshInterval();
-      advanceOneServiceListRefreshInterval();
-      advanceOneServiceListRefreshInterval();
+      requestRefresh(fixture);
+      requestRefresh(fixture);
+      slowAnswer.next([openService]);
+      fixture.detectChanges();
 
-      expect(listActiveServices).toHaveBeenCalledTimes(2);
+      expect(pageElement(fixture).textContent).toContain('No counter open right now');
+      expect(listActiveServices).toHaveBeenCalledTimes(3);
     });
 
-    it('keeps the list and retries at the next interval when a refresh fails', () => {
+    it('keeps the list and refreshes again at the next request when a refresh fails', () => {
       listActiveServices.mockReturnValueOnce(of([openService]));
       listActiveServices.mockReturnValueOnce(failingRequestWithStatus(500));
       listActiveServices.mockReturnValueOnce(of([closedService]));
       const fixture = createPage();
 
-      advanceOneServiceListRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
       expect(pageElement(fixture).querySelector('.service-tile')).not.toBeNull();
       expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
 
-      advanceOneServiceListRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(pageElement(fixture).textContent).toContain('No counter open right now');
       expect(listActiveServices).toHaveBeenCalledTimes(3);
@@ -487,16 +516,16 @@ describe('StudentTicketPage', () => {
       const fixture = createPage();
       (pageElement(fixture).querySelector('.service-tile') as HTMLButtonElement).click();
 
-      advanceOneServiceListRefreshInterval();
+      requestRefresh(fixture);
 
       expect(listActiveServices).toHaveBeenCalledTimes(1);
     });
 
-    it('sends no request when the student has a ticket', () => {
+    it('sends no request for the service list when the student has a ticket', () => {
       fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
-      createPage();
+      const fixture = createPage();
 
-      advanceOneServiceListRefreshInterval();
+      requestRefresh(fixture);
 
       expect(listActiveServices).not.toHaveBeenCalled();
     });
@@ -506,7 +535,7 @@ describe('StudentTicketPage', () => {
       const fixture = createPage();
 
       fixture.destroy();
-      advanceOneServiceListRefreshInterval();
+      fakeLiveUpdateService.liveUpdateWatch.requestRefresh();
 
       expect(listActiveServices).toHaveBeenCalledTimes(1);
     });
@@ -518,7 +547,7 @@ describe('StudentTicketPage', () => {
       listActiveServices.mockReturnValueOnce(of([closedService]));
       takeTicket.mockReturnValue(failingRequestWithMessage(409, NO_COUNTER_MESSAGE));
       const fixture = createPage();
-      advanceOneServiceListRefreshInterval();
+      requestRefresh(fixture);
 
       (pageElement(fixture).querySelector('.service-tile') as HTMLButtonElement).click();
       lateRefreshAnswer.next([openService]);

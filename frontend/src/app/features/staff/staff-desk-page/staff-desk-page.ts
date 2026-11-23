@@ -1,17 +1,29 @@
 import {
   Component,
+  DestroyRef,
   Injector,
   afterNextRender,
   computed,
-  effect,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  Subscription,
+  catchError,
+  ignoreElements,
+  switchMap,
+  takeUntil,
+  tap,
+} from 'rxjs';
 
 import { CONFLICT_STATUS, NOT_FOUND_STATUS, isHttpStatus, serverMessageOf } from '../../../core/api-failure';
+import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import { AvailableCounter, CalledStudent, WaitingList } from '../../../core/models/staff-desk.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ChosenCounterStorage } from '../../../core/services/chosen-counter-storage';
@@ -21,7 +33,6 @@ import { PageHeader } from '../../../shared/page-header/page-header';
 import { CallNextPanel } from './call-next-panel/call-next-panel';
 import { CounterPickerDialog } from './counter-picker-dialog/counter-picker-dialog';
 import { CurrentStudentCard } from './current-student-card/current-student-card';
-import { WAITING_LIST_REFRESH_INTERVAL_MS } from './waiting-list-refresh';
 import { WaitingTicketList } from './waiting-ticket-list/waiting-ticket-list';
 
 type StaffDeskState = 'loading' | 'noCounterChosen' | 'ready' | 'failed';
@@ -48,6 +59,8 @@ export class StaffDeskPage {
   private readonly staffCounterService = inject(StaffCounterService);
   private readonly staffDeskService = inject(StaffDeskService);
   private readonly chosenCounterStorage = inject(ChosenCounterStorage);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly liveUpdateService = inject(LiveUpdateService);
 
   private readonly counterPicker = viewChild.required(CounterPickerDialog);
 
@@ -78,10 +91,11 @@ export class StaffDeskPage {
   );
 
   private waitingListRequest: Subscription | null = null;
+  private readonly waitingListReplaced = new Subject<void>();
 
   constructor() {
     this.loadDesk();
-    this.pollWaitingListWhileDeskIsIdle();
+    this.refreshWaitingListOnLiveUpdates();
   }
 
   protected changeCounter(): void {
@@ -187,12 +201,28 @@ export class StaffDeskPage {
     this.requestWaitingList(counterId);
   }
 
-  private loadWaitingListWhenNoRequestRuns(): void {
+  private refreshWaitingListOnLiveUpdates(): void {
+    this.liveUpdateService
+      .watch('staff', this.destroyRef)
+      .refreshRequests.pipe(
+        switchMap(() => this.refreshWaitingListWhenDeskIsIdle()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private refreshWaitingListWhenDeskIsIdle(): Observable<void> {
     const counterId = this.chosenCounterId();
-    if (counterId === null || this.waitingListRequest?.closed === false) {
-      return;
+    if (counterId === null || this.screenState() !== 'ready' || this.isSubmitting()) {
+      return EMPTY;
     }
-    this.requestWaitingList(counterId);
+    this.cancelWaitingListRequest();
+    return this.staffDeskService.fetchWaitingList(counterId).pipe(
+      takeUntil(this.waitingListReplaced),
+      tap((waitingList) => this.waitingList.set(waitingList)),
+      catchError(() => EMPTY),
+      ignoreElements(),
+    );
   }
 
   private requestWaitingList(counterId: number): void {
@@ -205,24 +235,12 @@ export class StaffDeskPage {
   private cancelWaitingListRequest(): void {
     this.waitingListRequest?.unsubscribe();
     this.waitingListRequest = null;
+    this.waitingListReplaced.next();
   }
 
   private discardWaitingList(): void {
     this.cancelWaitingListRequest();
     this.waitingList.set(null);
-  }
-
-  private pollWaitingListWhileDeskIsIdle(): void {
-    effect((onCleanup) => {
-      if (this.screenState() !== 'ready' || this.isSubmitting()) {
-        return;
-      }
-      const intervalId = setInterval(
-        () => this.loadWaitingListWhenNoRequestRuns(),
-        WAITING_LIST_REFRESH_INTERVAL_MS,
-      );
-      onCleanup(() => clearInterval(intervalId));
-    });
   }
 
   private refreshAvailableCounters(): void {

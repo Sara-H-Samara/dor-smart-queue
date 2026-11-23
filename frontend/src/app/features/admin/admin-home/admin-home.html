@@ -16,6 +16,7 @@
       <app-catalog-panel
         [class.panel-hidden-on-phone]="selectedSection() !== 'services'"
         catalogResource="services"
+        [refreshRequests]="refreshRequests"
         heading="Services"
         itemLabel="Service"
         emptyText="Add a service so students can start taking tickets."
@@ -23,6 +24,7 @@
       <app-catalog-panel
         [class.panel-hidden-on-phone]="selectedSection() !== 'counters'"
         catalogResource="counters"
+        [refreshRequests]="refreshRequests"
         heading="Counters"
         itemLabel="Counter"
         emptyText="Add a counter so staff can start serving students."

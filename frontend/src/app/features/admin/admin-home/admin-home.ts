@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PageHeader } from '../../../shared/page-header/page-header';
 import { CatalogPanel } from './catalog-panel/catalog-panel';
@@ -15,7 +16,11 @@ import { SectionOption, SectionSwitch } from './section-switch/section-switch';
 export class AdminHome {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly liveUpdateService = inject(LiveUpdateService);
 
+  protected readonly refreshRequests = this.liveUpdateService.watch('admin', this.destroyRef)
+    .refreshRequests;
   protected readonly sectionOptions: SectionOption[] = [
     { value: 'services', label: 'Services' },
     { value: 'counters', label: 'Counters' },
