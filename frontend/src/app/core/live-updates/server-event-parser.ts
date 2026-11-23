@@ -3,6 +3,7 @@ export interface ServerEvent {
   data: string;
 }
 
+export const COMMENT_EVENT_NAME = 'comment';
 const DEFAULT_EVENT_NAME = 'message';
 const LINE_ENDING = /\r\n|\n|\r/g;
 
@@ -48,7 +49,7 @@ export class ServerEventParser {
       return this.finishEvent();
     }
     if (line.startsWith(':')) {
-      return null;
+      return { name: COMMENT_EVENT_NAME, data: '' };
     }
     const separatorIndex = line.indexOf(':');
     const fieldName = separatorIndex === -1 ? line : line.slice(0, separatorIndex);

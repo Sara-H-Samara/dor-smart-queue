@@ -30,6 +30,10 @@ class FakeOpenedStream {
     this.enqueue({ kind: 'event', event: { name, data: '{}' } });
   }
 
+  sendComment(): void {
+    this.sendEvent('comment');
+  }
+
   closeFromServer(): void {
     this.enqueue({ kind: 'serverClosed' });
   }
@@ -204,14 +208,6 @@ describe('LiveUpdateService', () => {
       await connectAndReceiveReady();
 
       expect(watch.isConnected()).toBe(true);
-    });
-
-    it('does not open a stream when the tab is hidden at the start', async () => {
-      isPageVisible.set(false);
-
-      await startWatching();
-
-      expect(server.openStream).not.toHaveBeenCalled();
     });
   });
 
@@ -597,56 +593,36 @@ describe('LiveUpdateService', () => {
   });
 
   describe('when the tab is hidden', () => {
-    it('stops the stream request with the abort signal', async () => {
+    it('hide_whileConnected_keepsStreamOpen', async () => {
       const openedStream = await connectAndReceiveReady();
+
+      await changePageVisibility(false);
+
       expect(openedStream.abortSignal.aborted).toBe(false);
-
-      await changePageVisibility(false);
-
-      expect(openedStream.abortSignal.aborted).toBe(true);
     });
 
-    it('is not connected while the tab is hidden', async () => {
-      await connectAndReceiveReady();
-
-      await changePageVisibility(false);
-
-      expect(watch.isConnected()).toBe(false);
-    });
-
-    it('does not open a new stream while the tab is hidden', async () => {
-      await connectAndReceiveReady();
-
-      await changePageVisibility(false);
-      await advanceTime(120000);
-
-      expect(server.openStream).toHaveBeenCalledTimes(1);
-    });
-
-    it('does not reconnect when the tab is hidden while the stream waits to reconnect', async () => {
-      const openedStream = await connectAndReceiveReady();
-      openedStream.closeFromServer();
-      await advanceTime(500);
-
-      await changePageVisibility(false);
-      await advanceTime(120000);
-
-      expect(server.openStream).toHaveBeenCalledTimes(1);
-    });
-
-    it('stops the stream request when the tab is hidden while the stream is still opening', async () => {
+    it('hide_whileStreamIsOpening_doesNotAbortTheOpeningRequest', async () => {
       server.leaveNextOpeningPending();
       await startWatching();
       const abortSignalOfOpening = server.openStream.mock.calls[0][1];
 
       await changePageVisibility(false);
-      await advanceTime(120000);
 
-      expect(abortSignalOfOpening.aborted).toBe(true);
-      expect(server.openStream).toHaveBeenCalledTimes(1);
+      expect(abortSignalOfOpening.aborted).toBe(false);
     });
 
-    it('does not ask for a refresh from events that arrive after the tab was hidden', async () => {
+    it('hide_whileWaitingToReconnect_stillReconnectsOnTime', async () => {
+      const openedStream = await connectAndReceiveReady();
+      openedStream.closeFromServer();
+      await advanceTime(500);
+
+      await changePageVisibility(false);
+      await advanceTime(500);
+
+      expect(server.openStream).toHaveBeenCalledTimes(2);
+    });
+
+    it('hide_thenTicketChanged_doesNotAskForRefresh', async () => {
       const openedStream = await connectAndReceiveReady();
       await changePageVisibility(false);
 
@@ -658,29 +634,100 @@ describe('LiveUpdateService', () => {
   });
 
   describe('when the tab is shown again', () => {
-    it('opens a new stream', async () => {
-      await connectAndReceiveReady();
+    it('show_afterManyChangesWhileHidden_asksForExactlyOneRefresh', async () => {
+      const openedStream = await connectAndReceiveReady();
       await changePageVisibility(false);
+      openedStream.sendEvent('ticket-changed');
+      openedStream.sendEvent('configuration-changed');
+      openedStream.sendEvent('ticket-changed');
+      await advanceTime(1000);
+      expect(refreshCount).toBe(1);
 
       await changePageVisibility(true);
+      await advanceTime(1000);
 
-      expect(server.openStream).toHaveBeenCalledTimes(2);
-      expect(server.openedStreams[1].abortSignal.aborted).toBe(false);
+      expect(refreshCount).toBe(2);
     });
 
-    it('asks for a refresh', async () => {
+    it('show_afterChangeWasAlreadyShown_secondShow_doesNotAskForRefresh', async () => {
+      const openedStream = await connectAndReceiveReady();
+      await changePageVisibility(false);
+      openedStream.sendEvent('ticket-changed');
+      await advanceTime(1000);
+      await changePageVisibility(true);
+      await advanceTime(1000);
+      expect(refreshCount).toBe(2);
+
+      await changePageVisibility(false);
+      await changePageVisibility(true);
+      await advanceTime(1000);
+
+      expect(refreshCount).toBe(2);
+    });
+
+    it('show_afterHiddenWithoutChange_whileConnected_doesNotAskForRefresh', async () => {
       await connectAndReceiveReady();
+      await changePageVisibility(false);
+      await advanceTime(30000);
+
+      await changePageVisibility(true);
+      await advanceTime(1000);
+
+      expect(refreshCount).toBe(1);
+    });
+
+    it('show_whileDisconnected_asksForOneRefresh', async () => {
+      server.failNextOpenings(10, networkFailure);
+      await startWatching();
       await changePageVisibility(false);
 
       await changePageVisibility(true);
       await advanceTime(300);
 
+      expect(refreshCount).toBe(1);
+    });
+
+    it('show_whileDisconnected_resumesFiveSecondPolling', async () => {
+      server.leaveNextOpeningPending();
+      await startWatching();
+      await changePageVisibility(false);
+
+      await changePageVisibility(true);
+      await advanceTime(5000);
+
       expect(refreshCount).toBe(2);
     });
 
-    it('asks for only one refresh when the server says ready right away', async () => {
+    it('show_whileWaitingToReconnect_doesNotSkipTheBackoff', async () => {
+      server.failNextOpenings(1, networkFailure);
+      await startWatching();
+      await changePageVisibility(false);
+      await advanceTime(500);
+
+      await changePageVisibility(true);
+      expect(server.openStream).toHaveBeenCalledTimes(1);
+      await advanceTime(499);
+      expect(server.openStream).toHaveBeenCalledTimes(1);
+      await advanceTime(1);
+
+      expect(server.openStream).toHaveBeenCalledTimes(2);
+    });
+
+    it('show_afterSilenceLongerThanSixtySeconds_abortsOldStreamAndOpensNewOne', async () => {
+      const openedStream = await connectAndReceiveReady();
+      await changePageVisibility(false);
+      await advanceTime(61000);
+
+      await changePageVisibility(true);
+
+      expect(openedStream.abortSignal.aborted).toBe(true);
+      expect(server.openStream).toHaveBeenCalledTimes(2);
+    });
+
+    it('show_afterSilenceLongerThanSixtySeconds_thenReady_asksForOneRefresh', async () => {
       await connectAndReceiveReady();
       await changePageVisibility(false);
+      await advanceTime(61000);
 
       await changePageVisibility(true);
       server.openedStreams[1].sendEvent('ready');
@@ -689,18 +736,42 @@ describe('LiveUpdateService', () => {
       expect(refreshCount).toBe(2);
     });
 
-    it('starts again with a short wait after earlier failures', async () => {
-      server.failNextOpenings(3, networkFailure);
-      await startWatching();
+    it('show_afterHeartbeatsKeptArriving_doesNotOpenNewStream', async () => {
+      const openedStream = await connectAndReceiveReady();
       await changePageVisibility(false);
-      server.failNextOpenings(1, networkFailure);
+      for (let heartbeatCount = 0; heartbeatCount < 10; heartbeatCount++) {
+        await advanceTime(25000);
+        openedStream.sendComment();
+        await advanceTime(0);
+      }
 
       await changePageVisibility(true);
-      await advanceTime(999);
-      expect(server.openStream).toHaveBeenCalledTimes(2);
-      await advanceTime(1);
+      await advanceTime(1000);
 
-      expect(server.openStream).toHaveBeenCalledTimes(3);
+      expect(server.openStream).toHaveBeenCalledTimes(1);
+      expect(refreshCount).toBe(1);
+    });
+
+    it('start_whenPageIsHidden_thenShown_asksForOneRefresh', async () => {
+      isPageVisible.set(false);
+      await startWatching();
+      server.openedStreams[0].sendEvent('ready');
+      await advanceTime(1000);
+      expect(refreshCount).toBe(0);
+
+      await changePageVisibility(true);
+      await advanceTime(1000);
+
+      expect(refreshCount).toBe(1);
+    });
+
+    it('heartbeatComment_whileVisible_doesNotAskForRefresh', async () => {
+      const openedStream = await connectAndReceiveReady();
+
+      openedStream.sendComment();
+      await advanceTime(1000);
+
+      expect(refreshCount).toBe(1);
     });
   });
 

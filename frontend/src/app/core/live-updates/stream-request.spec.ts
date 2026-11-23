@@ -139,7 +139,7 @@ describe('StreamRequest', () => {
     expect(await collectEvents(events)).toHaveLength(1);
   });
 
-  it('keeps reading when a heartbeat comment arrives between events', async () => {
+  it('openStream_withHeartbeatCommentBetweenEvents_keepsReadingAndReturnsCommentEvent', async () => {
     fetchStub.mockResolvedValue(
       responseWithChunks([
         'event:ready\ndata:{}\n\n',
@@ -152,6 +152,7 @@ describe('StreamRequest', () => {
 
     expect((await collectEvents(events)).map((event) => event.name)).toEqual([
       'ready',
+      'comment',
       'ticket-changed',
     ]);
   });
