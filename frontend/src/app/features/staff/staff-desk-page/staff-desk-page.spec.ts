@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Subject, of } from 'rxjs';
 
+import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import {
   AvailableCounter,
   CalledStudent,
@@ -12,9 +13,9 @@ import { ChosenCounterStorage } from '../../../core/services/chosen-counter-stor
 import { StaffCounterService } from '../../../core/services/staff-counter.service';
 import { StaffDeskService } from '../../../core/services/staff-desk.service';
 import { installDialogSupport } from '../../../testing/dialog-support';
+import { FakeLiveUpdateService } from '../../../testing/fake-live-update-service';
 import { failingRequestWithMessage, failingRequestWithStatus } from '../../../testing/http-failure';
 import { StaffDeskPage } from './staff-desk-page';
-import { WAITING_LIST_REFRESH_INTERVAL_MS } from './waiting-list-refresh';
 
 const counterTwo: AvailableCounter = {
   id: 2,
@@ -61,6 +62,7 @@ describe('StaffDeskPage', () => {
   let clearChosenCounter: ReturnType<typeof vi.fn>;
   let logout: ReturnType<typeof vi.fn>;
   let navigateByUrl: ReturnType<typeof vi.fn>;
+  let fakeLiveUpdateService: FakeLiveUpdateService;
 
   beforeAll(() => installDialogSupport());
 
@@ -76,9 +78,11 @@ describe('StaffDeskPage', () => {
     clearChosenCounter = vi.fn();
     logout = vi.fn();
     navigateByUrl = vi.fn();
+    fakeLiveUpdateService = new FakeLiveUpdateService();
 
     TestBed.configureTestingModule({
       providers: [
+        { provide: LiveUpdateService, useValue: fakeLiveUpdateService },
         { provide: StaffCounterService, useValue: { listAvailableCounters } },
         {
           provide: StaffDeskService,
@@ -490,39 +494,62 @@ describe('StaffDeskPage', () => {
     expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Document requests');
   });
 
-  describe('polling the waiting list', () => {
-    beforeEach(() => vi.useFakeTimers());
-
+  describe('live refresh of the waiting list', () => {
     afterEach(() => vi.useRealTimers());
 
-    it('requests the list again and shows the new count after the refresh interval', async () => {
+    function requestRefresh(fixture: ComponentFixture<StaffDeskPage>): void {
+      fakeLiveUpdateService.liveUpdateWatch.requestRefresh();
+      fixture.detectChanges();
+    }
+
+    it('watches the staff stream once', async () => {
+      await createPage();
+
+      expect(fakeLiveUpdateService.watchedLiveStreams).toEqual(['staff']);
+    });
+
+    it('requests the list again and shows the new count after a refresh request', async () => {
       fetchWaitingList.mockReturnValue(of(twoWaitingList));
       const fixture = await createPage();
       fetchWaitingList.mockReturnValue(of(oneWaitingList));
 
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS);
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(fetchWaitingList).toHaveBeenCalledTimes(2);
       expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Course registration');
     });
 
-    it('sends no request before the refresh interval', async () => {
+    it('does not request the list again by itself over time', async () => {
+      vi.useFakeTimers();
       await createPage();
 
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS - 1);
+      vi.advanceTimersByTime(60000);
 
       expect(fetchWaitingList).toHaveBeenCalledTimes(1);
     });
 
-    it('sends no second request while the previous one is still running', async () => {
-      await createPage();
-      fetchWaitingList.mockReturnValue(new Subject<WaitingList>());
+    it('does not ask for the called student or the counters when a refresh is requested', async () => {
+      const fixture = await createPage();
 
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS);
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS);
+      requestRefresh(fixture);
 
-      expect(fetchWaitingList).toHaveBeenCalledTimes(2);
+      expect(fetchCurrentStudent).toHaveBeenCalledTimes(1);
+      expect(listAvailableCounters).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses only the newest answer when refreshes are requested close together', async () => {
+      const slowAnswer = new Subject<WaitingList>();
+      const fixture = await createPage();
+      fetchWaitingList.mockReturnValueOnce(slowAnswer);
+      fetchWaitingList.mockReturnValueOnce(of(oneWaitingList));
+
+      requestRefresh(fixture);
+      requestRefresh(fixture);
+      slowAnswer.next(twoWaitingList);
+      fixture.detectChanges();
+
+      expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Course registration');
+      expect(fetchWaitingList).toHaveBeenCalledTimes(3);
     });
 
     it('keeps the last list and shows no alert when a request fails', async () => {
@@ -530,22 +557,20 @@ describe('StaffDeskPage', () => {
       const fixture = await createPage();
       fetchWaitingList.mockReturnValue(failingRequestWithStatus(500));
 
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS);
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(fetchWaitingList).toHaveBeenCalledTimes(2);
       expect(textOf(fixture, '.waiting-count')).toBe('2 waiting for Course registration');
       expect(pageElement(fixture).querySelector('.alert')).toBeNull();
     });
 
-    it('tries again at the next interval after a failed request', async () => {
+    it('requests again at the next refresh request after a failed request', async () => {
       const fixture = await createPage();
       fetchWaitingList.mockReturnValueOnce(failingRequestWithStatus(500));
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS);
+      requestRefresh(fixture);
       fetchWaitingList.mockReturnValue(of(oneWaitingList));
 
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS);
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(fetchWaitingList).toHaveBeenCalledTimes(3);
       expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Course registration');
@@ -557,27 +582,71 @@ describe('StaffDeskPage', () => {
       const fixture = await createPage();
       await clickAndSettle(fixture, buttonWithText(fixture, 'Served'));
 
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS * 2);
+      requestRefresh(fixture);
 
       expect(fetchWaitingList).toHaveBeenCalledTimes(1);
     });
 
     it('sends no request when no counter is chosen', async () => {
       readChosenCounter.mockReturnValue(null);
-      await createPage();
+      const fixture = await createPage();
 
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS * 2);
+      requestRefresh(fixture);
 
       expect(fetchWaitingList).not.toHaveBeenCalled();
     });
 
     it('sends no request when the desk failed to load', async () => {
       listAvailableCounters.mockReturnValue(failingRequestWithStatus(500));
-      await createPage();
+      const fixture = await createPage();
 
-      vi.advanceTimersByTime(WAITING_LIST_REFRESH_INTERVAL_MS * 2);
+      requestRefresh(fixture);
 
       expect(fetchWaitingList).not.toHaveBeenCalled();
+    });
+
+    it("ignores a late refresh answer for the old counter's list after the counter changes", async () => {
+      const lateAnswer = new Subject<WaitingList>();
+      const fixture = await createPage();
+      fetchWaitingList.mockReturnValueOnce(lateAnswer);
+      requestRefresh(fixture);
+      fetchWaitingList.mockReturnValue(of(oneWaitingList));
+
+      await clickAndSettle(fixture, buttonWithText(fixture, 'Change counter'));
+      const counterButton = Array.from(
+        pageElement(fixture).querySelectorAll<HTMLButtonElement>('.counter-option'),
+      ).find((button) => button.textContent?.includes('Counter 3'));
+      await clickAndSettle(fixture, counterButton);
+      lateAnswer.next(twoWaitingList);
+      fixture.detectChanges();
+
+      expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Document requests');
+    });
+
+    it('ignores a late refresh answer after a staff action reloaded the list', async () => {
+      const lateAnswer = new Subject<WaitingList>();
+      fetchCurrentStudent.mockReturnValue(of(calledStudent));
+      markTicketDone.mockReturnValue(of({ ...calledStudent, status: 'DONE' }));
+      const fixture = await createPage();
+      fetchWaitingList.mockReturnValueOnce(lateAnswer);
+      requestRefresh(fixture);
+      fetchCurrentStudent.mockReturnValue(of(null));
+      fetchWaitingList.mockReturnValue(of(oneWaitingList));
+
+      await clickAndSettle(fixture, buttonWithText(fixture, 'Served'));
+      lateAnswer.next(twoWaitingList);
+      fixture.detectChanges();
+
+      expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Course registration');
+    });
+
+    it('sends no request after the page is destroyed', async () => {
+      const fixture = await createPage();
+
+      fixture.destroy();
+      fakeLiveUpdateService.liveUpdateWatch.requestRefresh();
+
+      expect(fetchWaitingList).toHaveBeenCalledTimes(1);
     });
   });
 
