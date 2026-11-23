@@ -9,8 +9,8 @@ import { SessionExpiryHandler } from './session-expiry-handler';
 import { ServerEvent } from './server-event-parser';
 import { StreamRejectedError, StreamRequest } from './stream-request';
 
-export const REFRESH_MERGE_WINDOW_IN_MILLISECONDS = 300;
-export const FALLBACK_POLL_INTERVAL_IN_MILLISECONDS = 5000;
+const REFRESH_MERGE_WINDOW_IN_MILLISECONDS = 300;
+const FALLBACK_POLL_INTERVAL_IN_MILLISECONDS = 5000;
 
 const READY_EVENT_NAME = 'ready';
 const CHANGE_EVENT_NAMES: readonly string[] = ['ticket-changed', 'configuration-changed'];

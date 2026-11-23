@@ -487,8 +487,8 @@ After `ready` and after every event, the screen asks for the data it needs with 
 | Screen | Request |
 |---|---|
 | Waiting screen | `GET /api/public/queue-status` |
-| Student ticket | `GET /api/tickets/me`, and `GET /api/services` after `configuration-changed` |
-| Staff desk | `GET /api/counters/{counterId}/current` and `GET /api/counters/{counterId}/waiting`, and `GET /api/counters` after `configuration-changed` |
+| Student ticket | `GET /api/tickets/me` while the student has a ticket, and `GET /api/services` after any event while the student has no ticket |
+| Staff desk | `GET /api/counters/{counterId}/waiting` |
 | Admin | `GET /api/admin/services` and `GET /api/admin/counters` |
 
 The screen must ask again after every `ready`. Events that came while the screen was not connected are not sent again.

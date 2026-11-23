@@ -34,10 +34,10 @@ A university Student Affairs office with several services (for example course re
 - Staff desk: choose a counter, call next, see the current student and the waiting list, mark done or no-show.
 - Admin screen: create, edit, turn on and turn off services and counters.
 - Waiting screen at `/waiting-room` (no login) showing who is served at each open counter and the next tickets.
-- Automatic refresh every 5 seconds on the student ticket screen, the waiting list of the staff desk and the waiting screen. The admin screen does not refresh by itself.
+- Live updates on the student ticket screen, the waiting list of the staff desk, the waiting screen and the admin screen. They refresh when the server sends an event. While the live connection is not open, they ask the server every 5 seconds instead.
 
 **Planned (not built; do not present as existing):**
-- Live updates, early alerts and statistics (Release 2).
+- Early alerts and statistics (Release 2).
 - Admin user management from the screen (Release 2).
 
 **Technical:** Angular frontend; Java 21 Spring Boot backend with Spring Security (JWT); PostgreSQL. Planned, not set up yet: Flyway migrations, Docker Compose, GitHub Actions. Staff and admin accounts are seeded in the database. Admin user management from the screen is planned for Release 2.
