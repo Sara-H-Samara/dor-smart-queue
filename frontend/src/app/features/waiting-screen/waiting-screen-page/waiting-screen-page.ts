@@ -1,14 +1,14 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, Observable, catchError, exhaustMap, ignoreElements, interval, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, ignoreElements, switchMap, tap } from 'rxjs';
 
+import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import { WaitingRoom } from '../../../core/models/waiting-room.model';
 import { WaitingRoomService } from '../../../core/services/waiting-room.service';
 import { CounterTile } from './counter-tile/counter-tile';
 import { NextTicketList } from './next-ticket-list/next-ticket-list';
 import { ORGANIZATION_NAME } from './organization-name';
 import { WaitingScreenHeader } from './waiting-screen-header/waiting-screen-header';
-import { WAITING_SCREEN_REFRESH_INTERVAL_MS } from './waiting-screen-refresh';
 
 type WaitingScreenState = 'loading' | 'ready' | 'failed';
 
@@ -21,6 +21,7 @@ type WaitingScreenState = 'loading' | 'ready' | 'failed';
 export class WaitingScreenPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly waitingRoomService = inject(WaitingRoomService);
+  private readonly liveUpdateService = inject(LiveUpdateService);
 
   protected readonly organizationName = ORGANIZATION_NAME;
   protected readonly screenState = signal<WaitingScreenState>('loading');
@@ -28,17 +29,18 @@ export class WaitingScreenPage {
 
   constructor() {
     this.loadWaitingRoom();
-    this.startAutoRefresh();
+    this.refreshOnLiveUpdates();
   }
 
   private loadWaitingRoom(): void {
     this.refreshWaitingRoom().subscribe();
   }
 
-  private startAutoRefresh(): void {
-    interval(WAITING_SCREEN_REFRESH_INTERVAL_MS)
-      .pipe(
-        exhaustMap(() => this.refreshWaitingRoom()),
+  private refreshOnLiveUpdates(): void {
+    this.liveUpdateService
+      .watch('public', this.destroyRef)
+      .refreshRequests.pipe(
+        switchMap(() => this.refreshWaitingRoom()),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();

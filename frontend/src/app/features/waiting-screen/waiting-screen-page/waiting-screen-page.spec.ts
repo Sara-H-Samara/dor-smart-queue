@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
+import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import { WaitingRoom } from '../../../core/models/waiting-room.model';
 import { WaitingRoomService } from '../../../core/services/waiting-room.service';
+import { FakeLiveUpdateService } from '../../../testing/fake-live-update-service';
 import { failingRequestWithStatus } from '../../../testing/http-failure';
 import { WaitingScreenPage } from './waiting-screen-page';
-import { WAITING_SCREEN_REFRESH_INTERVAL_MS } from './waiting-screen-refresh';
 
 const waitingRoomWithCalledAndIdleCounter: WaitingRoom = {
   counters: [
@@ -22,11 +23,16 @@ const waitingRoomWithCalledAndIdleCounter: WaitingRoom = {
 
 describe('WaitingScreenPage', () => {
   let fetchWaitingRoom: ReturnType<typeof vi.fn>;
+  let fakeLiveUpdateService: FakeLiveUpdateService;
 
   beforeEach(() => {
     fetchWaitingRoom = vi.fn();
+    fakeLiveUpdateService = new FakeLiveUpdateService();
     TestBed.configureTestingModule({
-      providers: [{ provide: WaitingRoomService, useValue: { fetchWaitingRoom } }],
+      providers: [
+        { provide: WaitingRoomService, useValue: { fetchWaitingRoom } },
+        { provide: LiveUpdateService, useValue: fakeLiveUpdateService },
+      ],
     });
   });
 
@@ -117,20 +123,52 @@ describe('WaitingScreenPage', () => {
     expect(pageElement(fixture).querySelector('app-counter-tile')).toBeNull();
   });
 
-  describe('automatic refresh', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
+  describe('live refresh', () => {
     afterEach(() => {
       vi.useRealTimers();
     });
 
-    function advanceOneRefreshInterval(): void {
-      vi.advanceTimersByTime(WAITING_SCREEN_REFRESH_INTERVAL_MS);
+    function requestRefresh(fixture: ComponentFixture<WaitingScreenPage>): void {
+      fakeLiveUpdateService.liveUpdateWatch.requestRefresh();
+      fixture.detectChanges();
     }
 
-    it('shows the new called ticket after one refresh interval', () => {
+    it('watches the public stream', () => {
+      fetchWaitingRoom.mockReturnValue(of(waitingRoomWithCalledAndIdleCounter));
+
+      createPage();
+
+      expect(fakeLiveUpdateService.watchedLiveStreams).toEqual(['public']);
+    });
+
+    it('loads the waiting room once at the start without waiting for a refresh request', () => {
+      fetchWaitingRoom.mockReturnValue(of(waitingRoomWithCalledAndIdleCounter));
+
+      createPage();
+
+      expect(fetchWaitingRoom).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not load the waiting room again by itself over time', () => {
+      vi.useFakeTimers();
+      fetchWaitingRoom.mockReturnValue(of(waitingRoomWithCalledAndIdleCounter));
+      createPage();
+
+      vi.advanceTimersByTime(60000);
+
+      expect(fetchWaitingRoom).toHaveBeenCalledTimes(1);
+    });
+
+    it('loads the waiting room again when a refresh is requested', () => {
+      fetchWaitingRoom.mockReturnValue(of(waitingRoomWithCalledAndIdleCounter));
+      const fixture = createPage();
+
+      requestRefresh(fixture);
+
+      expect(fetchWaitingRoom).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows the new called ticket after a refresh request', () => {
       const waitingRoomWithNewCall: WaitingRoom = {
         ...waitingRoomWithCalledAndIdleCounter,
         counters: [
@@ -142,8 +180,7 @@ describe('WaitingScreenPage', () => {
       fetchWaitingRoom.mockReturnValueOnce(of(waitingRoomWithNewCall));
       const fixture = createPage();
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(textsOf(fixture, '.ticket-code')).toEqual(['R-015', 'D-008']);
       expect(pageElement(fixture).querySelector('.not-serving')).toBeNull();
@@ -154,8 +191,7 @@ describe('WaitingScreenPage', () => {
       fetchWaitingRoom.mockReturnValueOnce(failingRequestWithStatus(500));
       const fixture = createPage();
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(textsOf(fixture, '.ticket-code')).toEqual(['R-012']);
       expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
@@ -167,11 +203,39 @@ describe('WaitingScreenPage', () => {
       const fixture = createPage();
       expect(pageElement(fixture).querySelector('[role="alert"]')).not.toBeNull();
 
-      advanceOneRefreshInterval();
-      fixture.detectChanges();
+      requestRefresh(fixture);
 
       expect(pageElement(fixture).querySelector('[role="alert"]')).toBeNull();
       expect(textsOf(fixture, '.ticket-code')).toEqual(['R-012']);
+    });
+
+    it('ignores the answer of an older request when a newer refresh was requested', () => {
+      const waitingRoomWithNewCall: WaitingRoom = {
+        ...waitingRoomWithCalledAndIdleCounter,
+        counters: [{ counterName: 'Counter 1', serviceName: 'Registration', ticketCode: 'R-099' }],
+      };
+      const slowAnswer = new Subject<WaitingRoom>();
+      fetchWaitingRoom.mockReturnValueOnce(of(waitingRoomWithCalledAndIdleCounter));
+      fetchWaitingRoom.mockReturnValueOnce(slowAnswer);
+      fetchWaitingRoom.mockReturnValueOnce(of(waitingRoomWithNewCall));
+      const fixture = createPage();
+
+      requestRefresh(fixture);
+      requestRefresh(fixture);
+      slowAnswer.next(waitingRoomWithCalledAndIdleCounter);
+      fixture.detectChanges();
+
+      expect(textsOf(fixture, '.ticket-code')).toEqual(['R-099']);
+    });
+
+    it('does not load the waiting room after the page is destroyed', () => {
+      fetchWaitingRoom.mockReturnValue(of(waitingRoomWithCalledAndIdleCounter));
+      const fixture = createPage();
+
+      fixture.destroy();
+      fakeLiveUpdateService.liveUpdateWatch.requestRefresh();
+
+      expect(fetchWaitingRoom).toHaveBeenCalledTimes(1);
     });
   });
 });
