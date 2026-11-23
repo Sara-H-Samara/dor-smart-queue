@@ -1,17 +1,9 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import {
-  EMPTY,
-  Observable,
-  catchError,
-  exhaustMap,
-  filter,
-  ignoreElements,
-  interval,
-  tap,
-} from 'rxjs';
+import { EMPTY, Observable, catchError, ignoreElements, switchMap, tap } from 'rxjs';
 
+import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import { ActiveService } from '../../../core/models/active-service.model';
 import { ActiveTicket } from '../../../core/models/ticket.model';
 import { AuthService } from '../../../core/services/auth.service';
@@ -19,7 +11,6 @@ import { StudentCatalogService } from '../../../core/services/student-catalog.se
 import { TicketService } from '../../../core/services/ticket.service';
 import { PageHeader } from '../../../shared/page-header/page-header';
 import { firstNameOf } from './first-name';
-import { SERVICE_LIST_REFRESH_INTERVAL_MS } from './service-list-refresh';
 import { ServiceTileList } from './service-tile-list/service-tile-list';
 import { TicketCard } from './ticket-card/ticket-card';
 import {
@@ -28,7 +19,6 @@ import {
   messageForTicketFailure,
   serverMessageOf,
 } from './ticket-failure';
-import { TICKET_REFRESH_INTERVAL_MS } from './ticket-refresh';
 
 type StudentScreenState = 'loading' | 'ticket' | 'noTicket' | 'failed';
 
@@ -44,6 +34,7 @@ export class StudentTicketPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly ticketService = inject(TicketService);
   private readonly studentCatalogService = inject(StudentCatalogService);
+  private readonly liveUpdateService = inject(LiveUpdateService);
 
   protected readonly studentFirstName = computed(() => firstNameOf(this.authService.fullName()));
   protected readonly screenState = signal<StudentScreenState>('loading');
@@ -58,8 +49,7 @@ export class StudentTicketPage {
 
   constructor() {
     this.loadMyActiveTicket();
-    this.startAutoRefresh();
-    this.startServiceListAutoRefresh();
+    this.refreshOnLiveUpdates();
   }
 
   protected takeTicketForService(service: ActiveService): void {
@@ -117,14 +107,24 @@ export class StudentTicketPage {
     });
   }
 
-  private startAutoRefresh(): void {
-    interval(TICKET_REFRESH_INTERVAL_MS)
-      .pipe(
-        filter(() => this.hasTicketToRefresh()),
-        exhaustMap(() => this.refreshActiveTicket()),
+  private refreshOnLiveUpdates(): void {
+    this.liveUpdateService
+      .watch('student', this.destroyRef)
+      .refreshRequests.pipe(
+        switchMap(() => this.refreshForCurrentScreenState()),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  private refreshForCurrentScreenState(): Observable<void> {
+    if (this.hasTicketToRefresh()) {
+      return this.refreshActiveTicket();
+    }
+    if (this.hasServiceListToRefresh()) {
+      return this.refreshActiveServices();
+    }
+    return EMPTY;
   }
 
   private refreshActiveTicket(): Observable<void> {
@@ -144,16 +144,6 @@ export class StudentTicketPage {
       catchError(() => EMPTY),
       ignoreElements(),
     );
-  }
-
-  private startServiceListAutoRefresh(): void {
-    interval(SERVICE_LIST_REFRESH_INTERVAL_MS)
-      .pipe(
-        filter(() => this.hasServiceListToRefresh()),
-        exhaustMap(() => this.refreshActiveServices()),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
   }
 
   private refreshActiveServices(): Observable<void> {
