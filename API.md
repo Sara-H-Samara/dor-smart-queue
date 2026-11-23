@@ -478,7 +478,7 @@ data:{}
 
 Every connected student stream and staff stream gets every `ticket-changed` event, not only the one of the student or counter that changed.
 
-Every 25 seconds the server also sends a comment line (`:heartbeat`) to keep the connection open. A comment line is not an event.
+Every 25 seconds by default the server also sends a comment line (`:heartbeat`) to keep the connection open. A comment line is not an event. The time between two heartbeats is the property `dor.streams.heartbeat-interval-millis` (default `25000`).
 
 ### What the screen does
 

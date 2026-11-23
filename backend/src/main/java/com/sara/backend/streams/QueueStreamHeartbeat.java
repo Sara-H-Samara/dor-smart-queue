@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.Executors;
@@ -14,8 +15,8 @@ import java.util.concurrent.TimeUnit;
 public class QueueStreamHeartbeat {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QueueStreamHeartbeat.class);
-    private static final long HEARTBEAT_INTERVAL_SECONDS = 25;
 
+    private final long heartbeatIntervalMillis;
     private final QueueStreamRegistry queueStreamRegistry;
     private final QueueStreamSender queueStreamSender;
     private final QueueStreamSendExecutor queueStreamSendExecutor;
@@ -28,7 +29,9 @@ public class QueueStreamHeartbeat {
     public QueueStreamHeartbeat(
             QueueStreamRegistry queueStreamRegistry,
             QueueStreamSender queueStreamSender,
-            QueueStreamSendExecutor queueStreamSendExecutor) {
+            QueueStreamSendExecutor queueStreamSendExecutor,
+            @Value("${dor.streams.heartbeat-interval-millis:25000}") long heartbeatIntervalMillis) {
+        this.heartbeatIntervalMillis = heartbeatIntervalMillis;
         this.queueStreamRegistry = queueStreamRegistry;
         this.queueStreamSender = queueStreamSender;
         this.queueStreamSendExecutor = queueStreamSendExecutor;
@@ -38,7 +41,7 @@ public class QueueStreamHeartbeat {
     public void startSendingHeartbeats() {
         heartbeatScheduler.scheduleAtFixedRate(
                 this::sendHeartbeatAndKeepSchedule,
-                HEARTBEAT_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_SECONDS, TimeUnit.SECONDS);
+                heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
     }
 
     @PreDestroy
