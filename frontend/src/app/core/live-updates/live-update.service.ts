@@ -1,4 +1,12 @@
-import { DestroyRef, Injectable, Injector, effect, inject, untracked } from '@angular/core';
+import {
+  DestroyRef,
+  Injectable,
+  InjectionToken,
+  Injector,
+  effect,
+  inject,
+  untracked,
+} from '@angular/core';
 
 import { LiveStream } from './live-stream';
 import { LiveUpdateWatch } from './live-update-watch';
@@ -7,12 +15,18 @@ import { SessionExpiryHandler } from './session-expiry-handler';
 import { StreamLiveUpdateWatch } from './stream-live-update-watch';
 import { StreamRequest } from './stream-request';
 
+export const RANDOM_FRACTION = new InjectionToken<() => number>('RANDOM_FRACTION', {
+  providedIn: 'root',
+  factory: () => Math.random,
+});
+
 @Injectable({ providedIn: 'root' })
 export class LiveUpdateService {
   private readonly streamRequest = inject(StreamRequest);
   private readonly sessionExpiryHandler = inject(SessionExpiryHandler);
   private readonly pageVisibility = inject(PageVisibility);
   private readonly injector = inject(Injector);
+  private readonly randomFraction = inject(RANDOM_FRACTION);
 
   watch(liveStream: LiveStream, destroyRef: DestroyRef): LiveUpdateWatch {
     const watch = new StreamLiveUpdateWatch(
@@ -20,6 +34,7 @@ export class LiveUpdateService {
       this.streamRequest,
       this.sessionExpiryHandler,
       this.pageVisibility.isVisible(),
+      this.randomFraction,
     );
     const visibilityEffect = effect(
       () => {

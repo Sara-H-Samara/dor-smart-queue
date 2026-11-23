@@ -2,7 +2,7 @@ import { DestroyRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { LiveStream } from './live-stream';
-import { LiveUpdateService } from './live-update.service';
+import { LiveUpdateService, RANDOM_FRACTION } from './live-update.service';
 import { LiveUpdateWatch } from './live-update-watch';
 import { PageVisibility } from './page-visibility';
 import { ServerEvent } from './server-event-parser';
@@ -116,6 +116,13 @@ describe('LiveUpdateService', () => {
   let watch: LiveUpdateWatch;
   let refreshCount: number;
   let refreshRequestsCompleted: boolean;
+  let randomFraction: number;
+
+  async function closeOpenedStreamRightAfterReady(streamIndex: number): Promise<void> {
+    server.openedStreams[streamIndex].sendEvent('ready');
+    server.openedStreams[streamIndex].closeFromServer();
+    await advanceTime(0);
+  }
 
   async function advanceTime(milliseconds: number): Promise<void> {
     await vi.advanceTimersByTimeAsync(milliseconds);
@@ -163,8 +170,10 @@ describe('LiveUpdateService', () => {
     destroyCallbacks = [];
     refreshCount = 0;
     refreshRequestsCompleted = false;
+    randomFraction = 0;
     TestBed.configureTestingModule({
       providers: [
+        { provide: RANDOM_FRACTION, useValue: () => randomFraction },
         { provide: StreamRequest, useValue: { openStream: server.openStream } },
         { provide: SessionExpiryHandler, useValue: { endSessionAndShowLogin } },
         { provide: PageVisibility, useValue: { isVisible: isPageVisible } },
@@ -337,14 +346,40 @@ describe('LiveUpdateService', () => {
       expect(server.openStream).toHaveBeenCalledTimes(4);
     });
 
-    it('starts again with a short wait after the server said ready', async () => {
-      server.failNextOpenings(2, networkFailure);
+    it('reconnecting_afterReadyThenCloseRepeatedly_waitsOneThenTwoThenFourSeconds', async () => {
       await startWatching();
-      await advanceTime(3000);
-      server.openedStreams[0].sendEvent('ready');
-      await advanceTime(0);
 
-      server.openedStreams[0].closeFromServer();
+      await closeOpenedStreamRightAfterReady(0);
+      await advanceTime(999);
+      expect(server.openStream).toHaveBeenCalledTimes(1);
+      await advanceTime(1);
+      expect(server.openStream).toHaveBeenCalledTimes(2);
+
+      await closeOpenedStreamRightAfterReady(1);
+      await advanceTime(1999);
+      expect(server.openStream).toHaveBeenCalledTimes(2);
+      await advanceTime(1);
+      expect(server.openStream).toHaveBeenCalledTimes(3);
+
+      await closeOpenedStreamRightAfterReady(2);
+      await advanceTime(3999);
+      expect(server.openStream).toHaveBeenCalledTimes(3);
+      await advanceTime(1);
+      expect(server.openStream).toHaveBeenCalledTimes(4);
+    });
+
+    it('reconnecting_afterStreamStayedOpenThirtySeconds_waitsOneSecond', async () => {
+      await startWatching();
+      await closeOpenedStreamRightAfterReady(0);
+      await advanceTime(1000);
+      await closeOpenedStreamRightAfterReady(1);
+      await advanceTime(2000);
+      expect(server.openStream).toHaveBeenCalledTimes(3);
+      server.openedStreams[2].sendEvent('ready');
+      await advanceTime(0);
+      await advanceTime(30000);
+
+      server.openedStreams[2].closeFromServer();
       await advanceTime(999);
       expect(server.openStream).toHaveBeenCalledTimes(3);
       await advanceTime(1);
@@ -352,7 +387,76 @@ describe('LiveUpdateService', () => {
       expect(server.openStream).toHaveBeenCalledTimes(4);
     });
 
-    it('waits longer when the server closes the stream without saying ready', async () => {
+    it('reconnecting_afterStreamStayedOpenTwentyNineSeconds_keepsTheLongerWait', async () => {
+      await startWatching();
+      await closeOpenedStreamRightAfterReady(0);
+      await advanceTime(1000);
+      await closeOpenedStreamRightAfterReady(1);
+      await advanceTime(2000);
+      expect(server.openStream).toHaveBeenCalledTimes(3);
+      server.openedStreams[2].sendEvent('ready');
+      await advanceTime(0);
+      await advanceTime(29999);
+
+      server.openedStreams[2].closeFromServer();
+      await advanceTime(3999);
+      expect(server.openStream).toHaveBeenCalledTimes(3);
+      await advanceTime(1);
+
+      expect(server.openStream).toHaveBeenCalledTimes(4);
+    });
+
+    it('reconnecting_whenStreamClosesBeforeThirtySeconds_oldTimerDoesNotResetTheCounter', async () => {
+      server.failNextOpenings(5, networkFailure);
+      await startWatching();
+      await advanceTime(31000);
+      expect(server.openStream).toHaveBeenCalledTimes(6);
+      server.openedStreams[0].sendEvent('ready');
+      await advanceTime(2000);
+      server.openedStreams[0].closeFromServer();
+      await advanceTime(30000);
+      expect(server.openStream).toHaveBeenCalledTimes(7);
+
+      await closeOpenedStreamRightAfterReady(1);
+      await advanceTime(29999);
+      expect(server.openStream).toHaveBeenCalledTimes(7);
+      await advanceTime(1);
+
+      expect(server.openStream).toHaveBeenCalledTimes(8);
+    });
+
+    it('reconnecting_whenStreamFailsBeforeThirtySeconds_oldTimerDoesNotResetTheCounter', async () => {
+      server.failNextOpenings(5, networkFailure);
+      await startWatching();
+      await advanceTime(31000);
+      expect(server.openStream).toHaveBeenCalledTimes(6);
+      server.openedStreams[0].sendEvent('ready');
+      await advanceTime(2000);
+      server.openedStreams[0].failWith(networkFailure);
+      await advanceTime(30000);
+      expect(server.openStream).toHaveBeenCalledTimes(7);
+
+      await closeOpenedStreamRightAfterReady(1);
+      await advanceTime(29999);
+      expect(server.openStream).toHaveBeenCalledTimes(7);
+      await advanceTime(1);
+
+      expect(server.openStream).toHaveBeenCalledTimes(8);
+    });
+
+    it('reconnecting_withRandomFractionOneHalf_waitsTenPercentLonger', async () => {
+      randomFraction = 0.5;
+      await startWatching();
+
+      server.openedStreams[0].closeFromServer();
+      await advanceTime(1099);
+      expect(server.openStream).toHaveBeenCalledTimes(1);
+      await advanceTime(1);
+
+      expect(server.openStream).toHaveBeenCalledTimes(2);
+    });
+
+    it('reconnecting_afterServerClosesTwiceInARow_waitsOneThenTwoSeconds', async () => {
       await startWatching();
       server.openedStreams[0].closeFromServer();
       await advanceTime(1000);

@@ -4,13 +4,14 @@ import { Observable, Subject, auditTime, merge } from 'rxjs';
 import { FORBIDDEN_STATUS, UNAUTHORIZED_STATUS } from '../api-failure';
 import { LiveStream } from './live-stream';
 import { LiveUpdateWatch } from './live-update-watch';
-import { reconnectDelayInMillisecondsFor } from './reconnect-delay';
+import { reconnectDelayWithJitterInMillisecondsFor } from './reconnect-delay';
 import { SessionExpiryHandler } from './session-expiry-handler';
 import { ServerEvent } from './server-event-parser';
 import { StreamRejectedError, StreamRequest } from './stream-request';
 
 const REFRESH_MERGE_WINDOW_IN_MILLISECONDS = 300;
 const FALLBACK_POLL_INTERVAL_IN_MILLISECONDS = 5000;
+const STABLE_CONNECTION_DURATION_IN_MILLISECONDS = 30000;
 
 const READY_EVENT_NAME = 'ready';
 const CHANGE_EVENT_NAMES: readonly string[] = ['ticket-changed', 'configuration-changed'];
@@ -31,6 +32,7 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
   private failedAttemptCount = 0;
   private connectionAbortController: AbortController | null = null;
   private reconnectTimerId: ReturnType<typeof setTimeout> | null = null;
+  private stableConnectionTimerId: ReturnType<typeof setTimeout> | null = null;
   private fallbackPollTimerId: ReturnType<typeof setInterval> | null = null;
 
   constructor(
@@ -38,6 +40,7 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
     private readonly streamRequest: StreamRequest,
     private readonly sessionExpiryHandler: SessionExpiryHandler,
     private isPageVisible: boolean,
+    private readonly randomFraction: () => number,
   ) {}
 
   start(): void {
@@ -84,11 +87,9 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
   }
 
   private async readStream(abortController: AbortController): Promise<void> {
-    let hasReceivedReady = false;
     try {
       const events = await this.streamRequest.openStream(this.liveStream, abortController.signal);
       for await (const event of events) {
-        hasReceivedReady = hasReceivedReady || event.name === READY_EVENT_NAME;
         this.handleEvent(event);
       }
     } catch (error: unknown) {
@@ -98,13 +99,13 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
       return;
     }
     if (!abortController.signal.aborted) {
-      this.handleCleanClose(hasReceivedReady);
+      this.handleCleanClose();
     }
   }
 
   private handleEvent(event: ServerEvent): void {
     if (event.name === READY_EVENT_NAME) {
-      this.failedAttemptCount = 0;
+      this.startStableConnectionTimer();
       this.setConnected(true);
       this.changeSignals.next();
     } else if (CHANGE_EVENT_NAMES.includes(event.name)) {
@@ -112,11 +113,10 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
     }
   }
 
-  private handleCleanClose(hasReceivedReady: boolean): void {
+  private handleCleanClose(): void {
     this.setConnected(false);
-    if (!hasReceivedReady) {
-      this.failedAttemptCount++;
-    }
+    this.cancelStableConnectionTimer();
+    this.failedAttemptCount++;
     this.scheduleReconnect();
   }
 
@@ -129,17 +129,37 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
       this.closeConnection();
     } else {
       this.setConnected(false);
+      this.cancelStableConnectionTimer();
       this.failedAttemptCount++;
       this.scheduleReconnect();
     }
   }
 
+  private startStableConnectionTimer(): void {
+    this.cancelStableConnectionTimer();
+    this.stableConnectionTimerId = setTimeout(() => {
+      this.stableConnectionTimerId = null;
+      this.failedAttemptCount = 0;
+    }, STABLE_CONNECTION_DURATION_IN_MILLISECONDS);
+  }
+
+  private cancelStableConnectionTimer(): void {
+    if (this.stableConnectionTimerId !== null) {
+      clearTimeout(this.stableConnectionTimerId);
+      this.stableConnectionTimerId = null;
+    }
+  }
+
   private scheduleReconnect(): void {
     this.cancelReconnect();
+    const reconnectDelay = reconnectDelayWithJitterInMillisecondsFor(
+      this.failedAttemptCount,
+      this.randomFraction(),
+    );
     this.reconnectTimerId = setTimeout(() => {
       this.reconnectTimerId = null;
       this.openStreamWhenAllowed();
-    }, reconnectDelayInMillisecondsFor(this.failedAttemptCount));
+    }, reconnectDelay);
   }
 
   private cancelReconnect(): void {
@@ -150,6 +170,7 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
   }
 
   private closeConnection(): void {
+    this.cancelStableConnectionTimer();
     this.connectionAbortController?.abort();
     this.connectionAbortController = null;
     this.setConnected(false);
