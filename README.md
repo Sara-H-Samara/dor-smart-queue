@@ -188,6 +188,7 @@ Protected endpoints need the header `Authorization: Bearer <token>`. See [API.md
 - Live updates have no limit on the number of open streams, in total or for one user.
 - Live updates work with one server only. The open streams are kept in the memory of that server, so a second server would not tell the screens connected to the first.
 - A live stream sends only a signal that something changed. The screen must ask the server for the data. Events that came while a screen was disconnected are not sent again.
+- If the heartbeat interval of the live streams is raised above about 50 seconds, the silence limit in `stream-live-update-watch.ts` must be raised too. Otherwise a healthy stream looks silent and reconnects every time the tab is shown.
 - There is no user management on the screen. Staff and admin accounts come only from the seed.
 
 ## Screenshots

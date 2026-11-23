@@ -12,6 +12,7 @@ import { StreamRejectedError, StreamRequest } from './stream-request';
 const REFRESH_MERGE_WINDOW_IN_MILLISECONDS = 300;
 const FALLBACK_POLL_INTERVAL_IN_MILLISECONDS = 5000;
 const STABLE_CONNECTION_DURATION_IN_MILLISECONDS = 30000;
+const SILENT_CONNECTION_LIMIT_IN_MILLISECONDS = 60000;
 
 const READY_EVENT_NAME = 'ready';
 const CHANGE_EVENT_NAMES: readonly string[] = ['ticket-changed', 'configuration-changed'];
@@ -27,6 +28,8 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
     this.fallbackPollTicks,
   );
 
+  private hasChangeWaitingForVisiblePage = false;
+  private lastServerActivityInMilliseconds = Date.now();
   private hasStopped = false;
   private hasGivenUpStreaming = false;
   private failedAttemptCount = 0;
@@ -54,14 +57,38 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
     }
     this.isPageVisible = isPageVisible;
     if (isPageVisible) {
-      this.changeSignals.next();
-      this.openStreamWhenAllowed();
-    } else {
-      this.failedAttemptCount = 0;
-      this.cancelReconnect();
-      this.closeConnection();
+      this.handlePageBecameVisible();
     }
     this.updateFallbackPolling();
+  }
+
+  private handlePageBecameVisible(): void {
+    if (this.hasChangeWaitingForVisiblePage || !this.connected()) {
+      this.hasChangeWaitingForVisiblePage = false;
+      this.changeSignals.next();
+    }
+    if (this.connected() && !this.hasHeardFromServerRecently()) {
+      this.replaceSilentConnection();
+    }
+  }
+
+  private hasHeardFromServerRecently(): boolean {
+    return (
+      Date.now() - this.lastServerActivityInMilliseconds <= SILENT_CONNECTION_LIMIT_IN_MILLISECONDS
+    );
+  }
+
+  private replaceSilentConnection(): void {
+    this.cancelReconnect();
+    this.openStreamWhenAllowed();
+  }
+
+  private announceChangeWhenPageIsVisible(): void {
+    if (this.isPageVisible) {
+      this.changeSignals.next();
+    } else {
+      this.hasChangeWaitingForVisiblePage = true;
+    }
   }
 
   stop(): void {
@@ -77,10 +104,11 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
   }
 
   private openStreamWhenAllowed(): void {
-    if (this.hasStopped || this.hasGivenUpStreaming || !this.isPageVisible) {
+    if (this.hasStopped || this.hasGivenUpStreaming) {
       return;
     }
     this.closeConnection();
+    this.lastServerActivityInMilliseconds = Date.now();
     const abortController = new AbortController();
     this.connectionAbortController = abortController;
     void this.readStream(abortController);
@@ -104,12 +132,13 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
   }
 
   private handleEvent(event: ServerEvent): void {
+    this.lastServerActivityInMilliseconds = Date.now();
     if (event.name === READY_EVENT_NAME) {
       this.startStableConnectionTimer();
       this.setConnected(true);
-      this.changeSignals.next();
+      this.announceChangeWhenPageIsVisible();
     } else if (CHANGE_EVENT_NAMES.includes(event.name)) {
-      this.changeSignals.next();
+      this.announceChangeWhenPageIsVisible();
     }
   }
 

@@ -28,14 +28,17 @@ describe('ServerEventParser', () => {
     expect(parser.readEventsFrom('\n')).toEqual([{ name: 'ticket-changed', data: '{}' }]);
   });
 
-  it('ignores heartbeat comment lines', () => {
-    expect(parser.readEventsFrom(':heartbeat\n\n')).toEqual([]);
+  it('readEventsFrom_withCommentLine_returnsCommentEvent', () => {
+    expect(parser.readEventsFrom(':heartbeat\n\n')).toEqual([{ name: 'comment', data: '' }]);
   });
 
-  it('reads an event that comes after a heartbeat comment line', () => {
+  it('readEventsFrom_withCommentLineBeforeEvent_returnsCommentEventThenEvent', () => {
     const events = parser.readEventsFrom(':heartbeat\n\nevent:ready\ndata:{}\n\n');
 
-    expect(events).toEqual([{ name: 'ready', data: '{}' }]);
+    expect(events).toEqual([
+      { name: 'comment', data: '' },
+      { name: 'ready', data: '{}' },
+    ]);
   });
 
   it('accepts a space after the colon', () => {
