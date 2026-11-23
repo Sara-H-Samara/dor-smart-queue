@@ -2,6 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 export const NO_CONNECTION_MESSAGE = 'Could not reach the server. Check your connection and try again.';
 
+export const UNAUTHORIZED_STATUS = 401;
+export const FORBIDDEN_STATUS = 403;
 export const NOT_FOUND_STATUS = 404;
 export const CONFLICT_STATUS = 409;
 
