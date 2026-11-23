@@ -1,5 +1,25 @@
-import { Component, computed, inject, input, OnInit, signal, viewChild } from '@angular/core';
-import { Observable } from 'rxjs';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  input,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  catchError,
+  ignoreElements,
+  merge,
+  switchMap,
+  takeUntil,
+  tap,
+} from 'rxjs';
 
 import { AppIcon } from '../../../../shared/icon/app-icon';
 import { CatalogItem, CatalogResource } from '../../../../core/models/catalog.model';
@@ -22,8 +42,13 @@ import { CatalogRow } from './catalog-row/catalog-row';
 })
 export class CatalogPanel implements OnInit {
   private readonly catalogService = inject(CatalogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly itemsRequestStarted = new Subject<void>();
+  private readonly droppedRefreshRetries = new Subject<void>();
+  private hasDroppedRefreshRequest = false;
 
   readonly catalogResource = input.required<CatalogResource>();
+  readonly refreshRequests = input.required<Observable<void>>();
   readonly heading = input.required<string>();
   readonly itemLabel = input.required<string>();
   readonly emptyText = input.required<string>();
@@ -60,6 +85,7 @@ export class CatalogPanel implements OnInit {
 
   ngOnInit(): void {
     this.reloadItems();
+    this.refreshItemsOnLiveUpdates();
   }
 
   protected tileTextFor(item: CatalogItem): string | null {
@@ -111,6 +137,9 @@ export class CatalogPanel implements OnInit {
     this.editingItem.set(null);
     this.codeConflictMessage.set(null);
     this.error.set(null);
+    if (this.hasDroppedRefreshRequest) {
+      this.droppedRefreshRetries.next();
+    }
   }
 
   protected onFormSubmitted(formValue: CatalogFormValue): void {
@@ -198,9 +227,44 @@ export class CatalogPanel implements OnInit {
     });
   }
 
+  private refreshItemsOnLiveUpdates(): void {
+    merge(this.refreshRequests(), this.droppedRefreshRetries)
+      .pipe(
+        switchMap(() => this.refreshItemsWhenNothingIsBeingEdited()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private refreshItemsWhenNothingIsBeingEdited(): Observable<void> {
+    if (this.isSaving() || this.dialogOpen()) {
+      this.hasDroppedRefreshRequest = true;
+      return EMPTY;
+    }
+    return this.requestItemsAndDropOlderRequests().pipe(
+      tap((items) => {
+        this.items.set(items);
+        this.isLoadingList.set(false);
+      }),
+      catchError(() => {
+        this.isLoadingList.set(false);
+        return EMPTY;
+      }),
+      ignoreElements(),
+    );
+  }
+
+  private requestItemsAndDropOlderRequests(): Observable<CatalogItem[]> {
+    this.hasDroppedRefreshRequest = false;
+    this.itemsRequestStarted.next();
+    return this.catalogService
+      .listItems(this.catalogResource())
+      .pipe(takeUntil(this.itemsRequestStarted));
+  }
+
   private reloadItems(): void {
     this.isLoadingList.set(true);
-    this.catalogService.listItems(this.catalogResource()).subscribe({
+    this.requestItemsAndDropOlderRequests().subscribe({
       next: (items) => {
         this.items.set(items);
         this.isLoadingList.set(false);
