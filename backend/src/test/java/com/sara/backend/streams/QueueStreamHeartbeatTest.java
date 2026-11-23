@@ -20,6 +20,9 @@ class QueueStreamHeartbeatTest {
 
     private static final long EVENT_WAIT_MILLIS = 2000;
     private static final long NO_EVENT_WAIT_MILLIS = 100;
+    private static final long SHORT_HEARTBEAT_INTERVAL_MILLIS = 50;
+    private static final long QUIET_PERIOD_MILLIS = 500;
+    private static final int HEARTBEATS_TO_WAIT_FOR = 3;
 
     private QueueStreamRegistry queueStreamRegistry;
     private QueueStreamSendExecutor queueStreamSendExecutor;
@@ -30,12 +33,39 @@ class QueueStreamHeartbeatTest {
         queueStreamRegistry = new QueueStreamRegistry();
         queueStreamSendExecutor = new QueueStreamSendExecutor();
         queueStreamHeartbeat = new QueueStreamHeartbeat(
-                queueStreamRegistry, new QueueStreamSender(queueStreamRegistry), queueStreamSendExecutor);
+                queueStreamRegistry,
+                new QueueStreamSender(queueStreamRegistry),
+                queueStreamSendExecutor,
+                SHORT_HEARTBEAT_INTERVAL_MILLIS);
     }
 
     @AfterEach
-    void stopSendExecutor() {
+    void stopHeartbeatAndSendExecutor() {
+        queueStreamHeartbeat.stopSendingHeartbeats();
         queueStreamSendExecutor.stopSending();
+    }
+
+    @Test
+    void startSendingHeartbeats_withShortInterval_sendsHeartbeatRepeatedly() {
+        RecordingSseEmitter emitter = registerEmitter(StreamAudience.PUBLIC);
+
+        queueStreamHeartbeat.startSendingHeartbeats();
+
+        for (int received = 0; received < HEARTBEATS_TO_WAIT_FOR; received++) {
+            assertEquals(HEARTBEAT_EVENT, emitter.pollEvent(EVENT_WAIT_MILLIS));
+        }
+    }
+
+    @Test
+    void stopSendingHeartbeats_afterStart_sendsNoMoreHeartbeats() {
+        RecordingSseEmitter emitter = registerEmitter(StreamAudience.PUBLIC);
+        queueStreamHeartbeat.startSendingHeartbeats();
+        assertEquals(HEARTBEAT_EVENT, emitter.pollEvent(EVENT_WAIT_MILLIS));
+
+        queueStreamHeartbeat.stopSendingHeartbeats();
+        discardEventsUntilEmitterIsQuiet(emitter);
+
+        assertNull(emitter.pollEvent(QUIET_PERIOD_MILLIS));
     }
 
     @Test
@@ -68,6 +98,14 @@ class QueueStreamHeartbeatTest {
     @Test
     void sendHeartbeatToAllStreams_withNoEmitters_sendsNothingAndDoesNotFail() {
         queueStreamHeartbeat.sendHeartbeatToAllStreams();
+    }
+
+    private void discardEventsUntilEmitterIsQuiet(RecordingSseEmitter emitter) {
+        long deadline = System.currentTimeMillis() + EVENT_WAIT_MILLIS;
+        boolean discardedAnEvent = true;
+        while (discardedAnEvent && System.currentTimeMillis() < deadline) {
+            discardedAnEvent = emitter.pollEvent(QUIET_PERIOD_MILLIS) != null;
+        }
     }
 
     private RecordingSseEmitter registerEmitter(StreamAudience audience) {

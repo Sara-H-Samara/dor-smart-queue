@@ -23,6 +23,7 @@ public class StreamTestHelper {
     public static final String STAFF_STREAM_PATH = "/api/staff/stream";
     public static final String ADMIN_STREAM_PATH = "/api/admin/stream";
     public static final String READY_EVENT = "event:ready\ndata:{}";
+    public static final String HEARTBEAT_EVENT = ":heartbeat";
     public static final String TICKET_CHANGED_EVENT = "event:ticket-changed\ndata:{}";
     public static final String CONFIGURATION_CHANGED_EVENT = "event:configuration-changed\ndata:{}";
     public static final long EVENT_WAIT_MILLIS = 5000;
@@ -68,6 +69,21 @@ public class StreamTestHelper {
         assertEquals(TICKET_CHANGED_EVENT, streams.publicStream().awaitEvent(EVENT_WAIT_MILLIS));
         assertEquals(TICKET_CHANGED_EVENT, streams.studentStream().awaitEvent(EVENT_WAIT_MILLIS));
         assertEquals(TICKET_CHANGED_EVENT, streams.staffStream().awaitEvent(EVENT_WAIT_MILLIS));
+    }
+
+    public void assertHeartbeatsReceived(OpenStreamConnection stream, int heartbeatCount) {
+        for (int received = 0; received < heartbeatCount; received++) {
+            assertEquals(HEARTBEAT_EVENT, stream.awaitEvent(EVENT_WAIT_MILLIS));
+        }
+    }
+
+    public String awaitEventSkippingHeartbeats(OpenStreamConnection stream) {
+        long deadline = System.currentTimeMillis() + EVENT_WAIT_MILLIS;
+        String event = stream.awaitEvent(EVENT_WAIT_MILLIS);
+        while (HEARTBEAT_EVENT.equals(event) && System.currentTimeMillis() < deadline) {
+            event = stream.awaitEvent(EVENT_WAIT_MILLIS);
+        }
+        return event;
     }
 
     public void assertNoEventReceived(OpenStreamConnection stream) {
