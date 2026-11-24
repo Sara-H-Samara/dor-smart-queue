@@ -25,8 +25,18 @@
           @if (estimatedWaitText(); as estimatedWaitLine) {
             <span><app-icon iconName="clock" />{{ estimatedWaitLine }}</span>
           }
+          @if (alertPromiseText(); as alertPromiseLine) {
+            <span>{{ alertPromiseLine }}</span>
+          }
         }
       </div>
+
+      @if (turnNearText(); as turnNearLine) {
+        <p class="turn-notice" role="status">
+          <app-icon iconName="arrowRight" />
+          <span>{{ turnNearLine }}</span>
+        </p>
+      }
     </div>
 
     <div class="ticket-stub">

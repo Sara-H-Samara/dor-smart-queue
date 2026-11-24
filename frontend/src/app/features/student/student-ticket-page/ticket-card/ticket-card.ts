@@ -2,6 +2,7 @@ import { Component, computed, input, output } from '@angular/core';
 
 import { AppIcon } from '../../../../shared/icon/app-icon';
 import { ActiveTicket } from '../../../../core/models/ticket.model';
+import { alertPromiseTextFor } from './alert-promise-text';
 
 @Component({
   selector: 'app-ticket-card',
@@ -34,6 +35,20 @@ export class TicketCard {
       return 'You are next';
     }
     return peopleAhead === 1 ? '1 person ahead of you' : `${peopleAhead} people ahead of you`;
+  });
+
+  protected readonly turnNearText = computed<string | null>(() =>
+    this.ticket().status === 'WAITING' && this.ticket().turnIsNear
+      ? 'Your turn is near. Please come to the counters.'
+      : null,
+  );
+
+  protected readonly alertPromiseText = computed<string | null>(() => {
+    const alertAtPeopleAhead = this.ticket().alertAtPeopleAhead;
+    if (this.ticket().turnIsNear || alertAtPeopleAhead === null) {
+      return null;
+    }
+    return alertPromiseTextFor(alertAtPeopleAhead);
   });
 
   protected readonly estimatedWaitText = computed<string | null>(() => {

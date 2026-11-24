@@ -36,6 +36,23 @@
   }
 }
 
+.turn-notice {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--fw-bold);
+  line-height: 1.25;
+  color: var(--color-state-waiting-fg);
+  background: var(--color-state-waiting-bg);
+  border-radius: var(--radius-md);
+
+  app-icon {
+    flex-shrink: 0;
+  }
+}
+
 .ticket-called {
   .ticket-body {
     color: var(--color-state-called-bg);

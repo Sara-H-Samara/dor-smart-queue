@@ -23,6 +23,9 @@ const waitingTicket: ActiveTicket = {
   estimatedWaitMinutes: 10,
   counterName: null,
   hasOpenCounter: true,
+  distance: 'NEAR',
+  turnIsNear: false,
+  alertAtPeopleAhead: null,
 };
 
 const openService: ActiveService = {
@@ -42,6 +45,7 @@ const takenTicket: TakenTicket = {
   serviceName: 'Registration',
   status: 'WAITING',
   createdAt: '2026-11-12T08:00:00Z',
+  distance: 'NEAR',
 };
 
 describe('StudentTicketPage', () => {
@@ -197,6 +201,94 @@ describe('StudentTicketPage', () => {
     expect(pageElement(fixture).querySelector('app-ticket-card')).not.toBeNull();
   });
 
+  function distanceRadio(
+    fixture: ComponentFixture<StudentTicketPage>,
+    distance: string,
+  ): HTMLInputElement {
+    return pageElement(fixture).querySelector(
+      `input[name="ticket-distance"][value="${distance}"]`,
+    )!;
+  }
+
+  it('shows the distance picker with near selected when the student has no ticket', () => {
+    fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
+    listActiveServices.mockReturnValue(of([openService]));
+
+    const fixture = createPage();
+
+    expect(pageElement(fixture).querySelector('app-distance-picker')).not.toBeNull();
+    expect(distanceRadio(fixture, 'NEAR').checked).toBe(true);
+  });
+
+  it('shows no distance picker when the student has a ticket', () => {
+    fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
+
+    const fixture = createPage();
+
+    expect(pageElement(fixture).querySelector('app-distance-picker')).toBeNull();
+  });
+
+  it('shows no distance picker when no service is open', () => {
+    fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
+    listActiveServices.mockReturnValue(of([]));
+
+    const fixture = createPage();
+
+    expect(pageElement(fixture).querySelector('app-distance-picker')).toBeNull();
+  });
+
+  it('takes the ticket with near when the student chooses nothing', () => {
+    fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
+    listActiveServices.mockReturnValue(of([openService]));
+    takeTicket.mockReturnValue(new Subject<TakenTicket>());
+    const fixture = createPage();
+
+    (pageElement(fixture).querySelector('.service-tile') as HTMLButtonElement).click();
+
+    expect(takeTicket).toHaveBeenCalledWith(openService.id, 'NEAR');
+  });
+
+  it('takes the ticket with the distance the student chose', () => {
+    fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
+    listActiveServices.mockReturnValue(of([openService]));
+    takeTicket.mockReturnValue(new Subject<TakenTicket>());
+    const fixture = createPage();
+
+    distanceRadio(fixture, 'FAR').click();
+    fixture.detectChanges();
+    (pageElement(fixture).querySelector('.service-tile') as HTMLButtonElement).click();
+
+    expect(takeTicket).toHaveBeenCalledWith(openService.id, 'FAR');
+  });
+
+  it('sends the chosen distance again when the student tries again after a failed attempt', () => {
+    fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
+    listActiveServices.mockReturnValue(of([openService]));
+    takeTicket.mockReturnValue(failingRequestWithMessage(409, NO_COUNTER_MESSAGE));
+    const fixture = createPage();
+    distanceRadio(fixture, 'MEDIUM').click();
+    fixture.detectChanges();
+    (pageElement(fixture).querySelector('.service-tile') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    (pageElement(fixture).querySelector('.service-tile') as HTMLButtonElement).click();
+
+    expect(takeTicket).toHaveBeenCalledTimes(2);
+    expect(takeTicket).toHaveBeenLastCalledWith(openService.id, 'MEDIUM');
+  });
+
+  it('disables the distance picker while a ticket is being taken', () => {
+    fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
+    listActiveServices.mockReturnValue(of([openService]));
+    takeTicket.mockReturnValue(new Subject<TakenTicket>());
+    const fixture = createPage();
+
+    (pageElement(fixture).querySelector('.service-tile') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(distanceRadio(fixture, 'NEAR').disabled).toBe(true);
+  });
+
   it('shows the server message above the service list on a conflict without a ticket', () => {
     fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
     listActiveServices.mockReturnValueOnce(of([openService]));
@@ -316,6 +408,24 @@ describe('StudentTicketPage', () => {
 
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
       expect(listActiveServices).not.toHaveBeenCalled();
+    });
+
+    it('shows the turn-near notice after a refresh request without the loading state', () => {
+      const ticketWithNearTurn: ActiveTicket = {
+        ...waitingTicket,
+        peopleAhead: 1,
+        turnIsNear: true,
+      };
+      fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
+      fetchMyActiveTicket.mockReturnValueOnce(of(ticketWithNearTurn));
+      const fixture = createPage();
+      expect(pageElement(fixture).querySelector('.turn-notice')).toBeNull();
+
+      requestRefresh(fixture);
+
+      const noticeElement = pageElement(fixture).querySelector('.turn-notice');
+      expect(noticeElement?.textContent).toContain('Your turn is near');
+      expect(pageElement(fixture).textContent).not.toContain('Loading');
     });
 
     it('shows the no-counter notice when the counter turns off', () => {
