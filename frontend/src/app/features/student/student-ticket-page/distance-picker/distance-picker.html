@@ -1,0 +1,19 @@
+<fieldset class="distance-group">
+  <legend class="distance-heading">How far are you from the counters?</legend>
+  @for (option of distanceOptions; track option.value) {
+    <input
+      class="distance-input"
+      type="radio"
+      name="ticket-distance"
+      [id]="'ticket-distance-' + option.value"
+      [value]="option.value"
+      [checked]="selectedDistance() === option.value"
+      [disabled]="isDisabled()"
+      (change)="distanceChosen.emit(option.value)"
+    />
+    <label class="distance-option" [for]="'ticket-distance-' + option.value">
+      <span class="distance-name">{{ option.name }}</span>
+      <span class="distance-description">{{ option.description }}</span>
+    </label>
+  }
+</fieldset>

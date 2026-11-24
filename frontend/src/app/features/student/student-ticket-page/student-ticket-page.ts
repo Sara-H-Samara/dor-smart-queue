@@ -5,11 +5,12 @@ import { EMPTY, Observable, catchError, ignoreElements, switchMap, tap } from 'r
 
 import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import { ActiveService } from '../../../core/models/active-service.model';
-import { ActiveTicket } from '../../../core/models/ticket.model';
+import { ActiveTicket, TicketDistance } from '../../../core/models/ticket.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { StudentCatalogService } from '../../../core/services/student-catalog.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { PageHeader } from '../../../shared/page-header/page-header';
+import { DistancePicker } from './distance-picker/distance-picker';
 import { firstNameOf } from './first-name';
 import { ServiceTileList } from './service-tile-list/service-tile-list';
 import { TicketCard } from './ticket-card/ticket-card';
@@ -24,7 +25,7 @@ type StudentScreenState = 'loading' | 'ticket' | 'noTicket' | 'failed';
 
 @Component({
   selector: 'app-student-ticket-page',
-  imports: [PageHeader, TicketCard, ServiceTileList],
+  imports: [PageHeader, TicketCard, ServiceTileList, DistancePicker],
   templateUrl: './student-ticket-page.html',
   styleUrl: './student-ticket-page.scss',
 })
@@ -43,6 +44,7 @@ export class StudentTicketPage {
   );
   protected readonly activeTicket = signal<ActiveTicket | null>(null);
   protected readonly activeServices = signal<ActiveService[]>([]);
+  protected readonly chosenDistance = signal<TicketDistance>('NEAR');
   protected readonly isSubmitting = signal(false);
   protected readonly failureMessage = signal<string | null>(null);
   protected readonly takeTicketConflictMessage = signal<string | null>(null);
@@ -51,9 +53,13 @@ export class StudentTicketPage {
     this.loadAfterStreamIsReadyAndRefreshOnLiveUpdates();
   }
 
+  protected chooseDistance(distance: TicketDistance): void {
+    this.chosenDistance.set(distance);
+  }
+
   protected takeTicketForService(service: ActiveService): void {
     this.startSubmitting();
-    this.ticketService.takeTicket(service.id).subscribe({
+    this.ticketService.takeTicket(service.id, this.chosenDistance()).subscribe({
       next: () => this.loadMyActiveTicket(),
       error: (error: unknown) => {
         if (isConflict(error)) {

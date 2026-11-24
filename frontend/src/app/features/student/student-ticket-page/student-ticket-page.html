@@ -29,6 +29,13 @@
       @if (takeTicketConflictMessage(); as conflictMessage) {
         <p class="alert" role="alert">{{ conflictMessage }}</p>
       }
+      @if (activeServices().length > 0) {
+        <app-distance-picker
+          [selectedDistance]="chosenDistance()"
+          [isDisabled]="isSubmitting()"
+          (distanceChosen)="chooseDistance($event)"
+        />
+      }
       <app-service-tile-list
         [services]="activeServices()"
         [isTakingTicket]="isSubmitting()"

@@ -1,5 +1,7 @@
 export type TicketStatus = 'WAITING' | 'CALLED' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
 
+export type TicketDistance = 'NEAR' | 'MEDIUM' | 'FAR';
+
 export interface ActiveTicket {
   ticketCode: string;
   serviceName: string;
@@ -18,4 +20,5 @@ export interface TakenTicket {
   serviceName: string;
   status: TicketStatus;
   createdAt: string;
+  distance: TicketDistance;
 }

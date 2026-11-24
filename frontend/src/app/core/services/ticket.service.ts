@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { ActiveTicket, TakenTicket } from '../models/ticket.model';
+import { ActiveTicket, TakenTicket, TicketDistance } from '../models/ticket.model';
 
 @Injectable({ providedIn: 'root' })
 export class TicketService {
@@ -14,8 +14,8 @@ export class TicketService {
     return this.http.get<ActiveTicket>(`${this.ticketsUrl}/me`);
   }
 
-  takeTicket(serviceId: number): Observable<TakenTicket> {
-    return this.http.post<TakenTicket>(this.ticketsUrl, { serviceId });
+  takeTicket(serviceId: number, distance: TicketDistance): Observable<TakenTicket> {
+    return this.http.post<TakenTicket>(this.ticketsUrl, { serviceId, distance });
   }
 
   cancelMyActiveTicket(): Observable<void> {
