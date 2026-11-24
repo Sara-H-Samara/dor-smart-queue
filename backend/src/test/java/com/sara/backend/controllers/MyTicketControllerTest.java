@@ -6,6 +6,7 @@ import com.sara.backend.entities.Counter;
 import com.sara.backend.entities.Role;
 import com.sara.backend.entities.ServiceType;
 import com.sara.backend.entities.Ticket;
+import com.sara.backend.entities.TicketDistance;
 import com.sara.backend.entities.TicketStatus;
 import com.sara.backend.entities.User;
 import com.sara.backend.repositories.CounterRepository;
@@ -159,6 +160,48 @@ class MyTicketControllerTest {
                 .andExpect(jsonPath("$.position").value(1))
                 .andExpect(jsonPath("$.peopleAhead").value(0))
                 .andExpect(jsonPath("$.estimatedWaitMinutes").value(5));
+    }
+
+    private void saveDistance(Ticket ticket, TicketDistance distance) {
+        ticket.setDistance(distance);
+        ticketRepository.save(ticket);
+    }
+
+    @Test
+    @DisplayName("A waiting ticket answers with its distance")
+    void getActiveTicket_withWaitingFarTicket_returnsFarDistance() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        saveDistance(ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING),
+                TicketDistance.FAR);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.distance").value("FAR"));
+    }
+
+    @Test
+    @DisplayName("A called ticket answers with its distance")
+    void getActiveTicket_withCalledFarTicket_returnsFarDistance() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        saveDistance(ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.CALLED),
+                TicketDistance.FAR);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.distance").value("FAR"));
+    }
+
+    @Test
+    @DisplayName("A ticket saved without a distance answers with distance near")
+    void getActiveTicket_withTicketSavedWithoutDistance_returnsNearDistance() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.distance").value("NEAR"));
     }
 
     @Test

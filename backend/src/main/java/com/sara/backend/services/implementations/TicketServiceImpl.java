@@ -5,6 +5,7 @@ import com.sara.backend.dtos.responses.ActiveTicketResponse;
 import com.sara.backend.dtos.responses.TicketResponse;
 import com.sara.backend.entities.ServiceType;
 import com.sara.backend.entities.Ticket;
+import com.sara.backend.entities.TicketDistance;
 import com.sara.backend.entities.TicketStatus;
 import com.sara.backend.entities.User;
 import com.sara.backend.repositories.ServiceTypeRepository;
@@ -27,6 +28,8 @@ import java.util.List;
 public class TicketServiceImpl implements TicketService {
 
     private static final int ESTIMATED_MINUTES_PER_PERSON = 5;
+
+    private static final TicketDistance DISTANCE_WHEN_NOT_CHOSEN = TicketDistance.NEAR;
 
     private static final List<TicketStatus> ACTIVE_STATUSES = List.of(TicketStatus.WAITING, TicketStatus.CALLED);
 
@@ -77,6 +80,7 @@ public class TicketServiceImpl implements TicketService {
         ticket.setNumber((lastNumberToday == null ? 0 : lastNumberToday) + 1);
         ticket.setTicketDate(today);
         ticket.setStatus(TicketStatus.WAITING);
+        ticket.setDistance(request.distance() == null ? DISTANCE_WHEN_NOT_CHOSEN : request.distance());
 
         try {
             Ticket savedTicket = ticketRepository.saveAndFlush(ticket);

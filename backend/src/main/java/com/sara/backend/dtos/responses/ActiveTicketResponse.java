@@ -1,6 +1,7 @@
 package com.sara.backend.dtos.responses;
 
 import com.sara.backend.entities.Ticket;
+import com.sara.backend.entities.TicketDistance;
 import com.sara.backend.entities.TicketStatus;
 
 public record ActiveTicketResponse(
@@ -11,7 +12,8 @@ public record ActiveTicketResponse(
         Integer peopleAhead,
         Integer estimatedWaitMinutes,
         String counterName,
-        boolean hasOpenCounter
+        boolean hasOpenCounter,
+        TicketDistance distance
 ) {
 
     public static ActiveTicketResponse forWaitingTicket(
@@ -25,7 +27,8 @@ public record ActiveTicketResponse(
                 peopleAhead,
                 hasOpenCounter ? position * minutesPerPerson : null,
                 null,
-                hasOpenCounter);
+                hasOpenCounter,
+                ticket.getDistance());
     }
 
     public static ActiveTicketResponse forCalledTicket(Ticket ticket) {
@@ -37,6 +40,7 @@ public record ActiveTicketResponse(
                 null,
                 null,
                 ticket.getCounter() == null ? null : ticket.getCounter().getName(),
-                true);
+                true,
+                ticket.getDistance());
     }
 }

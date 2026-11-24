@@ -40,6 +40,10 @@ public class Ticket {
     @Column(nullable = false, length = 20)
     private TicketStatus status = TicketStatus.WAITING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, columnDefinition = "varchar(20) not null default 'NEAR'")
+    private TicketDistance distance = TicketDistance.NEAR;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -64,6 +68,9 @@ public class Ticket {
 
     public TicketStatus getStatus() { return status; }
     public void setStatus(TicketStatus status) { this.status = status; }
+
+    public TicketDistance getDistance() { return distance; }
+    public void setDistance(TicketDistance distance) { this.distance = distance; }
 
     public Counter getCounter() { return counter; }
     public void setCounter(Counter counter) { this.counter = counter; }
