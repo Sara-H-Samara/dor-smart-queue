@@ -78,26 +78,30 @@ public class StreamTestHelper {
     }
 
     public String awaitEventSkippingHeartbeats(OpenStreamConnection stream) {
-        long deadline = System.currentTimeMillis() + EVENT_WAIT_MILLIS;
-        String event = stream.awaitEvent(EVENT_WAIT_MILLIS);
-        while (HEARTBEAT_EVENT.equals(event) && System.currentTimeMillis() < deadline) {
-            event = stream.awaitEvent(EVENT_WAIT_MILLIS);
+        return awaitEventSkippingHeartbeats(stream, EVENT_WAIT_MILLIS);
+    }
+
+    public String awaitEventSkippingHeartbeats(OpenStreamConnection stream, long timeoutMillis) {
+        long deadline = System.currentTimeMillis() + timeoutMillis;
+        String event = stream.awaitEvent(timeoutMillis);
+        while (HEARTBEAT_EVENT.equals(event)) {
+            event = stream.awaitEvent(Math.max(0, deadline - System.currentTimeMillis()));
         }
         return event;
     }
 
     public void assertNoEventReceived(OpenStreamConnection stream) {
-        assertNull(stream.awaitEvent(NO_EVENT_WAIT_MILLIS));
+        assertNull(awaitEventSkippingHeartbeats(stream, NO_EVENT_WAIT_MILLIS));
     }
 
     public void assertConfigurationChangedReceivedOnceByEveryAudience(OpenStreams streams)
             throws InterruptedException {
         for (OpenStreamConnection stream : streams.all()) {
-            assertEquals(CONFIGURATION_CHANGED_EVENT, stream.awaitEvent(EVENT_WAIT_MILLIS));
+            assertEquals(CONFIGURATION_CHANGED_EVENT, awaitEventSkippingHeartbeats(stream));
         }
         Thread.sleep(NO_EVENT_WAIT_MILLIS);
         for (OpenStreamConnection stream : streams.all()) {
-            assertNull(stream.awaitEvent(0));
+            assertNull(awaitEventSkippingHeartbeats(stream, 0));
         }
     }
 
