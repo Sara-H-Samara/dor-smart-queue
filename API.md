@@ -456,7 +456,7 @@ Send `Accept: text/event-stream`. For the three protected streams, also send `Au
 
 Response `200` with `Content-Type: text/event-stream` and the header `X-Accel-Buffering: no`.
 
-Errors: `401` for no token or an invalid token, `403` for a valid token with the wrong role. For example, an admin token on `/api/staff/stream` returns `403`.
+Errors: `401` for no token or an invalid token, `403` for a valid token with the wrong role. For example, an admin token on `/api/staff/stream` returns `403`. `429` when the client address already has too many open streams, `503` when the server has too many open streams in total. Both answers have no body. See [How many streams can be open](#how-many-streams-can-be-open).
 
 The token is checked only when the stream opens.
 
@@ -500,6 +500,19 @@ An event is sent only after the change is saved in the database. A request that 
 ### How long a stream stays open
 
 The server closes each stream after 10 minutes. The screen must open a new stream, with a valid token for the protected streams, and ask for the data again after `ready`. The server also closes all streams when it stops.
+
+### How many streams can be open
+
+All four stream paths share the same two limits. The limits are checked after the token, and before the stream is created.
+
+| Limit | Default | Property | Answer when reached |
+|---|---|---|---|
+| Open streams for one client address | `100` | `dor.streams.max-streams-per-address` | `429` |
+| Open streams in total | `1000` | `dor.streams.max-total-streams` | `503` |
+
+The client address is the address of the direct connection. The headers `X-Forwarded-For` and `Forwarded` are not used. Behind a proxy or a load balancer, all clients share the address of the proxy. When both limits are reached, the answer is `429`.
+
+The answer has no body and no `Retry-After` header. A slot is freed when the stream ends for any reason: the client closes it, it reaches its lifetime, a send fails, or the server stops. Streams that are already open are not affected by a refusal.
 
 ## Known limitations
 

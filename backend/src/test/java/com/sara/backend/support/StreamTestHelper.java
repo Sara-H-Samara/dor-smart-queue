@@ -1,6 +1,12 @@
 package com.sara.backend.support;
 
 import com.sara.backend.streams.QueueStreamRegistry;
+import jakarta.servlet.AsyncContext;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -15,6 +21,8 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 
 public class StreamTestHelper {
 
@@ -28,10 +36,14 @@ public class StreamTestHelper {
     public static final String CONFIGURATION_CHANGED_EVENT = "event:configuration-changed\ndata:{}";
     public static final long EVENT_WAIT_MILLIS = 5000;
     public static final long NO_EVENT_WAIT_MILLIS = 300;
+    public static final long SLOT_RELEASE_WAIT_MILLIS = 5000;
+    public static final long SLOT_RETRY_PAUSE_MILLIS = 50;
+    public static final int TOO_MANY_REQUESTS_STATUS = 429;
 
     private final QueueStreamRegistry queueStreamRegistry;
     private final HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
     private final List<OpenStreamConnection> openConnections = new CopyOnWriteArrayList<>();
+    private final List<AsyncContext> startedAsyncContexts = new CopyOnWriteArrayList<>();
 
     public StreamTestHelper(QueueStreamRegistry queueStreamRegistry) {
         this.queueStreamRegistry = queueStreamRegistry;
@@ -53,6 +65,18 @@ public class StreamTestHelper {
     public OpenStreamConnection openReadyStream(int port, String path, String token)
             throws IOException, InterruptedException {
         return confirmReady(openStream(port, path, token));
+    }
+
+    public OpenStreamConnection openReadyStreamWhenSlotIsFree(int port, String path)
+            throws IOException, InterruptedException {
+        long deadline = System.currentTimeMillis() + SLOT_RELEASE_WAIT_MILLIS;
+        OpenStreamConnection connection = openStream(port, path);
+        while (connection.statusCode() == TOO_MANY_REQUESTS_STATUS && System.currentTimeMillis() < deadline) {
+            connection.close();
+            Thread.sleep(SLOT_RETRY_PAUSE_MILLIS);
+            connection = openStream(port, path);
+        }
+        return confirmReady(connection);
     }
 
     public OpenStreams openReadyStreamOfEveryAudience(
@@ -121,6 +145,33 @@ public class StreamTestHelper {
         return queueStreamRegistry.findAllEmitters().isEmpty();
     }
 
+    public MockHttpServletRequestBuilder streamRequestFromAddress(String path, String clientAddress) {
+        return get(path)
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .with(request -> {
+                    request.setRemoteAddr(clientAddress);
+                    return request;
+                });
+    }
+
+    public ResultActions performStreamRequest(MockMvc mockMvc, MockHttpServletRequestBuilder streamRequest)
+            throws Exception {
+        ResultActions streamResult = mockMvc.perform(streamRequest);
+        MockHttpServletRequest performedRequest = streamResult.andReturn().getRequest();
+        if (performedRequest.isAsyncStarted()) {
+            startedAsyncContexts.add(performedRequest.getAsyncContext());
+        }
+        return streamResult;
+    }
+
+    public void openPublicStreamsFromAddress(MockMvc mockMvc, String clientAddress, int streamCount)
+            throws Exception {
+        for (int openedCount = 0; openedCount < streamCount; openedCount++) {
+            performStreamRequest(mockMvc, streamRequestFromAddress(PUBLIC_STREAM_PATH, clientAddress))
+                    .andExpect(request().asyncStarted());
+        }
+    }
+
     public void removeAllEmitters() {
         queueStreamRegistry.findAllEmitters().forEach(queueStreamRegistry::remove);
     }
@@ -131,6 +182,8 @@ public class StreamTestHelper {
     }
 
     private void closeAllStreams() {
+        startedAsyncContexts.forEach(AsyncContext::complete);
+        startedAsyncContexts.clear();
         openConnections.forEach(OpenStreamConnection::close);
         openConnections.clear();
         queueStreamRegistry.findAllEmitters().forEach(SseEmitter::complete);

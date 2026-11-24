@@ -4,11 +4,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 public interface QueueStreamService {
 
-    SseEmitter openPublicStream();
+    SseEmitter openPublicStream(String clientAddress);
 
-    SseEmitter openStudentStream();
+    SseEmitter openStudentStream(String clientAddress);
 
-    SseEmitter openStaffStream();
+    SseEmitter openStaffStream(String clientAddress);
 
-    SseEmitter openAdminStream();
+    SseEmitter openAdminStream(String clientAddress);
 }

@@ -1,6 +1,7 @@
 package com.sara.backend.controllers;
 
 import com.sara.backend.services.QueueStreamService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,23 +20,23 @@ public class QueueStreamController {
     private QueueStreamService queueStreamService;
 
     @GetMapping(value = "/public/queue-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<SseEmitter> streamPublicQueue() {
-        return withoutProxyBuffering(queueStreamService.openPublicStream());
+    public ResponseEntity<SseEmitter> streamPublicQueue(HttpServletRequest httpServletRequest) {
+        return withoutProxyBuffering(queueStreamService.openPublicStream(httpServletRequest.getRemoteAddr()));
     }
 
     @GetMapping(value = "/tickets/me/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<SseEmitter> streamMyTicket() {
-        return withoutProxyBuffering(queueStreamService.openStudentStream());
+    public ResponseEntity<SseEmitter> streamMyTicket(HttpServletRequest httpServletRequest) {
+        return withoutProxyBuffering(queueStreamService.openStudentStream(httpServletRequest.getRemoteAddr()));
     }
 
     @GetMapping(value = "/staff/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<SseEmitter> streamStaffDesk() {
-        return withoutProxyBuffering(queueStreamService.openStaffStream());
+    public ResponseEntity<SseEmitter> streamStaffDesk(HttpServletRequest httpServletRequest) {
+        return withoutProxyBuffering(queueStreamService.openStaffStream(httpServletRequest.getRemoteAddr()));
     }
 
     @GetMapping(value = "/admin/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<SseEmitter> streamAdminChanges() {
-        return withoutProxyBuffering(queueStreamService.openAdminStream());
+    public ResponseEntity<SseEmitter> streamAdminChanges(HttpServletRequest httpServletRequest) {
+        return withoutProxyBuffering(queueStreamService.openAdminStream(httpServletRequest.getRemoteAddr()));
     }
 
     private ResponseEntity<SseEmitter> withoutProxyBuffering(SseEmitter emitter) {
