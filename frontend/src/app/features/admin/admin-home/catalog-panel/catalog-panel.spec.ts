@@ -44,8 +44,10 @@ describe('CatalogPanel with counters', () => {
     httpTesting = TestBed.inject(HttpTestingController);
     showModalSpy = vi.spyOn(HTMLDialogElement.prototype, 'showModal');
     fixture = TestBed.createComponent(CatalogPanel);
+    const liveUpdateWatch = new FakeLiveUpdateWatch();
     fixture.componentRef.setInput('catalogResource', 'counters');
-    fixture.componentRef.setInput('refreshRequests', new FakeLiveUpdateWatch().refreshRequests);
+    fixture.componentRef.setInput('firstLoadRequest', liveUpdateWatch.firstLoadRequest);
+    fixture.componentRef.setInput('refreshRequests', liveUpdateWatch.refreshRequests);
     fixture.componentRef.setInput('heading', 'Counters');
     fixture.componentRef.setInput('itemLabel', 'Counter');
     fixture.componentRef.setInput(
@@ -54,6 +56,7 @@ describe('CatalogPanel with counters', () => {
     );
     panelElement = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
+    liveUpdateWatch.requestFirstLoad();
     httpTesting.expectOne(countersUrl).flush([counterOne]);
     fixture.detectChanges();
   });
@@ -229,8 +232,10 @@ describe('CatalogPanel with services', () => {
     });
     httpTesting = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(CatalogPanel);
+    const liveUpdateWatch = new FakeLiveUpdateWatch();
     fixture.componentRef.setInput('catalogResource', 'services');
-    fixture.componentRef.setInput('refreshRequests', new FakeLiveUpdateWatch().refreshRequests);
+    fixture.componentRef.setInput('firstLoadRequest', liveUpdateWatch.firstLoadRequest);
+    fixture.componentRef.setInput('refreshRequests', liveUpdateWatch.refreshRequests);
     fixture.componentRef.setInput('heading', 'Services');
     fixture.componentRef.setInput('itemLabel', 'Service');
     fixture.componentRef.setInput(
@@ -239,6 +244,7 @@ describe('CatalogPanel with services', () => {
     );
     panelElement = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
+    liveUpdateWatch.requestFirstLoad();
     httpTesting.expectOne(servicesUrl).flush([activeRegistration]);
     fixture.detectChanges();
   });
@@ -276,6 +282,7 @@ describe('CatalogPanel live refresh', () => {
     refreshWatch = new FakeLiveUpdateWatch();
     fixture = TestBed.createComponent(CatalogPanel);
     fixture.componentRef.setInput('catalogResource', 'services');
+    fixture.componentRef.setInput('firstLoadRequest', refreshWatch.firstLoadRequest);
     fixture.componentRef.setInput('refreshRequests', refreshWatch.refreshRequests);
     fixture.componentRef.setInput('heading', 'Services');
     fixture.componentRef.setInput('itemLabel', 'Service');
@@ -285,6 +292,7 @@ describe('CatalogPanel live refresh', () => {
     );
     panelElement = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
+    refreshWatch.requestFirstLoad();
     httpTesting.expectOne(servicesUrl).flush([activeRegistration]);
     fixture.detectChanges();
   });
@@ -510,5 +518,51 @@ describe('CatalogPanel live refresh', () => {
     refreshWatch.requestRefresh();
 
     httpTesting.expectNone(servicesUrl);
+  });
+});
+
+describe('CatalogPanel first load', () => {
+  let fixture: ComponentFixture<CatalogPanel>;
+  let httpTesting: HttpTestingController;
+  let liveUpdateWatch: FakeLiveUpdateWatch;
+
+  beforeAll(() => installDialogSupport());
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    httpTesting = TestBed.inject(HttpTestingController);
+    liveUpdateWatch = new FakeLiveUpdateWatch();
+    fixture = TestBed.createComponent(CatalogPanel);
+    fixture.componentRef.setInput('catalogResource', 'services');
+    fixture.componentRef.setInput('firstLoadRequest', liveUpdateWatch.firstLoadRequest);
+    fixture.componentRef.setInput('refreshRequests', liveUpdateWatch.refreshRequests);
+    fixture.componentRef.setInput('heading', 'Services');
+    fixture.componentRef.setInput('itemLabel', 'Service');
+    fixture.componentRef.setInput(
+      'emptyText',
+      'Add a service so students can start taking tickets.',
+    );
+    fixture.detectChanges();
+  });
+
+  afterEach(() => httpTesting.verify());
+
+  it('constructor_beforeFirstLoadRequest_sendsNoRequest', () => {
+    httpTesting.expectNone(servicesUrl);
+  });
+
+  it('firstLoadRequest_whenEmitted_loadsTheListOnce', () => {
+    liveUpdateWatch.requestFirstLoad();
+
+    httpTesting.expectOne(servicesUrl).flush([activeRegistration]);
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.list-group-footer')
+        ?.textContent?.trim(),
+    ).toBe('1 service');
   });
 });

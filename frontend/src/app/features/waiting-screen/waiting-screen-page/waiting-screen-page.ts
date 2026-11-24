@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, Observable, catchError, ignoreElements, switchMap, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, ignoreElements, merge, switchMap, tap } from 'rxjs';
 
 import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import { WaitingRoom } from '../../../core/models/waiting-room.model';
@@ -28,18 +28,13 @@ export class WaitingScreenPage {
   protected readonly waitingRoom = signal<WaitingRoom | null>(null);
 
   constructor() {
-    this.loadWaitingRoom();
-    this.refreshOnLiveUpdates();
+    this.loadAfterStreamIsReadyAndRefreshOnLiveUpdates();
   }
 
-  private loadWaitingRoom(): void {
-    this.refreshWaitingRoom().subscribe();
-  }
-
-  private refreshOnLiveUpdates(): void {
-    this.liveUpdateService
-      .watch('public', this.destroyRef)
-      .refreshRequests.pipe(
+  private loadAfterStreamIsReadyAndRefreshOnLiveUpdates(): void {
+    const liveUpdateWatch = this.liveUpdateService.watch('public', this.destroyRef);
+    merge(liveUpdateWatch.firstLoadRequest, liveUpdateWatch.refreshRequests)
+      .pipe(
         switchMap(() => this.refreshWaitingRoom()),
         takeUntilDestroyed(this.destroyRef),
       )

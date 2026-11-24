@@ -48,8 +48,7 @@ export class StudentTicketPage {
   protected readonly takeTicketConflictMessage = signal<string | null>(null);
 
   constructor() {
-    this.loadMyActiveTicket();
-    this.refreshOnLiveUpdates();
+    this.loadAfterStreamIsReadyAndRefreshOnLiveUpdates();
   }
 
   protected takeTicketForService(service: ActiveService): void {
@@ -107,10 +106,13 @@ export class StudentTicketPage {
     });
   }
 
-  private refreshOnLiveUpdates(): void {
-    this.liveUpdateService
-      .watch('student', this.destroyRef)
-      .refreshRequests.pipe(
+  private loadAfterStreamIsReadyAndRefreshOnLiveUpdates(): void {
+    const liveUpdateWatch = this.liveUpdateService.watch('student', this.destroyRef);
+    liveUpdateWatch.firstLoadRequest
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadMyActiveTicket());
+    liveUpdateWatch.refreshRequests
+      .pipe(
         switchMap(() => this.refreshForCurrentScreenState()),
         takeUntilDestroyed(this.destroyRef),
       )

@@ -19,8 +19,10 @@ export class AdminHome {
   private readonly destroyRef = inject(DestroyRef);
   private readonly liveUpdateService = inject(LiveUpdateService);
 
-  protected readonly refreshRequests = this.liveUpdateService.watch('admin', this.destroyRef)
-    .refreshRequests;
+  private readonly liveUpdateWatch = this.liveUpdateService.watch('admin', this.destroyRef);
+
+  protected readonly firstLoadRequest = this.liveUpdateWatch.firstLoadRequest;
+  protected readonly refreshRequests = this.liveUpdateWatch.refreshRequests;
   protected readonly sectionOptions: SectionOption[] = [
     { value: 'services', label: 'Services' },
     { value: 'counters', label: 'Counters' },

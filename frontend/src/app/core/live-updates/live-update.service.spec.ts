@@ -119,6 +119,7 @@ describe('LiveUpdateService', () => {
   let destroyCallbacks: (() => void)[];
   let watch: LiveUpdateWatch;
   let refreshCount: number;
+  let firstLoadCount: number;
   let refreshRequestsCompleted: boolean;
   let randomFraction: number;
 
@@ -140,6 +141,7 @@ describe('LiveUpdateService', () => {
       },
     } as DestroyRef;
     watch = TestBed.inject(LiveUpdateService).watch(liveStream, destroyRef);
+    watch.firstLoadRequest.subscribe(() => firstLoadCount++);
     watch.refreshRequests.subscribe({
       next: () => refreshCount++,
       complete: () => (refreshRequestsCompleted = true),
@@ -173,6 +175,7 @@ describe('LiveUpdateService', () => {
     isPageVisible = signal(true);
     destroyCallbacks = [];
     refreshCount = 0;
+    firstLoadCount = 0;
     refreshRequestsCompleted = false;
     randomFraction = 0;
     TestBed.configureTestingModule({
@@ -211,20 +214,134 @@ describe('LiveUpdateService', () => {
     });
   });
 
-  describe('asking the screen to refresh', () => {
-    it('asks for a refresh after ready', async () => {
+  describe('asking the screen for the first load', () => {
+    it('firstLoadRequest_whenServerSaysReady_emitsOnce', async () => {
       await connectAndReceiveReady();
+      await advanceTime(5000);
 
-      expect(refreshCount).toBe(1);
+      expect(firstLoadCount).toBe(1);
     });
 
+    it('firstLoadRequest_beforeReadyAndBeforeOneSecond_doesNotEmit', async () => {
+      await startWatching();
+
+      await advanceTime(999);
+
+      expect(firstLoadCount).toBe(0);
+    });
+
+    it('refreshRequests_afterFirstReady_doesNotEmit', async () => {
+      await connectAndReceiveReady();
+      await advanceTime(5000);
+
+      expect(refreshCount).toBe(0);
+    });
+
+    it('firstLoadRequest_whenNoReadyWithinOneSecond_emitsOnce', async () => {
+      server.leaveNextOpeningPending();
+      await startWatching();
+
+      await advanceTime(999);
+      expect(firstLoadCount).toBe(0);
+      await advanceTime(1);
+      await advanceTime(60000);
+
+      expect(firstLoadCount).toBe(1);
+    });
+
+    it('refreshRequests_whenReadyArrivesAfterFallbackFirstLoad_emitsOnce', async () => {
+      await startWatching();
+      await advanceTime(1000);
+      expect(firstLoadCount).toBe(1);
+
+      server.openedStreams[0].sendEvent('ready');
+      await advanceTime(300);
+
+      expect(refreshCount).toBe(1);
+      expect(firstLoadCount).toBe(1);
+    });
+
+    it('firstLoadRequest_afterForbiddenAnswer_emitsAfterOneSecond', async () => {
+      server.failNextOpenings(1, new StreamRejectedError(403));
+      await startWatching();
+
+      await advanceTime(999);
+      expect(firstLoadCount).toBe(0);
+      await advanceTime(1);
+
+      expect(firstLoadCount).toBe(1);
+    });
+
+    it('firstLoadRequest_afterStop_neverEmits', async () => {
+      await startWatching();
+
+      watch.stop();
+      await advanceTime(60000);
+
+      expect(firstLoadCount).toBe(0);
+    });
+
+    it('firstLoadRequest_afterStopWhenServerSaysReadyLate_neverEmits', async () => {
+      await startWatching();
+      const openedStream = server.openedStreams[0];
+
+      watch.stop();
+      openedStream.sendEvent('ready');
+      await advanceTime(60000);
+
+      expect(firstLoadCount).toBe(0);
+    });
+
+    it('firstLoadRequest_whenPageIsHiddenAtStart_waitsUntilPageIsShown', async () => {
+      isPageVisible.set(false);
+      await startWatching();
+      server.openedStreams[0].sendEvent('ready');
+      await advanceTime(1000);
+      expect(firstLoadCount).toBe(0);
+      expect(refreshCount).toBe(0);
+
+      await changePageVisibility(true);
+      await advanceTime(1000);
+
+      expect(firstLoadCount).toBe(1);
+      expect(refreshCount).toBe(0);
+    });
+
+    it('firstLoadRequest_whenPageIsHiddenAtStartAndNoReady_waitsUntilPageIsShown', async () => {
+      server.leaveNextOpeningPending();
+      isPageVisible.set(false);
+      await startWatching();
+      await advanceTime(10000);
+      expect(firstLoadCount).toBe(0);
+
+      await changePageVisibility(true);
+      await advanceTime(300);
+
+      expect(firstLoadCount).toBe(1);
+      expect(refreshCount).toBe(0);
+    });
+
+    it('firstLoadRequest_whenPageIsShownBeforeOneSecond_doesNotAlsoAskForRefresh', async () => {
+      server.leaveNextOpeningPending();
+      await startWatching();
+      await changePageVisibility(false);
+
+      await changePageVisibility(true);
+      await advanceTime(300);
+
+      expect(refreshCount).toBe(0);
+      expect(firstLoadCount).toBe(0);
+    });
+  });
+
+  describe('asking the screen to refresh', () => {
     it('asks for a refresh after a ticket-changed event', async () => {
       const openedStream = await connectAndReceiveReady();
 
       openedStream.sendEvent('ticket-changed');
       await advanceTime(300);
 
-      expect(refreshCount).toBe(2);
+      expect(refreshCount).toBe(1);
     });
 
     it('asks for a refresh after a configuration-changed event', async () => {
@@ -233,7 +350,7 @@ describe('LiveUpdateService', () => {
       openedStream.sendEvent('configuration-changed');
       await advanceTime(300);
 
-      expect(refreshCount).toBe(2);
+      expect(refreshCount).toBe(1);
     });
 
     it('ignores an event with an unknown name', async () => {
@@ -242,7 +359,7 @@ describe('LiveUpdateService', () => {
       openedStream.sendEvent('something-else');
       await advanceTime(1000);
 
-      expect(refreshCount).toBe(1);
+      expect(refreshCount).toBe(0);
     });
 
     it('asks for only one refresh when many events arrive close together', async () => {
@@ -269,7 +386,7 @@ describe('LiveUpdateService', () => {
       openedStream.sendEvent('ticket-changed');
       await advanceTime(300);
 
-      expect(refreshCount).toBe(3);
+      expect(refreshCount).toBe(2);
     });
   });
 
@@ -294,7 +411,7 @@ describe('LiveUpdateService', () => {
       expect(watch.isConnected()).toBe(false);
     });
 
-    it('asks for a refresh after it reconnects and the server says ready again', async () => {
+    it('refreshRequests_afterReconnectReady_emitsOnce', async () => {
       const openedStream = await connectAndReceiveReady();
       openedStream.closeFromServer();
       await advanceTime(1000);
@@ -302,7 +419,8 @@ describe('LiveUpdateService', () => {
       server.openedStreams[1].sendEvent('ready');
       await advanceTime(300);
 
-      expect(refreshCount).toBe(2);
+      expect(refreshCount).toBe(1);
+      expect(firstLoadCount).toBe(1);
     });
 
     it('opens a new stream one second after a read error', async () => {
@@ -579,7 +697,7 @@ describe('LiveUpdateService', () => {
       openedStream.closeFromServer();
       await advanceTime(5000);
 
-      expect(refreshCount).toBe(2);
+      expect(refreshCount).toBe(1);
     });
 
     it('does not ask for refreshes every five seconds while the tab is hidden', async () => {
@@ -629,7 +747,7 @@ describe('LiveUpdateService', () => {
       openedStream.sendEvent('ticket-changed');
       await advanceTime(1000);
 
-      expect(refreshCount).toBe(1);
+      expect(refreshCount).toBe(0);
     });
   });
 
@@ -641,12 +759,12 @@ describe('LiveUpdateService', () => {
       openedStream.sendEvent('configuration-changed');
       openedStream.sendEvent('ticket-changed');
       await advanceTime(1000);
-      expect(refreshCount).toBe(1);
+      expect(refreshCount).toBe(0);
 
       await changePageVisibility(true);
       await advanceTime(1000);
 
-      expect(refreshCount).toBe(2);
+      expect(refreshCount).toBe(1);
     });
 
     it('show_afterChangeWasAlreadyShown_secondShow_doesNotAskForRefresh', async () => {
@@ -656,13 +774,13 @@ describe('LiveUpdateService', () => {
       await advanceTime(1000);
       await changePageVisibility(true);
       await advanceTime(1000);
-      expect(refreshCount).toBe(2);
+      expect(refreshCount).toBe(1);
 
       await changePageVisibility(false);
       await changePageVisibility(true);
       await advanceTime(1000);
 
-      expect(refreshCount).toBe(2);
+      expect(refreshCount).toBe(1);
     });
 
     it('show_afterHiddenWithoutChange_whileConnected_doesNotAskForRefresh', async () => {
@@ -673,12 +791,13 @@ describe('LiveUpdateService', () => {
       await changePageVisibility(true);
       await advanceTime(1000);
 
-      expect(refreshCount).toBe(1);
+      expect(refreshCount).toBe(0);
     });
 
     it('show_whileDisconnected_asksForOneRefresh', async () => {
       server.failNextOpenings(10, networkFailure);
       await startWatching();
+      await advanceTime(1000);
       await changePageVisibility(false);
 
       await changePageVisibility(true);
@@ -690,6 +809,7 @@ describe('LiveUpdateService', () => {
     it('show_whileDisconnected_resumesFiveSecondPolling', async () => {
       server.leaveNextOpeningPending();
       await startWatching();
+      await advanceTime(1000);
       await changePageVisibility(false);
 
       await changePageVisibility(true);
@@ -733,7 +853,7 @@ describe('LiveUpdateService', () => {
       server.openedStreams[1].sendEvent('ready');
       await advanceTime(1000);
 
-      expect(refreshCount).toBe(2);
+      expect(refreshCount).toBe(1);
     });
 
     it('show_afterHeartbeatsKeptArriving_doesNotOpenNewStream', async () => {
@@ -749,20 +869,7 @@ describe('LiveUpdateService', () => {
       await advanceTime(1000);
 
       expect(server.openStream).toHaveBeenCalledTimes(1);
-      expect(refreshCount).toBe(1);
-    });
-
-    it('start_whenPageIsHidden_thenShown_asksForOneRefresh', async () => {
-      isPageVisible.set(false);
-      await startWatching();
-      server.openedStreams[0].sendEvent('ready');
-      await advanceTime(1000);
       expect(refreshCount).toBe(0);
-
-      await changePageVisibility(true);
-      await advanceTime(1000);
-
-      expect(refreshCount).toBe(1);
     });
 
     it('heartbeatComment_whileVisible_doesNotAskForRefresh', async () => {
@@ -771,7 +878,7 @@ describe('LiveUpdateService', () => {
       openedStream.sendComment();
       await advanceTime(1000);
 
-      expect(refreshCount).toBe(1);
+      expect(refreshCount).toBe(0);
     });
   });
 
@@ -841,7 +948,7 @@ describe('LiveUpdateService', () => {
       openedStream.sendEvent('ticket-changed');
       await advanceTime(1000);
 
-      expect(refreshCount).toBe(1);
+      expect(refreshCount).toBe(0);
     });
 
     it('ends the refresh requests', async () => {

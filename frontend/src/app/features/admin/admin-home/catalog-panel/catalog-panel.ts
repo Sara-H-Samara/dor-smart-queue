@@ -48,6 +48,7 @@ export class CatalogPanel implements OnInit {
   private hasDroppedRefreshRequest = false;
 
   readonly catalogResource = input.required<CatalogResource>();
+  readonly firstLoadRequest = input.required<Observable<void>>();
   readonly refreshRequests = input.required<Observable<void>>();
   readonly heading = input.required<string>();
   readonly itemLabel = input.required<string>();
@@ -84,7 +85,7 @@ export class CatalogPanel implements OnInit {
   });
 
   ngOnInit(): void {
-    this.reloadItems();
+    this.loadItemsOnFirstLoadRequest();
     this.refreshItemsOnLiveUpdates();
   }
 
@@ -225,6 +226,12 @@ export class CatalogPanel implements OnInit {
       },
       error: (err: unknown) => this.error.set(errorMessageForStatus(err)),
     });
+  }
+
+  private loadItemsOnFirstLoadRequest(): void {
+    this.firstLoadRequest()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.reloadItems());
   }
 
   private refreshItemsOnLiveUpdates(): void {
