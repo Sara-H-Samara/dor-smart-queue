@@ -6,6 +6,7 @@ import com.sara.backend.entities.Counter;
 import com.sara.backend.entities.Role;
 import com.sara.backend.entities.ServiceType;
 import com.sara.backend.entities.Ticket;
+import com.sara.backend.entities.TicketDistance;
 import com.sara.backend.entities.TicketStatus;
 import com.sara.backend.entities.User;
 import com.sara.backend.repositories.CounterRepository;
@@ -157,6 +158,79 @@ class TicketControllerTest {
                 .andExpect(jsonPath("$.serviceName").value("Registration"))
                 .andExpect(jsonPath("$.status").value("WAITING"))
                 .andExpect(jsonPath("$.createdAt").exists());
+    }
+
+    private org.springframework.test.web.servlet.ResultActions takeWithRawBody(String token, String rawBody)
+            throws Exception {
+        return mockMvc.perform(post(URL)
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(rawBody));
+    }
+
+    @Test
+    @DisplayName("A ticket taken with distance far answers with distance far")
+    void takeTicket_withFarDistance_returnsFarDistance() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
+
+        takeWithRawBody(registerStudentAndLogin("a@example.com"),
+                "{\"serviceId\":%d,\"distance\":\"FAR\"}".formatted(registration.getId()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.distance").value("FAR"));
+    }
+
+    @Test
+    @DisplayName("A ticket taken with distance far is saved with distance far")
+    void takeTicket_withFarDistance_savesFarDistanceOnTicket() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
+
+        takeWithRawBody(registerStudentAndLogin("a@example.com"),
+                "{\"serviceId\":%d,\"distance\":\"FAR\"}".formatted(registration.getId()))
+                .andExpect(status().isCreated());
+
+        assertEquals(TicketDistance.FAR, ticketRepository.findAll().get(0).getDistance());
+    }
+
+    @Test
+    @DisplayName("A ticket taken without a distance gets distance near")
+    void takeTicket_withoutDistance_savesNearDistance() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
+
+        take(registerStudentAndLogin("a@example.com"), registration.getId())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.distance").value("NEAR"));
+
+        assertEquals(TicketDistance.NEAR, ticketRepository.findAll().get(0).getDistance());
+    }
+
+    @Test
+    @DisplayName("A ticket taken with a null distance gets distance near")
+    void takeTicket_withNullDistance_savesNearDistance() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
+
+        takeWithRawBody(registerStudentAndLogin("a@example.com"),
+                "{\"serviceId\":%d,\"distance\":null}".formatted(registration.getId()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.distance").value("NEAR"));
+
+        assertEquals(TicketDistance.NEAR, ticketRepository.findAll().get(0).getDistance());
+    }
+
+    @Test
+    @DisplayName("An unknown distance is rejected and no ticket is saved")
+    void takeTicket_withUnknownDistance_returnsBadRequest() throws Exception {
+        ServiceType registration = createService("Registration", "R", true);
+        testHelper.createCounter("Window 1", registration);
+
+        takeWithRawBody(registerStudentAndLogin("a@example.com"),
+                "{\"serviceId\":%d,\"distance\":\"FARTHEST\"}".formatted(registration.getId()))
+                .andExpect(status().isBadRequest());
+
+        assertEquals(0, ticketRepository.count());
     }
 
     @Test

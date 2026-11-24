@@ -6,6 +6,7 @@ import com.sara.backend.entities.Counter;
 import com.sara.backend.entities.Role;
 import com.sara.backend.entities.ServiceType;
 import com.sara.backend.entities.Ticket;
+import com.sara.backend.entities.TicketDistance;
 import com.sara.backend.entities.TicketStatus;
 import com.sara.backend.entities.User;
 import com.sara.backend.repositories.CounterRepository;
@@ -27,6 +28,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -159,6 +162,185 @@ class MyTicketControllerTest {
                 .andExpect(jsonPath("$.position").value(1))
                 .andExpect(jsonPath("$.peopleAhead").value(0))
                 .andExpect(jsonPath("$.estimatedWaitMinutes").value(5));
+    }
+
+    private void saveDistance(Ticket ticket, TicketDistance distance) {
+        ticket.setDistance(distance);
+        ticketRepository.save(ticket);
+    }
+
+    @Test
+    @DisplayName("A waiting ticket answers with its distance")
+    void getActiveTicket_withWaitingFarTicket_returnsFarDistance() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        saveDistance(ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING),
+                TicketDistance.FAR);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.distance").value("FAR"));
+    }
+
+    @Test
+    @DisplayName("A called ticket answers with its distance")
+    void getActiveTicket_withCalledFarTicket_returnsFarDistance() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        saveDistance(ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.CALLED),
+                TicketDistance.FAR);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.distance").value("FAR"));
+    }
+
+    @Test
+    @DisplayName("A ticket saved without a distance answers with distance near")
+    void getActiveTicket_withTicketSavedWithoutDistance_returnsNearDistance() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.distance").value("NEAR"));
+    }
+
+    private List<Ticket> waitingTicketsAhead(ServiceType service, int count) throws Exception {
+        List<Ticket> ticketsAhead = new ArrayList<>();
+        for (int number = 1; number <= count; number++) {
+            ticketsAhead.add(ticketFor(
+                    "ahead" + number + "@example.com", service, number, LocalDate.now(), TicketStatus.WAITING));
+        }
+        return ticketsAhead;
+    }
+
+    private void waitingTicketWithDistance(
+            ServiceType service, int number, TicketDistance distance) throws Exception {
+        saveDistance(ticketFor("student@example.com", service, number, LocalDate.now(), TicketStatus.WAITING),
+                distance);
+    }
+
+    @Test
+    @DisplayName("A far student with six people ahead is told the turn is near")
+    void getActiveTicket_farWithSixAhead_returnsTurnIsNearTrue() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        waitingTicketsAhead(registration, 6);
+        waitingTicketWithDistance(registration, 7, TicketDistance.FAR);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.peopleAhead").value(6))
+                .andExpect(jsonPath("$.turnIsNear").value(true));
+    }
+
+    @Test
+    @DisplayName("A far student with seven people ahead is not told yet")
+    void getActiveTicket_farWithSevenAhead_returnsTurnIsNearFalse() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        waitingTicketsAhead(registration, 7);
+        waitingTicketWithDistance(registration, 8, TicketDistance.FAR);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.peopleAhead").value(7))
+                .andExpect(jsonPath("$.turnIsNear").value(false));
+    }
+
+    @Test
+    @DisplayName("A near student with six people ahead is not told yet")
+    void getActiveTicket_nearWithSixAhead_returnsTurnIsNearFalse() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        waitingTicketsAhead(registration, 6);
+        waitingTicketWithDistance(registration, 7, TicketDistance.NEAR);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.turnIsNear").value(false));
+    }
+
+    @Test
+    @DisplayName("A medium student with three people ahead is told the turn is near")
+    void getActiveTicket_mediumWithThreeAhead_returnsTurnIsNearTrue() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        waitingTicketsAhead(registration, 3);
+        waitingTicketWithDistance(registration, 4, TicketDistance.MEDIUM);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.turnIsNear").value(true));
+    }
+
+    @Test
+    @DisplayName("The alert turns on when one person ahead leaves the queue")
+    void getActiveTicket_afterPersonAheadLeaves_returnsTurnIsNearTrue() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        List<Ticket> ticketsAhead = waitingTicketsAhead(registration, 7);
+        waitingTicketWithDistance(registration, 8, TicketDistance.FAR);
+        me("student@example.com").andExpect(jsonPath("$.turnIsNear").value(false));
+
+        Ticket leavingTicket = ticketsAhead.get(0);
+        leavingTicket.setStatus(TicketStatus.CANCELLED);
+        ticketRepository.save(leavingTicket);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.peopleAhead").value(6))
+                .andExpect(jsonPath("$.turnIsNear").value(true));
+    }
+
+    @Test
+    @DisplayName("No alert is sent when no counter is open")
+    void getActiveTicket_waitingWithoutOpenCounter_returnsTurnIsNearFalse() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        waitingTicketWithDistance(registration, 1, TicketDistance.FAR);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasOpenCounter").value(false))
+                .andExpect(jsonPath("$.turnIsNear").value(false));
+    }
+
+    @Test
+    @DisplayName("A called ticket has no alert")
+    void getActiveTicket_calledTicket_returnsTurnIsNearFalseAndNoAlertLimit() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        saveDistance(ticketFor("student@example.com", registration, 1, LocalDate.now(), TicketStatus.CALLED),
+                TicketDistance.FAR);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.turnIsNear").value(false))
+                .andExpect(jsonPath("$.alertAtPeopleAhead").isEmpty());
+    }
+
+    @Test
+    @DisplayName("A far ticket tells the student the alert comes at six people ahead")
+    void getActiveTicket_withFarDistance_returnsAlertAtPeopleAheadSix() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        waitingTicketWithDistance(registration, 1, TicketDistance.FAR);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.alertAtPeopleAhead").value(6));
+    }
+
+    @Test
+    @DisplayName("A near ticket tells the student the alert comes at one person ahead")
+    void getActiveTicket_withNearDistance_returnsAlertAtPeopleAheadOne() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        waitingTicketWithDistance(registration, 1, TicketDistance.NEAR);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.alertAtPeopleAhead").value(1));
     }
 
     @Test

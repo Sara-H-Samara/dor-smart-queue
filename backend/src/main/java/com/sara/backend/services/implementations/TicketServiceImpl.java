@@ -5,6 +5,7 @@ import com.sara.backend.dtos.responses.ActiveTicketResponse;
 import com.sara.backend.dtos.responses.TicketResponse;
 import com.sara.backend.entities.ServiceType;
 import com.sara.backend.entities.Ticket;
+import com.sara.backend.entities.TicketDistance;
 import com.sara.backend.entities.TicketStatus;
 import com.sara.backend.entities.User;
 import com.sara.backend.repositories.ServiceTypeRepository;
@@ -12,6 +13,7 @@ import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.services.OpenCounterFinder;
 import com.sara.backend.services.TicketService;
+import com.sara.backend.services.TurnAlertPolicy;
 import com.sara.backend.streams.QueueChangeAnnouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,6 +30,8 @@ public class TicketServiceImpl implements TicketService {
 
     private static final int ESTIMATED_MINUTES_PER_PERSON = 5;
 
+    private static final TicketDistance DISTANCE_WHEN_NOT_CHOSEN = TicketDistance.NEAR;
+
     private static final List<TicketStatus> ACTIVE_STATUSES = List.of(TicketStatus.WAITING, TicketStatus.CALLED);
 
     @Autowired
@@ -41,6 +45,9 @@ public class TicketServiceImpl implements TicketService {
 
     @Autowired
     private OpenCounterFinder openCounterFinder;
+
+    @Autowired
+    private TurnAlertPolicy turnAlertPolicy;
 
     @Autowired
     private QueueChangeAnnouncer queueChangeAnnouncer;
@@ -77,6 +84,7 @@ public class TicketServiceImpl implements TicketService {
         ticket.setNumber((lastNumberToday == null ? 0 : lastNumberToday) + 1);
         ticket.setTicketDate(today);
         ticket.setStatus(TicketStatus.WAITING);
+        ticket.setDistance(request.distance() == null ? DISTANCE_WHEN_NOT_CHOSEN : request.distance());
 
         try {
             Ticket savedTicket = ticketRepository.saveAndFlush(ticket);
@@ -99,8 +107,15 @@ public class TicketServiceImpl implements TicketService {
         Long serviceId = ticket.getServiceType().getId();
         int peopleAhead = (int) ticketRepository.countWaitingAhead(
                 serviceId, ticket.getTicketDate(), ticket.getNumber());
+        boolean hasOpenCounter = openCounterFinder.hasOpenCounter(serviceId);
+        boolean turnIsNear = hasOpenCounter && turnAlertPolicy.isTurnNear(peopleAhead, ticket.getDistance());
         return ActiveTicketResponse.forWaitingTicket(
-                ticket, peopleAhead, ESTIMATED_MINUTES_PER_PERSON, openCounterFinder.hasOpenCounter(serviceId));
+                ticket,
+                peopleAhead,
+                ESTIMATED_MINUTES_PER_PERSON,
+                hasOpenCounter,
+                turnIsNear,
+                turnAlertPolicy.peopleAheadLimitFor(ticket.getDistance()));
     }
 
     @Override

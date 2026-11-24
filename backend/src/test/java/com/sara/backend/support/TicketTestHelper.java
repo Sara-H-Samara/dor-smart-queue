@@ -143,6 +143,10 @@ public class TicketTestHelper {
         return ticketRepository.save(ticket);
     }
 
+    public ResultActions getMyActiveTicket(String token) throws Exception {
+        return mockMvc.perform(get("/api/tickets/me").header("Authorization", "Bearer " + token));
+    }
+
     public ResultActions takeTicket(String token, Long serviceId) throws Exception {
         return mockMvc.perform(post("/api/tickets")
                 .header("Authorization", "Bearer " + token)
