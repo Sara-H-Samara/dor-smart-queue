@@ -13,11 +13,18 @@ public record ActiveTicketResponse(
         Integer estimatedWaitMinutes,
         String counterName,
         boolean hasOpenCounter,
-        TicketDistance distance
+        TicketDistance distance,
+        boolean turnIsNear,
+        Integer alertAtPeopleAhead
 ) {
 
     public static ActiveTicketResponse forWaitingTicket(
-            Ticket ticket, int peopleAhead, int minutesPerPerson, boolean hasOpenCounter) {
+            Ticket ticket,
+            int peopleAhead,
+            int minutesPerPerson,
+            boolean hasOpenCounter,
+            boolean turnIsNear,
+            int alertAtPeopleAhead) {
         int position = peopleAhead + 1;
         return new ActiveTicketResponse(
                 TicketResponse.formatTicketCode(ticket),
@@ -28,7 +35,9 @@ public record ActiveTicketResponse(
                 hasOpenCounter ? position * minutesPerPerson : null,
                 null,
                 hasOpenCounter,
-                ticket.getDistance());
+                ticket.getDistance(),
+                turnIsNear,
+                alertAtPeopleAhead);
     }
 
     public static ActiveTicketResponse forCalledTicket(Ticket ticket) {
@@ -41,6 +50,8 @@ public record ActiveTicketResponse(
                 null,
                 ticket.getCounter() == null ? null : ticket.getCounter().getName(),
                 true,
-                ticket.getDistance());
+                ticket.getDistance(),
+                false,
+                null);
     }
 }

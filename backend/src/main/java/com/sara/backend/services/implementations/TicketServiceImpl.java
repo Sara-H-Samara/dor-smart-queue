@@ -13,6 +13,7 @@ import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.repositories.UserRepository;
 import com.sara.backend.services.OpenCounterFinder;
 import com.sara.backend.services.TicketService;
+import com.sara.backend.services.TurnAlertPolicy;
 import com.sara.backend.streams.QueueChangeAnnouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -44,6 +45,9 @@ public class TicketServiceImpl implements TicketService {
 
     @Autowired
     private OpenCounterFinder openCounterFinder;
+
+    @Autowired
+    private TurnAlertPolicy turnAlertPolicy;
 
     @Autowired
     private QueueChangeAnnouncer queueChangeAnnouncer;
@@ -103,8 +107,15 @@ public class TicketServiceImpl implements TicketService {
         Long serviceId = ticket.getServiceType().getId();
         int peopleAhead = (int) ticketRepository.countWaitingAhead(
                 serviceId, ticket.getTicketDate(), ticket.getNumber());
+        boolean hasOpenCounter = openCounterFinder.hasOpenCounter(serviceId);
+        boolean turnIsNear = hasOpenCounter && turnAlertPolicy.isTurnNear(peopleAhead, ticket.getDistance());
         return ActiveTicketResponse.forWaitingTicket(
-                ticket, peopleAhead, ESTIMATED_MINUTES_PER_PERSON, openCounterFinder.hasOpenCounter(serviceId));
+                ticket,
+                peopleAhead,
+                ESTIMATED_MINUTES_PER_PERSON,
+                hasOpenCounter,
+                turnIsNear,
+                turnAlertPolicy.peopleAheadLimitFor(ticket.getDistance()));
     }
 
     @Override
