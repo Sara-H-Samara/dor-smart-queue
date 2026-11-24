@@ -72,8 +72,15 @@ describe('StudentTicketPage', () => {
     });
   });
 
-  function createPage(): ComponentFixture<StudentTicketPage> {
+  function createPageBeforeFirstLoad(): ComponentFixture<StudentTicketPage> {
     const fixture = TestBed.createComponent(StudentTicketPage);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  function createPage(): ComponentFixture<StudentTicketPage> {
+    const fixture = createPageBeforeFirstLoad();
+    fakeLiveUpdateService.liveUpdateWatch.requestFirstLoad();
     fixture.detectChanges();
     return fixture;
   }
@@ -269,6 +276,35 @@ describe('StudentTicketPage', () => {
       createPage();
 
       expect(fakeLiveUpdateService.watchedLiveStreams).toEqual(['student']);
+    });
+
+    it('constructor_beforeFirstLoadRequest_doesNotFetchAnything', () => {
+      fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
+
+      createPageBeforeFirstLoad();
+
+      expect(fetchMyActiveTicket).not.toHaveBeenCalled();
+      expect(listActiveServices).not.toHaveBeenCalled();
+    });
+
+    it('firstLoadRequest_whenStudentHasNoTicket_runsTicketThenServicesOnce', () => {
+      fetchMyActiveTicket.mockReturnValue(failingRequestWithStatus(404));
+      listActiveServices.mockReturnValue(of([openService]));
+
+      const fixture = createPage();
+
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
+      expect(listActiveServices).toHaveBeenCalledTimes(1);
+      expect(pageElement(fixture).querySelector('app-service-tile-list')).not.toBeNull();
+    });
+
+    it('firstLoadRequest_whenStudentHasTicket_fetchesTheTicketOnce', () => {
+      fetchMyActiveTicket.mockReturnValue(of(waitingTicket));
+
+      createPage();
+
+      expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
+      expect(listActiveServices).not.toHaveBeenCalled();
     });
 
     it('does not load anything again by itself over time', () => {

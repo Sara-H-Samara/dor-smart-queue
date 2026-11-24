@@ -36,8 +36,15 @@ describe('WaitingScreenPage', () => {
     });
   });
 
-  function createPage(): ComponentFixture<WaitingScreenPage> {
+  function createPageBeforeFirstLoad(): ComponentFixture<WaitingScreenPage> {
     const fixture = TestBed.createComponent(WaitingScreenPage);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  function createPage(): ComponentFixture<WaitingScreenPage> {
+    const fixture = createPageBeforeFirstLoad();
+    fakeLiveUpdateService.liveUpdateWatch.requestFirstLoad();
     fixture.detectChanges();
     return fixture;
   }
@@ -141,7 +148,15 @@ describe('WaitingScreenPage', () => {
       expect(fakeLiveUpdateService.watchedLiveStreams).toEqual(['public']);
     });
 
-    it('loads the waiting room once at the start without waiting for a refresh request', () => {
+    it('constructor_beforeFirstLoadRequest_doesNotFetch', () => {
+      fetchWaitingRoom.mockReturnValue(of(waitingRoomWithCalledAndIdleCounter));
+
+      createPageBeforeFirstLoad();
+
+      expect(fetchWaitingRoom).not.toHaveBeenCalled();
+    });
+
+    it('firstLoadRequest_whenEmitted_fetchesOnce', () => {
       fetchWaitingRoom.mockReturnValue(of(waitingRoomWithCalledAndIdleCounter));
 
       createPage();

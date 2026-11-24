@@ -94,8 +94,7 @@ export class StaffDeskPage {
   private readonly waitingListReplaced = new Subject<void>();
 
   constructor() {
-    this.loadDesk();
-    this.refreshWaitingListOnLiveUpdates();
+    this.loadAfterStreamIsReadyAndRefreshWaitingListOnLiveUpdates();
   }
 
   protected changeCounter(): void {
@@ -201,10 +200,13 @@ export class StaffDeskPage {
     this.requestWaitingList(counterId);
   }
 
-  private refreshWaitingListOnLiveUpdates(): void {
-    this.liveUpdateService
-      .watch('staff', this.destroyRef)
-      .refreshRequests.pipe(
+  private loadAfterStreamIsReadyAndRefreshWaitingListOnLiveUpdates(): void {
+    const liveUpdateWatch = this.liveUpdateService.watch('staff', this.destroyRef);
+    liveUpdateWatch.firstLoadRequest
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadDesk());
+    liveUpdateWatch.refreshRequests
+      .pipe(
         switchMap(() => this.refreshWaitingListWhenDeskIsIdle()),
         takeUntilDestroyed(this.destroyRef),
       )

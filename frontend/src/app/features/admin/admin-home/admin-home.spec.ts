@@ -34,6 +34,9 @@ describe('AdminHome', () => {
     httpTesting = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(AdminHome);
     fixture.detectChanges();
+    httpTesting.expectNone(servicesUrl);
+    httpTesting.expectNone(countersUrl);
+    fakeLiveUpdateService.liveUpdateWatch.requestFirstLoad();
     httpTesting.expectOne(servicesUrl).flush([]);
     httpTesting.expectOne(countersUrl).flush([]);
     fixture.detectChanges();
@@ -50,6 +53,11 @@ describe('AdminHome', () => {
 
     httpTesting.expectOne(servicesUrl).flush([]);
     httpTesting.expectOne(countersUrl).flush([]);
+  });
+
+  it('firstLoadRequest_afterTheFirstLoad_sendsNoSecondRequest', () => {
+    httpTesting.expectNone(servicesUrl);
+    httpTesting.expectNone(countersUrl);
   });
 
   it('sends no request when no refresh is requested', () => {

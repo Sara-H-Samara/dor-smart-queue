@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import { Observable, Subject, auditTime, merge } from 'rxjs';
+import { Observable, ReplaySubject, Subject, auditTime, merge } from 'rxjs';
 
 import { FORBIDDEN_STATUS, UNAUTHORIZED_STATUS } from '../api-failure';
 import { LiveStream } from './live-stream';
@@ -13,6 +13,7 @@ const REFRESH_MERGE_WINDOW_IN_MILLISECONDS = 300;
 const FALLBACK_POLL_INTERVAL_IN_MILLISECONDS = 5000;
 const STABLE_CONNECTION_DURATION_IN_MILLISECONDS = 30000;
 const SILENT_CONNECTION_LIMIT_IN_MILLISECONDS = 60000;
+const FIRST_LOAD_WAIT_FOR_STREAM_IN_MILLISECONDS = 1000;
 
 const READY_EVENT_NAME = 'ready';
 const CHANGE_EVENT_NAMES: readonly string[] = ['ticket-changed', 'configuration-changed'];
@@ -21,14 +22,19 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
   private readonly connected = signal(false);
   private readonly changeSignals = new Subject<void>();
   private readonly fallbackPollTicks = new Subject<void>();
+  private readonly firstLoadSignals = new ReplaySubject<void>(1);
 
   readonly isConnected = this.connected.asReadonly();
+  readonly firstLoadRequest: Observable<void> = this.firstLoadSignals.asObservable();
   readonly refreshRequests: Observable<void> = merge(
     this.changeSignals.pipe(auditTime(REFRESH_MERGE_WINDOW_IN_MILLISECONDS)),
     this.fallbackPollTicks,
   );
 
   private hasChangeWaitingForVisiblePage = false;
+  private isFirstLoadDue = false;
+  private isFirstLoadWaitingForVisiblePage = false;
+  private firstLoadTimerId: ReturnType<typeof setTimeout> | null = null;
   private lastServerActivityInMilliseconds = Date.now();
   private hasStopped = false;
   private hasGivenUpStreaming = false;
@@ -49,6 +55,39 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
   start(): void {
     this.openStreamWhenAllowed();
     this.updateFallbackPolling();
+    this.startFirstLoadTimer();
+  }
+
+  private startFirstLoadTimer(): void {
+    this.firstLoadTimerId = setTimeout(() => {
+      this.firstLoadTimerId = null;
+      this.makeFirstLoadDue();
+    }, FIRST_LOAD_WAIT_FOR_STREAM_IN_MILLISECONDS);
+  }
+
+  private cancelFirstLoadTimer(): void {
+    if (this.firstLoadTimerId !== null) {
+      clearTimeout(this.firstLoadTimerId);
+      this.firstLoadTimerId = null;
+    }
+  }
+
+  private makeFirstLoadDue(): void {
+    if (this.hasStopped) {
+      return;
+    }
+    this.isFirstLoadDue = true;
+    this.cancelFirstLoadTimer();
+    if (this.isPageVisible) {
+      this.requestFirstLoad();
+    } else {
+      this.isFirstLoadWaitingForVisiblePage = true;
+    }
+  }
+
+  private requestFirstLoad(): void {
+    this.firstLoadSignals.next();
+    this.firstLoadSignals.complete();
   }
 
   pageVisibilityChanged(isPageVisible: boolean): void {
@@ -63,7 +102,11 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
   }
 
   private handlePageBecameVisible(): void {
-    if (this.hasChangeWaitingForVisiblePage || !this.connected()) {
+    if (this.isFirstLoadWaitingForVisiblePage) {
+      this.isFirstLoadWaitingForVisiblePage = false;
+      this.hasChangeWaitingForVisiblePage = false;
+      this.requestFirstLoad();
+    } else if (this.isFirstLoadDue && (this.hasChangeWaitingForVisiblePage || !this.connected())) {
       this.hasChangeWaitingForVisiblePage = false;
       this.changeSignals.next();
     }
@@ -96,11 +139,13 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
       return;
     }
     this.hasStopped = true;
+    this.cancelFirstLoadTimer();
     this.cancelReconnect();
     this.closeConnection();
     this.updateFallbackPolling();
     this.changeSignals.complete();
     this.fallbackPollTicks.complete();
+    this.firstLoadSignals.complete();
   }
 
   private openStreamWhenAllowed(): void {
@@ -136,9 +181,17 @@ export class StreamLiveUpdateWatch implements LiveUpdateWatch {
     if (event.name === READY_EVENT_NAME) {
       this.startStableConnectionTimer();
       this.setConnected(true);
-      this.announceChangeWhenPageIsVisible();
+      this.handleReady();
     } else if (CHANGE_EVENT_NAMES.includes(event.name)) {
       this.announceChangeWhenPageIsVisible();
+    }
+  }
+
+  private handleReady(): void {
+    if (this.isFirstLoadDue) {
+      this.announceChangeWhenPageIsVisible();
+    } else {
+      this.makeFirstLoadDue();
     }
   }
 

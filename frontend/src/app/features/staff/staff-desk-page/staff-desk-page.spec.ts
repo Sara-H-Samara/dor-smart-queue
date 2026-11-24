@@ -104,8 +104,15 @@ describe('StaffDeskPage', () => {
     });
   });
 
-  async function createPage(): Promise<ComponentFixture<StaffDeskPage>> {
+  function createPageBeforeFirstLoad(): ComponentFixture<StaffDeskPage> {
     const fixture = TestBed.createComponent(StaffDeskPage);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  async function createPage(): Promise<ComponentFixture<StaffDeskPage>> {
+    const fixture = createPageBeforeFirstLoad();
+    fakeLiveUpdateService.liveUpdateWatch.requestFirstLoad();
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -517,6 +524,22 @@ describe('StaffDeskPage', () => {
 
       expect(fetchWaitingList).toHaveBeenCalledTimes(2);
       expect(textOf(fixture, '.waiting-count')).toBe('1 waiting for Course registration');
+    });
+
+    it('constructor_beforeFirstLoadRequest_doesNotFetchAnything', () => {
+      createPageBeforeFirstLoad();
+
+      expect(listAvailableCounters).not.toHaveBeenCalled();
+      expect(fetchCurrentStudent).not.toHaveBeenCalled();
+      expect(fetchWaitingList).not.toHaveBeenCalled();
+    });
+
+    it('firstLoadRequest_whenCounterIsChosen_runsCountersCurrentStudentAndWaitingListOnce', async () => {
+      await createPage();
+
+      expect(listAvailableCounters).toHaveBeenCalledTimes(1);
+      expect(fetchCurrentStudent).toHaveBeenCalledTimes(1);
+      expect(fetchWaitingList).toHaveBeenCalledTimes(1);
     });
 
     it('does not request the list again by itself over time', async () => {
