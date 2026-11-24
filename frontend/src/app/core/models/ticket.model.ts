@@ -11,6 +11,9 @@ export interface ActiveTicket {
   estimatedWaitMinutes: number | null;
   counterName: string | null;
   hasOpenCounter: boolean;
+  distance: TicketDistance;
+  turnIsNear: boolean;
+  alertAtPeopleAhead: number | null;
 }
 
 export interface TakenTicket {

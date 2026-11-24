@@ -23,6 +23,9 @@ const waitingTicket: ActiveTicket = {
   estimatedWaitMinutes: 10,
   counterName: null,
   hasOpenCounter: true,
+  distance: 'NEAR',
+  turnIsNear: false,
+  alertAtPeopleAhead: null,
 };
 
 const openService: ActiveService = {
@@ -405,6 +408,24 @@ describe('StudentTicketPage', () => {
 
       expect(fetchMyActiveTicket).toHaveBeenCalledTimes(1);
       expect(listActiveServices).not.toHaveBeenCalled();
+    });
+
+    it('shows the turn-near notice after a refresh request without the loading state', () => {
+      const ticketWithNearTurn: ActiveTicket = {
+        ...waitingTicket,
+        peopleAhead: 1,
+        turnIsNear: true,
+      };
+      fetchMyActiveTicket.mockReturnValueOnce(of(waitingTicket));
+      fetchMyActiveTicket.mockReturnValueOnce(of(ticketWithNearTurn));
+      const fixture = createPage();
+      expect(pageElement(fixture).querySelector('.turn-notice')).toBeNull();
+
+      requestRefresh(fixture);
+
+      const noticeElement = pageElement(fixture).querySelector('.turn-notice');
+      expect(noticeElement?.textContent).toContain('Your turn is near');
+      expect(pageElement(fixture).textContent).not.toContain('Loading');
     });
 
     it('shows the no-counter notice when the counter turns off', () => {

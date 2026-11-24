@@ -14,7 +14,14 @@ describe('TicketCard', () => {
       estimatedWaitMinutes: null,
       counterName,
       hasOpenCounter: true,
+      distance: 'NEAR',
+      turnIsNear: false,
+      alertAtPeopleAhead: null,
     };
+  }
+
+  function waitingTicketWith(overrides: Partial<ActiveTicket>): ActiveTicket {
+    return { ...ticketWithStatus('WAITING', null), ...overrides };
   }
 
   function renderTicketCard(ticket: ActiveTicket): HTMLElement {
@@ -34,6 +41,9 @@ describe('TicketCard', () => {
       estimatedWaitMinutes: null,
       counterName: null,
       hasOpenCounter: true,
+      distance: 'NEAR',
+      turnIsNear: false,
+      alertAtPeopleAhead: null,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', ticketWithoutQueuePosition);
@@ -55,6 +65,9 @@ describe('TicketCard', () => {
       estimatedWaitMinutes: 5,
       counterName: null,
       hasOpenCounter: true,
+      distance: 'NEAR',
+      turnIsNear: false,
+      alertAtPeopleAhead: null,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', waitingTicket);
@@ -77,6 +90,9 @@ describe('TicketCard', () => {
       estimatedWaitMinutes: null,
       counterName: null,
       hasOpenCounter: false,
+      distance: 'NEAR',
+      turnIsNear: false,
+      alertAtPeopleAhead: null,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', waitingTicketWithoutOpenCounter);
@@ -103,6 +119,9 @@ describe('TicketCard', () => {
       estimatedWaitMinutes: null,
       counterName: null,
       hasOpenCounter: false,
+      distance: 'NEAR',
+      turnIsNear: false,
+      alertAtPeopleAhead: null,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', waitingTicketWithoutOpenCounter);
@@ -128,6 +147,9 @@ describe('TicketCard', () => {
       estimatedWaitMinutes: null,
       counterName: 'Counter 2',
       hasOpenCounter: false,
+      distance: 'NEAR',
+      turnIsNear: false,
+      alertAtPeopleAhead: null,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', calledTicketWithFlagFalse);
@@ -151,6 +173,9 @@ describe('TicketCard', () => {
       estimatedWaitMinutes: 0,
       counterName: null,
       hasOpenCounter: true,
+      distance: 'NEAR',
+      turnIsNear: false,
+      alertAtPeopleAhead: null,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', calledTicket);
@@ -176,6 +201,9 @@ describe('TicketCard', () => {
       estimatedWaitMinutes: null,
       counterName: 'Counter 2',
       hasOpenCounter: true,
+      distance: 'NEAR',
+      turnIsNear: false,
+      alertAtPeopleAhead: null,
     };
     const fixture = TestBed.createComponent(TicketCard);
     fixture.componentRef.setInput('ticket', calledTicketWithCounter);
@@ -218,5 +246,109 @@ describe('TicketCard', () => {
     );
     expect(cardElement.querySelector('.ticket-stub p')).toBeNull();
     expect(cardElement.textContent).not.toContain('Please go to your counter.');
+  });
+
+  describe('turn-near notice', () => {
+    it('shows the notice when the server says the turn is near', () => {
+      const cardElement = renderTicketCard(waitingTicketWith({ turnIsNear: true }));
+
+      expect(cardElement.querySelector('.turn-notice')?.textContent).toContain(
+        'Your turn is near. Please come to the counters.',
+      );
+    });
+
+    it('announces the notice through a status region', () => {
+      const cardElement = renderTicketCard(waitingTicketWith({ turnIsNear: true }));
+
+      expect(cardElement.querySelector('.turn-notice')?.getAttribute('role')).toBe('status');
+    });
+
+    it('shows no notice when the server says the turn is not near', () => {
+      const cardElement = renderTicketCard(waitingTicketWith({ turnIsNear: false }));
+
+      expect(cardElement.querySelector('.turn-notice')).toBeNull();
+      expect(cardElement.querySelector('[role="status"]')).toBeNull();
+    });
+
+    it('shows no notice for a called ticket even when the flag is true', () => {
+      const calledTicket: ActiveTicket = {
+        ...ticketWithStatus('CALLED', 'Counter 2'),
+        turnIsNear: true,
+      };
+
+      const cardElement = renderTicketCard(calledTicket);
+
+      expect(cardElement.querySelector('.turn-notice')).toBeNull();
+    });
+
+    it('shows no notice for zero people ahead when the server says the turn is not near', () => {
+      const cardElement = renderTicketCard(
+        waitingTicketWith({ position: 1, peopleAhead: 0, turnIsNear: false }),
+      );
+
+      expect(cardElement.textContent).toContain('You are next');
+      expect(cardElement.querySelector('.turn-notice')).toBeNull();
+    });
+
+    it('shows the notice for many people ahead when the server says the turn is near', () => {
+      const cardElement = renderTicketCard(
+        waitingTicketWith({ position: 10, peopleAhead: 9, turnIsNear: true }),
+      );
+
+      expect(cardElement.querySelector('.turn-notice')).not.toBeNull();
+    });
+
+    it('keeps the leave-queue button when the notice is shown', () => {
+      const cardElement = renderTicketCard(waitingTicketWith({ turnIsNear: true }));
+
+      expect(cardElement.querySelector('.ticket-stub button')?.textContent?.trim()).toBe(
+        'Leave queue',
+      );
+    });
+  });
+
+  describe('alert promise', () => {
+    it('tells the student when the alert will come', () => {
+      const cardElement = renderTicketCard(
+        waitingTicketWith({ position: 8, peopleAhead: 7, alertAtPeopleAhead: 6 }),
+      );
+
+      expect(cardElement.querySelector('.ticket-status')?.textContent).toContain(
+        'We will tell you when 6 people are ahead',
+      );
+    });
+
+    it('shows no promise when the server sent no alert number', () => {
+      const cardElement = renderTicketCard(waitingTicketWith({ alertAtPeopleAhead: null }));
+
+      expect(cardElement.textContent).not.toContain('We will tell you');
+    });
+
+    it('shows no promise once the turn is near', () => {
+      const cardElement = renderTicketCard(
+        waitingTicketWith({ turnIsNear: true, alertAtPeopleAhead: 6 }),
+      );
+
+      expect(cardElement.textContent).not.toContain('We will tell you');
+    });
+
+    it('shows no promise when no counter is open', () => {
+      const cardElement = renderTicketCard(
+        waitingTicketWith({ hasOpenCounter: false, alertAtPeopleAhead: 6 }),
+      );
+
+      expect(cardElement.textContent).not.toContain('We will tell you');
+    });
+
+    it('shows no promise for a called ticket', () => {
+      const calledTicket: ActiveTicket = {
+        ...ticketWithStatus('CALLED', 'Counter 2'),
+        alertAtPeopleAhead: 6,
+      };
+
+      const cardElement = renderTicketCard(calledTicket);
+
+      expect(cardElement.textContent).not.toContain('We will tell you');
+    });
   });
 });
