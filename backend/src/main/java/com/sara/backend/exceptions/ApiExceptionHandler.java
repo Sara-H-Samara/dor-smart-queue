@@ -72,6 +72,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         throw securityException;
     }
 
+    @ExceptionHandler(TooManyStreamsFromAddressException.class)
+    public ResponseEntity<Void> handleTooManyStreamsFromAddress() {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+    }
+
+    @ExceptionHandler(StreamCapacityReachedException.class)
+    public ResponseEntity<Void> handleStreamCapacityReached() {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleUnexpected(Exception exception) {
         LOGGER.error("Unexpected error", exception);

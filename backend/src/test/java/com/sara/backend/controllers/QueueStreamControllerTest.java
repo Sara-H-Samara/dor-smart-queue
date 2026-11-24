@@ -246,13 +246,13 @@ class QueueStreamControllerTest {
     }
 
     private ResultActions openStream(String path, String token) throws Exception {
-        return mockMvc.perform(get(path)
+        return streamTestHelper.performStreamRequest(mockMvc, get(path)
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .header("Authorization", "Bearer " + token));
     }
 
     private ResultActions openStreamWithoutToken(String path) throws Exception {
-        return mockMvc.perform(get(path).accept(MediaType.TEXT_EVENT_STREAM));
+        return streamTestHelper.performStreamRequest(mockMvc, get(path).accept(MediaType.TEXT_EVENT_STREAM));
     }
 
     private ResultActions completeStreamAndDispatchAsync(String path, String token) throws Exception {
