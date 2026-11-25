@@ -31,6 +31,7 @@ A university Student Affairs office with several services (for example course re
 - Role-based redirects after login (student, staff, admin).
 - Take a ticket: one active ticket (waiting or called) at a time per student, and only when the service has an open counter.
 - Student ticket screen: position, estimated wait (a fixed 5 minutes per person), called state with the counter name, leave the queue.
+- Turn alert: when taking a ticket the student chooses near, medium or far. The student ticket screen shows an alert when the number of people ahead reaches 1 (near), 3 (medium) or 6 (far). There is no alert when no counter is open or when the ticket is called.
 - Staff desk: choose a counter, call next, see the current student and the waiting list, mark done or no-show.
 - Admin screen: create, edit, turn on and turn off services and counters.
 - Waiting screen at `/waiting-room` (no login) showing who is served at each open counter and the next tickets.

@@ -196,8 +196,10 @@ Response `200`: active services only.
 Request:
 
 ```json
-{ "serviceId": 1 }
+{ "serviceId": 1, "distance": "MEDIUM" }
 ```
+
+`distance` is optional. It tells how far the student is from the counter. Allowed values: `NEAR`, `MEDIUM`, `FAR`. A missing or `null` value means `NEAR`.
 
 Response `201`:
 
@@ -208,7 +210,8 @@ Response `201`:
   "serviceId": 1,
   "serviceName": "Registration",
   "status": "WAITING",
-  "createdAt": "2026-01-15T09:30:00"
+  "createdAt": "2026-01-15T09:30:00",
+  "distance": "MEDIUM"
 }
 ```
 
@@ -216,6 +219,7 @@ Errors:
 
 | Status | Message |
 |---|---|
+| `400` | `The request body is not valid JSON.` (also for an unknown `distance` value) |
 | `400` | `This service is not available.` |
 | `404` | `Service not found.` |
 | `409` | `You already have an active ticket.` |
@@ -237,11 +241,20 @@ Response `200` for a waiting ticket:
   "peopleAhead": 1,
   "estimatedWaitMinutes": 10,
   "counterName": null,
-  "hasOpenCounter": true
+  "hasOpenCounter": true,
+  "distance": "MEDIUM",
+  "turnIsNear": true,
+  "alertAtPeopleAhead": 3
 }
 ```
 
 `estimatedWaitMinutes` is `position` times 5, and `null` when no counter is open.
+
+`turnIsNear` is decided by the server: it is `true` when `peopleAhead` is not more than `alertAtPeopleAhead`.
+
+`alertAtPeopleAhead` depends on `distance`: `NEAR` is 1, `MEDIUM` is 3 and `FAR` is 6 people ahead. The limits can be changed with the `dor.turn-alert.*` properties.
+
+`turnIsNear` is always `false` when no counter is open or the ticket is called.
 
 Response `200` for a called ticket:
 
@@ -254,7 +267,10 @@ Response `200` for a called ticket:
   "peopleAhead": null,
   "estimatedWaitMinutes": null,
   "counterName": "Counter 1",
-  "hasOpenCounter": true
+  "hasOpenCounter": true,
+  "distance": "MEDIUM",
+  "turnIsNear": false,
+  "alertAtPeopleAhead": null
 }
 ```
 
