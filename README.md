@@ -8,6 +8,7 @@ Dor is a digital queue for a university Student Affairs office. Paper queue numb
 
 - Register and log in.
 - Take a ticket for a service. A student can have only one active ticket (waiting or called) at a time. After it is done, no-show or cancelled, the student can take another. The ticket code looks like `R-001` and is numbered per service per day. A ticket can only be taken when the service has an open counter.
+- Choose how far you are from the counter (near, medium or far) when you take a ticket. The ticket screen tells you when your turn is near: 1 person ahead for near, 3 for medium, 6 for far.
 - See how many people are ahead and an estimated wait (a fixed 5 minutes per person).
 - See when the ticket is called and which counter to go to.
 - Leave the queue while the ticket is still waiting.
