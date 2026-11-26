@@ -22,9 +22,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -96,6 +100,10 @@ class StaffDeskControllerTest {
 
     private TicketStatus statusInDatabase(Ticket ticket) {
         return ticketRepository.findById(ticket.getId()).orElseThrow().getStatus();
+    }
+
+    private LocalDateTime finishedAtInDatabase(Ticket ticket) {
+        return ticketRepository.findById(ticket.getId()).orElseThrow().getFinishedAt();
     }
 
     @Test
@@ -353,6 +361,31 @@ class StaffDeskControllerTest {
     }
 
     @Test
+    @DisplayName("Marking a called ticket done saves the finish time")
+    void markDone_withCalledTicket_savesFinishedAtBetweenBeforeAndAfter() throws Exception {
+        Ticket called = calledTicketFor("a@example.com", 1);
+
+        LocalDateTime beforeRequest = LocalDateTime.now();
+        testHelper.markDone(staffToken, called.getId()).andExpect(status().isOk());
+        LocalDateTime afterRequest = LocalDateTime.now();
+
+        LocalDateTime finishedAt = finishedAtInDatabase(called);
+        assertNotNull(finishedAt);
+        assertFalse(finishedAt.isBefore(beforeRequest.truncatedTo(ChronoUnit.MILLIS)));
+        assertFalse(finishedAt.isAfter(afterRequest));
+    }
+
+    @Test
+    @DisplayName("A ticket that cannot be marked done keeps an empty finish time")
+    void markDone_withWaitingTicket_leavesFinishedAtEmpty() throws Exception {
+        Ticket waiting = waitingTicketFor("a@example.com", 1);
+
+        testHelper.markDone(staffToken, waiting.getId()).andExpect(status().isConflict());
+
+        assertNull(finishedAtInDatabase(waiting));
+    }
+
+    @Test
     @DisplayName("A called ticket from an earlier day can still be marked done")
     void markDone_withCalledTicketFromEarlierDay_returnsOk() throws Exception {
         testHelper.registerStudentAndLogin("a@example.com");
@@ -411,6 +444,16 @@ class StaffDeskControllerTest {
                 .andExpect(jsonPath("$.status").value("NO_SHOW"));
 
         assertEquals(TicketStatus.NO_SHOW, statusInDatabase(called));
+    }
+
+    @Test
+    @DisplayName("Marking a called ticket as no show leaves the finish time empty")
+    void markNoShow_withCalledTicket_leavesFinishedAtEmpty() throws Exception {
+        Ticket called = calledTicketFor("a@example.com", 1);
+
+        testHelper.markNoShow(staffToken, called.getId()).andExpect(status().isOk());
+
+        assertNull(finishedAtInDatabase(called));
     }
 
     @Test

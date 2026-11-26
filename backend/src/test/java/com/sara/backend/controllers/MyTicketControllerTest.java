@@ -27,7 +27,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -358,6 +360,80 @@ class MyTicketControllerTest {
                 .andExpect(jsonPath("$.position").value(3))
                 .andExpect(jsonPath("$.peopleAhead").value(2))
                 .andExpect(jsonPath("$.estimatedWaitMinutes").value(15));
+    }
+
+    @Test
+    @DisplayName("Enough finished tickets of the service set the wait from their average time")
+    void getActiveTicket_withThreeFinishedTicketsOfTenMinutes_returnsAverageTimesPosition() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        Counter window = testHelper.createCounter("Window 1", registration);
+        testHelper.registerStudentAndLogin("done@example.com");
+        for (int number = 1; number <= 3; number++) {
+            testHelper.createFinishedTicketForRegisteredStudent(
+                    "done@example.com", registration, number, window, Duration.ofMinutes(10));
+        }
+        ticketFor("a@example.com", registration, 4, LocalDate.now(), TicketStatus.WAITING);
+        ticketFor("b@example.com", registration, 5, LocalDate.now(), TicketStatus.WAITING);
+
+        me("b@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.position").value(2))
+                .andExpect(jsonPath("$.estimatedWaitMinutes").value(20));
+    }
+
+    @Test
+    @DisplayName("Only the latest ten finished tickets set the wait")
+    void getActiveTicket_withMoreThanTenFinishedTickets_usesOnlyTheLatestTen() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        Counter window = testHelper.createCounter("Window 1", registration);
+        testHelper.registerStudentAndLogin("done@example.com");
+        LocalDateTime twoHoursAgo = LocalDateTime.now().minusHours(2);
+        testHelper.createFinishedTicketForRegisteredStudent(
+                "done@example.com", registration, 1, window, twoHoursAgo.minusMinutes(50), twoHoursAgo);
+        for (int number = 2; number <= 11; number++) {
+            testHelper.createFinishedTicketForRegisteredStudent(
+                    "done@example.com", registration, number, window, Duration.ofMinutes(10));
+        }
+        ticketFor("a@example.com", registration, 12, LocalDate.now(), TicketStatus.WAITING);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estimatedWaitMinutes").value(10));
+    }
+
+    @Test
+    @DisplayName("Too few finished tickets keep the default wait")
+    void getActiveTicket_withTwoFinishedTickets_returnsDefaultMinutesTimesPosition() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        Counter window = testHelper.createCounter("Window 1", registration);
+        testHelper.registerStudentAndLogin("done@example.com");
+        for (int number = 1; number <= 2; number++) {
+            testHelper.createFinishedTicketForRegisteredStudent(
+                    "done@example.com", registration, number, window, Duration.ofMinutes(10));
+        }
+        ticketFor("a@example.com", registration, 3, LocalDate.now(), TicketStatus.WAITING);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estimatedWaitMinutes").value(5));
+    }
+
+    @Test
+    @DisplayName("Finished tickets of another service do not change the wait")
+    void getActiveTicket_withFinishedTicketsOfOtherService_returnsDefaultMinutesTimesPosition() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        ServiceType documents = createService("Documents", "D");
+        Counter window = testHelper.createCounter("Window 1", registration);
+        testHelper.registerStudentAndLogin("done@example.com");
+        for (int number = 1; number <= 3; number++) {
+            testHelper.createFinishedTicketForRegisteredStudent(
+                    "done@example.com", documents, number, window, Duration.ofMinutes(10));
+        }
+        ticketFor("a@example.com", registration, 1, LocalDate.now(), TicketStatus.WAITING);
+
+        me("a@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estimatedWaitMinutes").value(5));
     }
 
     @Test
