@@ -12,11 +12,15 @@ Authorization: Bearer <token>
 
 Roles: `STUDENT`, `STAFF`, `ADMIN`. A new account made with register is always a `STUDENT`.
 
+On every request with a token, the server checks the user and the role in the database. A token is only valid while the user exists and still has the role in the token. After a role change, the user must log in again to get a token with the new role.
+
 | Situation | Status |
 |---|---|
 | No token, or an invalid token | `401` |
+| Valid token, but the user no longer exists or the role in the token is not the role in the database | `401`, no body |
 | Valid token, wrong role | `403` |
-| Valid token, but the user no longer exists (student ticket endpoints) | `401` with the message `User not found.` |
+
+Endpoints that need no token, such as login and the public queue status, ignore an invalid or old token and answer as usual.
 
 ## Errors
 
@@ -500,7 +504,7 @@ Response `200` with `Content-Type: text/event-stream` and the header `X-Accel-Bu
 
 Errors: `401` for no token or an invalid token, `403` for a valid token with the wrong role. For example, an admin token on `/api/staff/stream` returns `403`. `429` when the client address already has too many open streams, `503` when the server has too many open streams in total. Both answers have no body. See [How many streams can be open](#how-many-streams-can-be-open).
 
-The token is checked only when the stream opens.
+The token is checked only when the stream opens. A stream that is already open stays open after the user is deleted or the role changes, until it closes. The next request or the next stream then gets `401`.
 
 ### Events
 
