@@ -9,7 +9,7 @@ Dor is a digital queue for a university Student Affairs office. Paper queue numb
 - Register and log in.
 - Take a ticket for a service. A student can have only one active ticket (waiting or called) at a time. After it is done, no-show or cancelled, the student can take another. The ticket code looks like `R-001` and is numbered per service per day. A ticket can only be taken when the service has an open counter.
 - Choose how far you are from the counter (near, medium or far) when you take a ticket. The ticket screen tells you when your turn is near: 1 person ahead for near, 3 for medium, 6 for far.
-- See how many people are ahead and an estimated wait (a fixed 5 minutes per person).
+- See how many people are ahead and an estimated wait (the average service time of the latest finished tickets of the same service today, 5 minutes per person until there are 3 usable tickets).
 - See when the ticket is called and which counter to go to.
 - Leave the queue while the ticket is still waiting.
 
@@ -185,7 +185,7 @@ Protected endpoints need the header `Authorization: Bearer <token>`. See [API.md
 - When an admin turns a service off, the tickets already waiting stay waiting. They disappear from the waiting screen and cannot be called. The student still sees the ticket and can leave the queue. If the service is turned on again, they come back.
 - There is no end-of-day close. Tickets belong to a date, and old waiting tickets are simply ignored the next day.
 - "Today" is the date of the server, so the server time zone decides when the ticket numbers start again.
-- The estimated wait is a fixed 5 minutes per person.
+- The estimated wait is the position times the average service time of the latest finished tickets of the same service today. The service time is measured from the call to Done, so it includes the walk to the counter. Services shorter than 30 seconds or longer than 60 minutes are ignored. Until there are 3 usable tickets, 5 minutes per person is used. The estimate does not consider how many counters are open. The numbers are set with the `dor.estimated-wait.*` properties (see `API.md`).
 - Live updates have no limit on the number of open streams, in total or for one user.
 - Live updates work with one server only. The open streams are kept in the memory of that server, so a second server would not tell the screens connected to the first.
 - A live stream sends only a signal that something changed. The screen must ask the server for the data. Events that came while a screen was disconnected are not sent again.
