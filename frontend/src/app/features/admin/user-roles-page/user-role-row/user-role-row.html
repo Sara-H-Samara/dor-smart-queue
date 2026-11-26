@@ -1,0 +1,24 @@
+<div class="list-row">
+  <span class="list-row-meta">
+    <span class="list-row-name">{{ user().fullName }}</span>
+    <span class="list-row-detail">{{ user().email }}</span>
+  </span>
+  <span class="state-chip role-chip">{{ roleLabels[user().role] }}</span>
+  @if (user().currentUser) {
+    <span class="own-row-note">
+      You
+      <span class="visually-hidden">You cannot change your own role.</span>
+    </span>
+  } @else {
+    <select
+      class="role-select"
+      [disabled]="isBusy()"
+      [attr.aria-label]="'Change role for ' + user().fullName"
+      (change)="onRoleSelected($event)"
+    >
+      @for (role of roles; track role) {
+        <option [value]="role" [selected]="role === user().role">{{ roleLabels[role] }}</option>
+      }
+    </select>
+  }
+</div>

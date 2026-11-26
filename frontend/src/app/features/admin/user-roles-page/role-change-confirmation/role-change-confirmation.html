@@ -1,0 +1,21 @@
+<dialog
+  #confirmation
+  class="role-change-confirmation"
+  aria-labelledby="role-change-heading"
+  aria-describedby="role-change-explanation"
+  (cancel)="onEscapePressed($event)"
+  (close)="onConfirmationClosed()"
+  (click)="onConfirmationClicked($event)"
+>
+  <h3 id="role-change-heading">{{ heading() }}</h3>
+  <p id="role-change-explanation">{{ explanation() }}</p>
+  <p>{{ signInNote() }}</p>
+  <div class="confirmation-actions">
+    <button #cancelButton class="btn btn-quiet btn-sm" type="button" (click)="cancel()">
+      Cancel
+    </button>
+    <button class="btn btn-sm confirm-button" type="button" (click)="confirm()">
+      {{ confirmLabel() }}
+    </button>
+  </div>
+</dialog>

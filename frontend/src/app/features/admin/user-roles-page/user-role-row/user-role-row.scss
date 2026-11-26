@@ -1,0 +1,55 @@
+@use '../../../../shared/styles/list-group';
+@use '../../../../shared/styles/state-chip';
+
+:host {
+  display: block;
+}
+
+.role-chip {
+  flex: 0 0 5rem;
+  justify-content: center;
+  color: var(--color-state-served-fg);
+  background: var(--color-state-served-bg);
+}
+
+.role-select {
+  flex: 0 0 auto;
+  width: 8rem;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.own-row-note {
+  flex: 0 0 auto;
+  width: 8rem;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 47.99rem) {
+  .list-row {
+    flex-wrap: wrap;
+    padding-bottom: var(--space-3);
+  }
+
+  .list-row-meta {
+    flex-basis: 100%;
+  }
+}

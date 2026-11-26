@@ -34,8 +34,6 @@ public class TicketServiceImpl implements TicketService {
 
     private static final TicketDistance DISTANCE_WHEN_NOT_CHOSEN = TicketDistance.NEAR;
 
-    private static final List<TicketStatus> ACTIVE_STATUSES = List.of(TicketStatus.WAITING, TicketStatus.CALLED);
-
     @Autowired
     private TicketRepository ticketRepository;
 
@@ -67,7 +65,8 @@ public class TicketServiceImpl implements TicketService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."));
 
         LocalDate today = LocalDate.now();
-        if (ticketRepository.existsByStudentIdAndTicketDateAndStatusIn(student.getId(), today, ACTIVE_STATUSES)) {
+        if (ticketRepository.existsByStudentIdAndTicketDateAndStatusIn(
+                student.getId(), today, TicketStatus.ACTIVE_STATUSES)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You already have an active ticket.");
         }
 
@@ -138,7 +137,7 @@ public class TicketServiceImpl implements TicketService {
         userRepository.findByIdWithWriteLock(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found."));
         Ticket ticket = ticketRepository.findActiveTicketOfStudentWithWriteLock(
-                        studentId, LocalDate.now(), ACTIVE_STATUSES)
+                        studentId, LocalDate.now(), TicketStatus.ACTIVE_STATUSES)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
 
         if (!ticket.getStatus().canChangeTo(TicketStatus.CANCELLED)) {
@@ -172,7 +171,7 @@ public class TicketServiceImpl implements TicketService {
         Long studentId = findStudentIdOrThrow(email);
 
         return ticketRepository.findFirstByStudentIdAndTicketDateAndStatusIn(
-                        studentId, LocalDate.now(), ACTIVE_STATUSES)
+                        studentId, LocalDate.now(), TicketStatus.ACTIVE_STATUSES)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You do not have an active ticket."));
     }
 }

@@ -83,6 +83,15 @@ public class TicketTestHelper {
         return loginAndGetToken("test-staff@example.com", "staff12345");
     }
 
+    public User createUserInDatabase(String fullName, String email, Role role) {
+        User user = new User();
+        user.setFullName(fullName);
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(STUDENT_PASSWORD));
+        user.setRole(role);
+        return userRepository.save(user);
+    }
+
     public void updateRoleInDatabase(String email, Role role) {
         User user = userRepository.findByEmail(email).orElseThrow();
         user.setRole(role);

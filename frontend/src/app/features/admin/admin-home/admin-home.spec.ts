@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
 import { environment } from '../../../../environments/environment';
 import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
@@ -28,7 +28,7 @@ describe('AdminHome', () => {
         provideHttpClientTesting(),
         { provide: LiveUpdateService, useValue: fakeLiveUpdateService },
         { provide: AuthService, useValue: {} },
-        { provide: Router, useValue: {} },
+        provideRouter([]),
       ],
     });
     httpTesting = TestBed.inject(HttpTestingController);
@@ -58,6 +58,15 @@ describe('AdminHome', () => {
   it('firstLoadRequest_afterTheFirstLoad_sendsNoSecondRequest', () => {
     httpTesting.expectNone(servicesUrl);
     httpTesting.expectNone(countersUrl);
+  });
+
+  it('shows a link to the users page', () => {
+    const usersLink = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      'a.users-link',
+    );
+
+    expect(usersLink?.textContent?.trim()).toBe('Manage users →');
+    expect(usersLink?.getAttribute('href')).toBe('/admin/users');
   });
 
   it('sends no request when no refresh is requested', () => {

@@ -36,6 +36,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/admin/admin-home/admin-home').then((m) => m.AdminHome),
   },
   {
+    path: 'admin/users',
+    canActivate: [authGuard, roleGuard('ADMIN')],
+    loadComponent: () =>
+      import('./features/admin/user-roles-page/user-roles-page').then((m) => m.UserRolesPage),
+  },
+  {
     path: 'waiting-room',
     loadComponent: () =>
       import('./features/waiting-screen/waiting-screen-page/waiting-screen-page').then(

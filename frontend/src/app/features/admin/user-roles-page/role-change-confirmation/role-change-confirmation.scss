@@ -1,0 +1,20 @@
+@use '../../../../shared/styles/modal-dialog';
+
+.role-change-confirmation {
+  @include modal-dialog.modal-dialog-shell;
+
+  p {
+    margin: 0 0 var(--space-3);
+  }
+
+  .confirmation-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    margin-top: var(--space-5);
+  }
+
+  .btn {
+    width: auto;
+  }
+}
