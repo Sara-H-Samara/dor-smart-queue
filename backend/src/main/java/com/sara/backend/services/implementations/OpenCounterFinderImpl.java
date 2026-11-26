@@ -15,7 +15,12 @@ public class OpenCounterFinderImpl implements OpenCounterFinder {
 
     @Override
     public boolean hasOpenCounter(Long serviceId) {
-        return findServiceIdsWithOpenCounter().contains(serviceId);
+        return countOpenCounters(serviceId) > 0;
+    }
+
+    @Override
+    public int countOpenCounters(Long serviceId) {
+        return Math.toIntExact(counterRepository.countOpenCountersOfService(serviceId));
     }
 
     @Override

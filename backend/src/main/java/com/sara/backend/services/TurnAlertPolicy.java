@@ -34,7 +34,14 @@ public class TurnAlertPolicy {
         };
     }
 
-    public boolean isTurnNear(int peopleAhead, TicketDistance distance) {
-        return peopleAhead <= peopleAheadLimitFor(distance);
+    public int alertAtPeopleAheadFor(TicketDistance distance, int openCounterCount) {
+        if (openCounterCount < 1) {
+            throw new IllegalArgumentException("The open counter count must be at least 1.");
+        }
+        return Math.multiplyExact(peopleAheadLimitFor(distance), openCounterCount);
+    }
+
+    public boolean isTurnNear(int peopleAhead, TicketDistance distance, int openCounterCount) {
+        return peopleAhead <= alertAtPeopleAheadFor(distance, openCounterCount);
     }
 }
