@@ -83,6 +83,12 @@ public class TicketTestHelper {
         return loginAndGetToken("test-staff@example.com", "staff12345");
     }
 
+    public void updateRoleInDatabase(String email, Role role) {
+        User user = userRepository.findByEmail(email).orElseThrow();
+        user.setRole(role);
+        userRepository.save(user);
+    }
+
     public ServiceType createActiveService(String name, String code) {
         ServiceType service = new ServiceType();
         service.setName(name);
