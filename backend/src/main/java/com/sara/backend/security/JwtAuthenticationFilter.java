@@ -1,5 +1,7 @@
 package com.sara.backend.security;
 
+import com.sara.backend.entities.Role;
+import com.sara.backend.repositories.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -24,6 +26,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
@@ -33,17 +38,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authorizationHeader.substring(BEARER_PREFIX.length());
             try {
                 Claims claims = jwtService.parseAndVerifyToken(token);
+                String email = claims.getSubject();
                 String role = claims.get(JwtService.ROLE_CLAIM, String.class);
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        claims.getSubject(), null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                if (hasRoleInDatabase(email, role)) {
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            email, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             } catch (JwtException | IllegalArgumentException invalidToken) {
                 SecurityContextHolder.clearContext();
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean hasRoleInDatabase(String email, String tokenRole) {
+        return userRepository.findRoleByEmail(email)
+                .map(Role::name)
+                .filter(databaseRole -> databaseRole.equals(tokenRole))
+                .isPresent();
     }
 }

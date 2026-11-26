@@ -1,5 +1,6 @@
 package com.sara.backend.repositories;
 
+import com.sara.backend.entities.Role;
 import com.sara.backend.entities.User;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +14,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    @Query("select u.role from User u where u.email = :email")
+    Optional<Role> findRoleByEmail(@Param("email") String email);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
