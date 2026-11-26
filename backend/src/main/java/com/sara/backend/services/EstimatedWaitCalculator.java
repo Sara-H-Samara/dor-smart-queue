@@ -49,17 +49,21 @@ public class EstimatedWaitCalculator {
         return recentTicketCount;
     }
 
-    public int estimateWaitMinutes(int position, List<Duration> recentServiceDurations) {
+    public int estimateWaitMinutes(int position, int openCounterCount, List<Duration> recentServiceDurations) {
+        if (openCounterCount < 1) {
+            throw new IllegalArgumentException("The open counter count must be at least 1.");
+        }
         List<Duration> usableDurations = recentServiceDurations.stream()
                 .filter(this::isUsableServiceDuration)
                 .toList();
         if (usableDurations.size() < minimumSamples) {
-            return position * defaultMinutesPerPerson;
+            return Math.ceilDiv(position * defaultMinutesPerPerson, openCounterCount);
         }
         long totalSeconds = usableDurations.stream().mapToLong(Duration::getSeconds).sum();
         long secondsForAllPositions = position * totalSeconds;
-        long divisorForAverageMinutes = (long) SECONDS_PER_MINUTE * usableDurations.size();
-        return (int) Math.ceilDiv(secondsForAllPositions, divisorForAverageMinutes);
+        long divisorForMinutesSharedByCounters =
+                (long) SECONDS_PER_MINUTE * usableDurations.size() * openCounterCount;
+        return (int) Math.ceilDiv(secondsForAllPositions, divisorForMinutesSharedByCounters);
     }
 
     private boolean isUsableServiceDuration(Duration serviceDuration) {

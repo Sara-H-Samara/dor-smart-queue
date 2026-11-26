@@ -346,6 +346,93 @@ class MyTicketControllerTest {
     }
 
     @Test
+    @DisplayName("Two open counters halve the wait estimate")
+    void getActiveTicket_withTwoOpenCounters_returnsHalvedEstimate() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        Counter window = testHelper.createCounter("Window 1", registration);
+        testHelper.createCounter("Window 2", registration);
+        finishedTicketsOfTenMinutes(registration, window);
+        ticketFor("a@example.com", registration, 4, LocalDate.now(), TicketStatus.WAITING);
+        ticketFor("b@example.com", registration, 5, LocalDate.now(), TicketStatus.WAITING);
+
+        me("b@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.position").value(2))
+                .andExpect(jsonPath("$.estimatedWaitMinutes").value(10));
+    }
+
+    @Test
+    @DisplayName("Two open counters double the people-ahead number of the alert")
+    void getActiveTicket_withTwoOpenCounters_returnsDoubledAlertLimit() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        testHelper.createCounter("Window 2", registration);
+        waitingTicketWithDistance(registration, 1, TicketDistance.FAR);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.alertAtPeopleAhead").value(12));
+    }
+
+    @Test
+    @DisplayName("A medium student with six people ahead and two open counters is told the turn is near")
+    void getActiveTicket_mediumWithSixAheadAndTwoOpenCounters_returnsTurnIsNearTrue() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        testHelper.createCounter("Window 2", registration);
+        waitingTicketsAhead(registration, 6);
+        waitingTicketWithDistance(registration, 7, TicketDistance.MEDIUM);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.peopleAhead").value(6))
+                .andExpect(jsonPath("$.turnIsNear").value(true));
+    }
+
+    @Test
+    @DisplayName("When every counter is closed there is no estimate and no alert limit")
+    void getActiveTicket_whenAllCountersClosed_returnsNoEstimateAndNoAlertLimit() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        testHelper.createInactiveCounter("Window 1", registration);
+        testHelper.createInactiveCounter("Window 2", registration);
+        waitingTicketWithDistance(registration, 1, TicketDistance.FAR);
+
+        me("student@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasOpenCounter").value(false))
+                .andExpect(jsonPath("$.turnIsNear").value(false))
+                .andExpect(jsonPath("$.estimatedWaitMinutes").isEmpty())
+                .andExpect(jsonPath("$.alertAtPeopleAhead").isEmpty());
+    }
+
+    @Test
+    @DisplayName("Opening a second counter makes the wait estimate shorter")
+    void getActiveTicket_afterSecondCounterOpens_returnsShorterEstimate() throws Exception {
+        ServiceType registration = createService("Registration", "R");
+        Counter window = testHelper.createCounter("Window 1", registration);
+        Counter secondWindow = testHelper.createInactiveCounter("Window 2", registration);
+        finishedTicketsOfTenMinutes(registration, window);
+        ticketFor("a@example.com", registration, 4, LocalDate.now(), TicketStatus.WAITING);
+        ticketFor("b@example.com", registration, 5, LocalDate.now(), TicketStatus.WAITING);
+        me("b@example.com").andExpect(jsonPath("$.estimatedWaitMinutes").value(20));
+
+        secondWindow.setActive(true);
+        counterRepository.save(secondWindow);
+
+        me("b@example.com")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estimatedWaitMinutes").value(10));
+    }
+
+    private void finishedTicketsOfTenMinutes(ServiceType service, Counter counter) throws Exception {
+        testHelper.registerStudentAndLogin("done@example.com");
+        for (int number = 1; number <= 3; number++) {
+            testHelper.createFinishedTicketForRegisteredStudent(
+                    "done@example.com", service, number, counter, Duration.ofMinutes(10));
+        }
+    }
+
+    @Test
     @DisplayName("The third student in line is at position three")
     void getActiveTicket_whenThirdInLine_returnsPositionThree() throws Exception {
         ServiceType registration = createService("Registration", "R");
@@ -367,11 +454,7 @@ class MyTicketControllerTest {
     void getActiveTicket_withThreeFinishedTicketsOfTenMinutes_returnsAverageTimesPosition() throws Exception {
         ServiceType registration = createService("Registration", "R");
         Counter window = testHelper.createCounter("Window 1", registration);
-        testHelper.registerStudentAndLogin("done@example.com");
-        for (int number = 1; number <= 3; number++) {
-            testHelper.createFinishedTicketForRegisteredStudent(
-                    "done@example.com", registration, number, window, Duration.ofMinutes(10));
-        }
+        finishedTicketsOfTenMinutes(registration, window);
         ticketFor("a@example.com", registration, 4, LocalDate.now(), TicketStatus.WAITING);
         ticketFor("b@example.com", registration, 5, LocalDate.now(), TicketStatus.WAITING);
 

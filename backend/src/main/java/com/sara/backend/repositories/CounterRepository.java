@@ -23,6 +23,10 @@ public interface CounterRepository extends JpaRepository<Counter, Long> {
     @Query("select distinct c.serviceType.id from Counter c where c.active = true and c.serviceType.active = true")
     Set<Long> findIdsOfServicesWithOpenCounter();
 
+    @Query("select count(c) from Counter c where c.serviceType.id = :serviceId"
+            + " and c.active = true and c.serviceType.active = true")
+    long countOpenCountersOfService(@Param("serviceId") Long serviceId);
+
     @Query("select new com.sara.backend.repositories.OpenCounterRow(c.id, c.name, c.serviceType.name)"
             + " from Counter c where c.active = true and c.serviceType.active = true order by c.id asc")
     List<OpenCounterRow> findOpenCounterRows();

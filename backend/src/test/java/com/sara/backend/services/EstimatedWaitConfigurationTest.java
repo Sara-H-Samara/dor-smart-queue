@@ -13,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Estimated wait configuration")
 class EstimatedWaitConfigurationTest {
 
+    private static final int ONE_OPEN_COUNTER = 1;
+
     private final ApplicationContextRunner contextRunner =
             new ApplicationContextRunner().withUserConfiguration(EstimatedWaitCalculator.class);
 
@@ -21,7 +23,7 @@ class EstimatedWaitConfigurationTest {
         contextRunner.run(context -> {
             EstimatedWaitCalculator calculator = context.getBean(EstimatedWaitCalculator.class);
             assertEquals(10, calculator.recentTicketCount());
-            assertEquals(10, calculator.estimateWaitMinutes(2, List.of()));
+            assertEquals(10, calculator.estimateWaitMinutes(2, ONE_OPEN_COUNTER, List.of()));
         });
     }
 
@@ -32,8 +34,8 @@ class EstimatedWaitConfigurationTest {
             List<Duration> twoSamples = List.of(Duration.ofMinutes(10), Duration.ofMinutes(10));
             List<Duration> threeSamples = List.of(
                     Duration.ofMinutes(10), Duration.ofMinutes(10), Duration.ofMinutes(10));
-            assertEquals(5, calculator.estimateWaitMinutes(1, twoSamples));
-            assertEquals(10, calculator.estimateWaitMinutes(1, threeSamples));
+            assertEquals(5, calculator.estimateWaitMinutes(1, ONE_OPEN_COUNTER, twoSamples));
+            assertEquals(10, calculator.estimateWaitMinutes(1, ONE_OPEN_COUNTER, threeSamples));
         });
     }
 
@@ -47,7 +49,7 @@ class EstimatedWaitConfigurationTest {
                     Duration.ofMinutes(10),
                     Duration.ofSeconds(29),
                     Duration.ofMinutes(61));
-            assertEquals(10, calculator.estimateWaitMinutes(1, durations));
+            assertEquals(10, calculator.estimateWaitMinutes(1, ONE_OPEN_COUNTER, durations));
         });
     }
 
@@ -63,12 +65,13 @@ class EstimatedWaitConfigurationTest {
                 .run(context -> {
                     EstimatedWaitCalculator calculator = context.getBean(EstimatedWaitCalculator.class);
                     assertEquals(4, calculator.recentTicketCount());
-                    assertEquals(16, calculator.estimateWaitMinutes(2, List.of(Duration.ofMinutes(40))));
+                    assertEquals(16, calculator.estimateWaitMinutes(
+                            2, ONE_OPEN_COUNTER, List.of(Duration.ofMinutes(40))));
                     List<Duration> twoSamples = List.of(Duration.ofMinutes(6), Duration.ofMinutes(6));
                     List<Duration> zeroLengthSampleIncluded = List.of(
                             Duration.ofMinutes(6), Duration.ofMinutes(6), Duration.ZERO);
-                    assertEquals(6, calculator.estimateWaitMinutes(1, twoSamples));
-                    assertEquals(4, calculator.estimateWaitMinutes(1, zeroLengthSampleIncluded));
+                    assertEquals(6, calculator.estimateWaitMinutes(1, ONE_OPEN_COUNTER, twoSamples));
+                    assertEquals(4, calculator.estimateWaitMinutes(1, ONE_OPEN_COUNTER, zeroLengthSampleIncluded));
                 });
     }
 

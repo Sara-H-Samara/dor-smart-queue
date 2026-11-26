@@ -24,7 +24,7 @@ public record ActiveTicketResponse(
             Integer estimatedWaitMinutes,
             boolean hasOpenCounter,
             boolean turnIsNear,
-            int alertAtPeopleAhead) {
+            Integer alertAtPeopleAhead) {
         int position = peopleAhead + 1;
         return new ActiveTicketResponse(
                 TicketResponse.formatTicketCode(ticket),

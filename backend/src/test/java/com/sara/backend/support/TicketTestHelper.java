@@ -106,6 +106,14 @@ public class TicketTestHelper {
         return counterRepository.save(counter);
     }
 
+    public Counter createInactiveCounter(String name, ServiceType service) {
+        Counter counter = new Counter();
+        counter.setName(name);
+        counter.setServiceType(service);
+        counter.setActive(false);
+        return counterRepository.save(counter);
+    }
+
     public Ticket createTicketForRegisteredStudent(
             String email, ServiceType service, int number, TicketStatus status) {
         Ticket ticket = new Ticket();

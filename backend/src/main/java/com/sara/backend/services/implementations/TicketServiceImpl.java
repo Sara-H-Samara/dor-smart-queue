@@ -112,16 +112,23 @@ public class TicketServiceImpl implements TicketService {
         Long serviceId = ticket.getServiceType().getId();
         int peopleAhead = (int) ticketRepository.countWaitingAhead(
                 serviceId, ticket.getTicketDate(), ticket.getNumber());
-        boolean hasOpenCounter = openCounterFinder.hasOpenCounter(serviceId);
-        boolean turnIsNear = hasOpenCounter && turnAlertPolicy.isTurnNear(peopleAhead, ticket.getDistance());
-        Integer estimatedWaitMinutes = hasOpenCounter ? estimateWaitMinutes(ticket, peopleAhead) : null;
+        int openCounterCount = openCounterFinder.countOpenCounters(serviceId);
+        boolean hasOpenCounter = openCounterCount > 0;
+        boolean turnIsNear = hasOpenCounter
+                && turnAlertPolicy.isTurnNear(peopleAhead, ticket.getDistance(), openCounterCount);
+        Integer estimatedWaitMinutes = hasOpenCounter
+                ? estimateWaitMinutes(ticket, peopleAhead, openCounterCount)
+                : null;
+        Integer alertAtPeopleAhead = hasOpenCounter
+                ? turnAlertPolicy.alertAtPeopleAheadFor(ticket.getDistance(), openCounterCount)
+                : null;
         return ActiveTicketResponse.forWaitingTicket(
                 ticket,
                 peopleAhead,
                 estimatedWaitMinutes,
                 hasOpenCounter,
                 turnIsNear,
-                turnAlertPolicy.peopleAheadLimitFor(ticket.getDistance()));
+                alertAtPeopleAhead);
     }
 
     @Override
@@ -143,7 +150,7 @@ public class TicketServiceImpl implements TicketService {
         queueChangeAnnouncer.announceTicketChanged();
     }
 
-    private int estimateWaitMinutes(Ticket ticket, int peopleAhead) {
+    private int estimateWaitMinutes(Ticket ticket, int peopleAhead, int openCounterCount) {
         List<Duration> recentServiceDurations = ticketRepository
                 .findRecentFinishedTicketRowsOfService(
                         ticket.getServiceType().getId(),
@@ -152,7 +159,7 @@ public class TicketServiceImpl implements TicketService {
                 .stream()
                 .map(FinishedTicketRow::serviceDuration)
                 .toList();
-        return estimatedWaitCalculator.estimateWaitMinutes(peopleAhead + 1, recentServiceDurations);
+        return estimatedWaitCalculator.estimateWaitMinutes(peopleAhead + 1, openCounterCount, recentServiceDurations);
     }
 
     private Long findStudentIdOrThrow(String email) {

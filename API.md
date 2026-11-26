@@ -248,7 +248,9 @@ Response `200` for a waiting ticket:
 }
 ```
 
-`estimatedWaitMinutes` is `position` times the average service time, rounded up to whole minutes. It is `null` when no counter is open.
+`estimatedWaitMinutes` is `position` times the average service time, divided by the number of open counters of the service, rounded up to whole minutes. It is `null` when no counter is open.
+
+An open counter is a counter that is on, of a service that is on. The server does not know if a staff member is really at the counter.
 
 The average service time is the average of the latest finished (`DONE`) tickets of the same service today. The service time of a ticket is measured from the call to Done. Services shorter than 30 seconds or longer than 60 minutes are ignored. Until there are 3 usable tickets, the default of 5 minutes per person is used. The server calculates the number. The screen only shows it.
 
@@ -266,9 +268,19 @@ The server does not start when a property is not valid.
 
 `turnIsNear` is decided by the server: it is `true` when `peopleAhead` is not more than `alertAtPeopleAhead`.
 
-`alertAtPeopleAhead` depends on `distance`: `NEAR` is 1, `MEDIUM` is 3 and `FAR` is 6 people ahead. The limits can be changed with the `dor.turn-alert.*` properties.
+`alertAtPeopleAhead` is the limit of the `distance` times the number of open counters of the service. The limits are `NEAR` 1, `MEDIUM` 3 and `FAR` 6 people ahead. They can be changed with the `dor.turn-alert.*` properties. A limit of 0 stays 0 for any number of counters.
+
+`alertAtPeopleAhead` is `null` when no counter is open or the ticket is called.
 
 `turnIsNear` is always `false` when no counter is open or the ticket is called.
+
+Examples with an average service time of 4 minutes, a ticket at `position` 6 (5 people ahead) and `distance` `MEDIUM`:
+
+| Open counters | `estimatedWaitMinutes` | `alertAtPeopleAhead` | `turnIsNear` |
+|---|---|---|---|
+| 1 | 24 | 3 | `false` |
+| 2 | 12 | 6 | `true` |
+| 0 | `null` | `null` | `false` |
 
 Response `200` for a called ticket:
 

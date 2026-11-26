@@ -146,6 +146,40 @@ class OpenCounterFinderTest {
         assertEquals(Set.of(registration.getId()), openCounterFinder.findServiceIdsWithOpenCounter());
     }
 
+    @Test
+    @DisplayName("Only the active counters of a service are counted")
+    void countOpenCounters_withInactiveCounter_countsOnlyActive() {
+        ServiceType registration = testHelper.createActiveService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        testHelper.createCounter("Window 2", registration);
+        deactivate(testHelper.createCounter("Window 3", registration));
+
+        assertEquals(2, openCounterFinder.countOpenCounters(registration.getId()));
+    }
+
+    @Test
+    @DisplayName("Active counters of an inactive service are not counted")
+    void countOpenCounters_withInactiveService_returnsZero() {
+        ServiceType registration = testHelper.createActiveService("Registration", "R");
+        testHelper.createCounter("Window 1", registration);
+        registration.setActive(false);
+        serviceTypeRepository.save(registration);
+
+        assertEquals(0, openCounterFinder.countOpenCounters(registration.getId()));
+    }
+
+    @Test
+    @DisplayName("Open counters of another service are not counted")
+    void countOpenCounters_withCounterOfOtherService_doesNotCountIt() {
+        ServiceType registration = testHelper.createActiveService("Registration", "R");
+        ServiceType payments = testHelper.createActiveService("Payments", "P");
+        testHelper.createCounter("Window 1", registration);
+        testHelper.createCounter("Window 2", payments);
+        testHelper.createCounter("Window 3", payments);
+
+        assertEquals(1, openCounterFinder.countOpenCounters(registration.getId()));
+    }
+
     private void deactivate(Counter counter) {
         counter.setActive(false);
         counterRepository.save(counter);
