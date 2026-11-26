@@ -8,27 +8,29 @@ import com.sara.backend.entities.Ticket;
 import com.sara.backend.entities.TicketDistance;
 import com.sara.backend.entities.TicketStatus;
 import com.sara.backend.entities.User;
+import com.sara.backend.repositories.FinishedTicketRow;
 import com.sara.backend.repositories.ServiceTypeRepository;
 import com.sara.backend.repositories.TicketRepository;
 import com.sara.backend.repositories.UserRepository;
+import com.sara.backend.services.EstimatedWaitCalculator;
 import com.sara.backend.services.OpenCounterFinder;
 import com.sara.backend.services.TicketService;
 import com.sara.backend.services.TurnAlertPolicy;
 import com.sara.backend.streams.QueueChangeAnnouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class TicketServiceImpl implements TicketService {
-
-    private static final int ESTIMATED_MINUTES_PER_PERSON = 5;
 
     private static final TicketDistance DISTANCE_WHEN_NOT_CHOSEN = TicketDistance.NEAR;
 
@@ -48,6 +50,9 @@ public class TicketServiceImpl implements TicketService {
 
     @Autowired
     private TurnAlertPolicy turnAlertPolicy;
+
+    @Autowired
+    private EstimatedWaitCalculator estimatedWaitCalculator;
 
     @Autowired
     private QueueChangeAnnouncer queueChangeAnnouncer;
@@ -109,10 +114,11 @@ public class TicketServiceImpl implements TicketService {
                 serviceId, ticket.getTicketDate(), ticket.getNumber());
         boolean hasOpenCounter = openCounterFinder.hasOpenCounter(serviceId);
         boolean turnIsNear = hasOpenCounter && turnAlertPolicy.isTurnNear(peopleAhead, ticket.getDistance());
+        Integer estimatedWaitMinutes = hasOpenCounter ? estimateWaitMinutes(ticket, peopleAhead) : null;
         return ActiveTicketResponse.forWaitingTicket(
                 ticket,
                 peopleAhead,
-                ESTIMATED_MINUTES_PER_PERSON,
+                estimatedWaitMinutes,
                 hasOpenCounter,
                 turnIsNear,
                 turnAlertPolicy.peopleAheadLimitFor(ticket.getDistance()));
@@ -135,6 +141,18 @@ public class TicketServiceImpl implements TicketService {
         ticket.setStatus(TicketStatus.CANCELLED);
         ticketRepository.save(ticket);
         queueChangeAnnouncer.announceTicketChanged();
+    }
+
+    private int estimateWaitMinutes(Ticket ticket, int peopleAhead) {
+        List<Duration> recentServiceDurations = ticketRepository
+                .findRecentFinishedTicketRowsOfService(
+                        ticket.getServiceType().getId(),
+                        ticket.getTicketDate(),
+                        PageRequest.of(0, estimatedWaitCalculator.recentTicketCount()))
+                .stream()
+                .map(FinishedTicketRow::serviceDuration)
+                .toList();
+        return estimatedWaitCalculator.estimateWaitMinutes(peopleAhead + 1, recentServiceDurations);
     }
 
     private Long findStudentIdOrThrow(String email) {

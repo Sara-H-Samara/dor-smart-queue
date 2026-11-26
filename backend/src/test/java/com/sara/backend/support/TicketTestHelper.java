@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -126,6 +127,33 @@ public class TicketTestHelper {
         ticket.setStatus(TicketStatus.CALLED);
         ticket.setCounter(counter);
         ticket.setCalledAt(LocalDateTime.now());
+        return ticketRepository.save(ticket);
+    }
+
+    public Ticket createCalledTicketCalledAtForRegisteredStudent(
+            String email, ServiceType service, int number, Counter counter, LocalDateTime calledAt) {
+        Ticket ticket = createCalledTicketForRegisteredStudent(email, service, number, counter);
+        ticket.setCalledAt(calledAt);
+        return ticketRepository.save(ticket);
+    }
+
+    public Ticket createFinishedTicketForRegisteredStudent(
+            String email, ServiceType service, int number, Counter counter, Duration serviceDuration) {
+        LocalDateTime finishedAt = LocalDateTime.now();
+        return createFinishedTicketForRegisteredStudent(
+                email, service, number, counter, finishedAt.minus(serviceDuration), finishedAt);
+    }
+
+    public Ticket createFinishedTicketForRegisteredStudent(
+            String email,
+            ServiceType service,
+            int number,
+            Counter counter,
+            LocalDateTime calledAt,
+            LocalDateTime finishedAt) {
+        Ticket ticket = createCalledTicketCalledAtForRegisteredStudent(email, service, number, counter, calledAt);
+        ticket.setStatus(TicketStatus.DONE);
+        ticket.setFinishedAt(finishedAt);
         return ticketRepository.save(ticket);
     }
 

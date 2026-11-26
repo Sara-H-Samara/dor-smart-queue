@@ -113,6 +113,9 @@ public class StaffDeskServiceImpl implements StaffDeskService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, rejectionMessage);
         }
         ticket.setStatus(newStatus);
+        if (newStatus == TicketStatus.DONE) {
+            ticket.setFinishedAt(LocalDateTime.now());
+        }
         Ticket changedTicket = ticketRepository.save(ticket);
         queueChangeAnnouncer.announceTicketChanged();
         return CalledTicketResponse.from(changedTicket);

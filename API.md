@@ -248,7 +248,21 @@ Response `200` for a waiting ticket:
 }
 ```
 
-`estimatedWaitMinutes` is `position` times 5, and `null` when no counter is open.
+`estimatedWaitMinutes` is `position` times the average service time, rounded up to whole minutes. It is `null` when no counter is open.
+
+The average service time is the average of the latest finished (`DONE`) tickets of the same service today. The service time of a ticket is measured from the call to Done. Services shorter than 30 seconds or longer than 60 minutes are ignored. Until there are 3 usable tickets, the default of 5 minutes per person is used. The server calculates the number. The screen only shows it.
+
+The numbers can be changed with these properties:
+
+| Property | Default | Meaning |
+|---|---|---|
+| `dor.estimated-wait.default-minutes` | `5` | Minutes per person when there are not enough usable tickets. At least 1. |
+| `dor.estimated-wait.recent-count` | `10` | How many of the latest finished tickets are read. At least 1. |
+| `dor.estimated-wait.minimum-samples` | `3` | How many usable tickets are needed before the average is used. At least 1 and not more than `recent-count`. |
+| `dor.estimated-wait.shortest-service-seconds` | `30` | Services shorter than this are ignored. Not negative. |
+| `dor.estimated-wait.longest-service-minutes` | `60` | Services longer than this are ignored. Must be longer than the shortest service. |
+
+The server does not start when a property is not valid.
 
 `turnIsNear` is decided by the server: it is `true` when `peopleAhead` is not more than `alertAtPeopleAhead`.
 

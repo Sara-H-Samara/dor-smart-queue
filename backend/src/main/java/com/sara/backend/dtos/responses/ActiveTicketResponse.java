@@ -21,7 +21,7 @@ public record ActiveTicketResponse(
     public static ActiveTicketResponse forWaitingTicket(
             Ticket ticket,
             int peopleAhead,
-            int minutesPerPerson,
+            Integer estimatedWaitMinutes,
             boolean hasOpenCounter,
             boolean turnIsNear,
             int alertAtPeopleAhead) {
@@ -32,7 +32,7 @@ public record ActiveTicketResponse(
                 ticket.getStatus(),
                 position,
                 peopleAhead,
-                hasOpenCounter ? position * minutesPerPerson : null,
+                estimatedWaitMinutes,
                 null,
                 hasOpenCounter,
                 ticket.getDistance(),

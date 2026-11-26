@@ -36,6 +36,9 @@ public class Ticket {
     @Column(name = "called_at")
     private LocalDateTime calledAt;
 
+    @Column(name = "finished_at")
+    private LocalDateTime finishedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TicketStatus status = TicketStatus.WAITING;
@@ -77,6 +80,9 @@ public class Ticket {
 
     public LocalDateTime getCalledAt() { return calledAt; }
     public void setCalledAt(LocalDateTime calledAt) { this.calledAt = calledAt; }
+
+    public LocalDateTime getFinishedAt() { return finishedAt; }
+    public void setFinishedAt(LocalDateTime finishedAt) { this.finishedAt = finishedAt; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
