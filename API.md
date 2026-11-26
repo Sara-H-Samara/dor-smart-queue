@@ -62,7 +62,7 @@ A ticket code is the service code, a dash and the number with three digits, for 
 
 ## Endpoints
 
-25 endpoints in total.
+27 endpoints in total.
 
 ### Public (4)
 
@@ -95,7 +95,7 @@ A ticket code is the service code, a dash and the number with three digits, for 
 | POST | `/api/tickets/{ticketId}/no-show` | Mark a called ticket as no-show |
 | GET | `/api/staff/stream` | Live updates for the staff desk |
 
-### Admin (9)
+### Admin (11)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -108,6 +108,8 @@ A ticket code is the service code, a dash and the number with three digits, for 
 | POST | `/api/admin/counters` | Create a counter |
 | PUT | `/api/admin/counters/{id}` | Change name and service of a counter |
 | PATCH | `/api/admin/counters/{id}/active` | Turn a counter on or off |
+| GET | `/api/admin/users` | List users, with search and pages |
+| PATCH | `/api/admin/users/{id}/role` | Change the role of a user |
 
 ## Public endpoints
 
@@ -485,6 +487,73 @@ Response `200`: the counter.
 
 Errors: `400` invalid fields, `404` `Counter not found.`, `409` `Finish the called student first.` (when turning off while a student is called at the counter)
 
+## Admin: users
+
+Only `ADMIN` can use these two endpoints. The answers never contain the password hash.
+
+### GET /api/admin/users
+
+Query parameters:
+
+| Parameter | Default | Rule |
+|---|---|---|
+| `search` | empty | Optional. Trimmed. Matches part of the name or the email, upper or lower case. `%` and `_` match only themselves. At most 100 characters. Empty means all users. |
+| `page` | `0` | The page number, starting at `0`. |
+| `size` | `20` | Users per page, `1` to `100`. |
+
+The list is always sorted by `fullName`, then by `id`. Other parameters, such as `sort`, are ignored.
+
+Response `200`:
+
+```json
+{
+  "users": [
+    { "id": 2, "fullName": "Desk Staff", "email": "staff@dor.com", "role": "STAFF", "currentUser": false },
+    { "id": 1, "fullName": "Office Admin", "email": "admin@dor.com", "role": "ADMIN", "currentUser": true }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalUsers": 2,
+  "totalPages": 1
+}
+```
+
+`currentUser` is `true` only for the admin who sent the request.
+
+Errors:
+
+| Status | Message |
+|---|---|
+| `400` | `Page must be 0 or more.` |
+| `400` | `Size must be 1 to 100.` |
+| `400` | `Search must be at most 100 characters.` |
+
+### PATCH /api/admin/users/{id}/role
+
+Request:
+
+```json
+{ "role": "STAFF" }
+```
+
+`role`: `STUDENT`, `STAFF` or `ADMIN`, in capital letters.
+
+Response `200`: the user, in the same shape as one row of the list. When the user already has this role, the answer is `200` with the unchanged user, and nothing is saved.
+
+| Status | When | Message |
+|---|---|---|
+| `400` | `role` is missing, empty or not one of the three roles | `Invalid value for: role.` |
+| `401` | The admin who sent the request is no longer an admin, for example after another admin changed their role at the same time | no body |
+| `404` | No user has this id | `User not found.` |
+| `409` | The admin tries to change their own role | `You cannot change your own role.` |
+| `409` | The user is a student with a waiting or called ticket today | `Cancel or finish this student's ticket first.` |
+
+At least one admin always remains, because an admin cannot change their own role.
+
+After a role change, the old token of the changed user gets `401` on the next request (see [Authentication](#authentication)). The user must sign in again to get a token with the new role.
+
+A role change sends no live update event.
+
 ## Live updates
 
 The server can tell a screen when the queue changes, so the screen does not need to ask again and again. It uses server-sent events: one long GET request that stays open and receives small events. The polling endpoints above still work and are not changed.
@@ -541,7 +610,7 @@ The screen must ask again after every `ready`. Events that came while the screen
 
 ### When events are sent
 
-An event is sent only after the change is saved in the database. A request that fails sends nothing. This includes `400`, `404` and `409` answers, and `call-next` when nobody is waiting (`204`).
+An event is sent only after the change is saved in the database. A request that fails sends nothing. This includes `400`, `404` and `409` answers, and `call-next` when nobody is waiting (`204`). A role change (`PATCH /api/admin/users/{id}/role`) never sends an event.
 
 ### How long a stream stays open
 

@@ -1,5 +1,5 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { LiveUpdateService } from '../../../core/live-updates/live-update.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -9,7 +9,7 @@ import { SectionOption, SectionSwitch } from './section-switch/section-switch';
 
 @Component({
   selector: 'app-admin-home',
-  imports: [CatalogPanel, PageHeader, SectionSwitch],
+  imports: [CatalogPanel, PageHeader, RouterLink, SectionSwitch],
   templateUrl: './admin-home.html',
   styleUrl: './admin-home.scss',
 })

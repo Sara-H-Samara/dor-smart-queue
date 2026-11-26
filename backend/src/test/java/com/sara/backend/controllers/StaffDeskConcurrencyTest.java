@@ -23,17 +23,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
+import static com.sara.backend.support.SimultaneousRequests.runAtTheSameTime;
+import static com.sara.backend.support.SimultaneousRequests.statusesOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -98,43 +94,8 @@ class StaffDeskConcurrencyTest {
         ticketRepository.deleteAll();
     }
 
-    private List<MockHttpServletResponse> runAtTheSameTime(List<Callable<MockHttpServletResponse>> requests)
-            throws Exception {
-        ExecutorService executor = Executors.newFixedThreadPool(requests.size());
-        CountDownLatch startSignal = new CountDownLatch(1);
-        try {
-            List<Future<MockHttpServletResponse>> pendingResponses = new ArrayList<>();
-            for (Callable<MockHttpServletResponse> request : requests) {
-                pendingResponses.add(executor.submit(() -> {
-                    startSignal.await();
-                    return request.call();
-                }));
-            }
-            startSignal.countDown();
-            List<MockHttpServletResponse> responses = new ArrayList<>();
-            for (Future<MockHttpServletResponse> pendingResponse : pendingResponses) {
-                responses.add(getOrRethrow(pendingResponse));
-            }
-            return responses;
-        } finally {
-            executor.shutdownNow();
-        }
-    }
-
-    private MockHttpServletResponse getOrRethrow(Future<MockHttpServletResponse> pendingResponse) throws Exception {
-        try {
-            return pendingResponse.get();
-        } catch (ExecutionException failure) {
-            throw new AssertionError("A concurrent request failed", failure.getCause());
-        }
-    }
-
     private Callable<MockHttpServletResponse> callNextRequest(Counter counter) {
         return () -> testHelper.callNext(staffToken, counter.getId()).andReturn().getResponse();
-    }
-
-    private List<Integer> statusesOf(List<MockHttpServletResponse> responses) {
-        return responses.stream().map(MockHttpServletResponse::getStatus).sorted().toList();
     }
 
     private long ticketIdOf(MockHttpServletResponse response) throws Exception {

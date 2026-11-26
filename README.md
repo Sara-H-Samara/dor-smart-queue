@@ -24,6 +24,7 @@ Dor is a digital queue for a university Student Affairs office. Paper queue numb
 
 - Create, edit, turn on and turn off services (a name and a code of 1 or 2 letters).
 - Create, edit, turn on and turn off counters. Each counter belongs to one service.
+- See all users, search them by name or email, and change a user's role (student, staff or admin). An admin cannot change their own role.
 
 **Waiting screen** (`/waiting-room`, no login)
 

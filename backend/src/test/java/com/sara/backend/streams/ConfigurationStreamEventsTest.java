@@ -2,7 +2,9 @@ package com.sara.backend.streams;
 
 import com.sara.backend.configurations.DataSeeder;
 import com.sara.backend.entities.Counter;
+import com.sara.backend.entities.Role;
 import com.sara.backend.entities.ServiceType;
+import com.sara.backend.entities.User;
 import com.sara.backend.repositories.CounterRepository;
 import com.sara.backend.repositories.ServiceTypeRepository;
 import com.sara.backend.repositories.TicketRepository;
@@ -184,6 +186,17 @@ class ConfigurationStreamEventsTest {
                 .andExpect(status().isOk());
 
         streamTestHelper.assertConfigurationChangedReceivedOnceByEveryAudience(streams);
+    }
+
+    @Test
+    void changeRole_asAdmin_sendsNoStreamEvent() throws Exception {
+        User otherStudent = ticketTestHelper.createUserInDatabase("Other", "other@example.com", Role.STUDENT);
+        OpenStreams streams = openStreamOfEveryAudience();
+
+        sendAsAdmin(patch("/api/admin/users/{id}/role", otherStudent.getId()), "{\"role\":\"STAFF\"}")
+                .andExpect(status().isOk());
+
+        assertOnlyControlEventWasSent(streams);
     }
 
     @Test

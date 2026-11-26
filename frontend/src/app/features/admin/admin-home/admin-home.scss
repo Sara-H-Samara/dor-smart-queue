@@ -15,9 +15,15 @@
 
 .lede {
   max-width: 46ch;
-  margin: 0 0 var(--space-6);
+  margin: 0 0 var(--space-3);
   color: var(--color-text-muted);
   text-wrap: pretty;
+}
+
+.users-link {
+  display: inline-block;
+  margin-bottom: var(--space-6);
+  color: var(--color-link);
 }
 
 .panels {

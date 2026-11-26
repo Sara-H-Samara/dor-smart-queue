@@ -1,0 +1,92 @@
+<div class="admin-screen">
+  <app-page-header [showSignOut]="true" (signOutRequested)="signOut()" />
+
+  <main class="admin-main">
+    <a class="back-link" routerLink="/admin">← Services and counters</a>
+    <h1>Users</h1>
+    <p class="lede">See every account and change its role.</p>
+
+    <div class="field search-field">
+      <label for="user-search">Search by name or email</label>
+      <input
+        id="user-search"
+        type="search"
+        maxlength="100"
+        autocomplete="off"
+        [formControl]="searchControl"
+      />
+    </div>
+
+    @if (successMessage(); as message) {
+      <p class="notice success-message" role="status">{{ message }}</p>
+    }
+    @if (changeErrorMessage(); as message) {
+      <p class="alert change-error" role="alert">{{ message }}</p>
+    }
+
+    @if (loadErrorMessage(); as message) {
+      <div class="load-error">
+        <p class="alert" role="alert">{{ message }}</p>
+        <button class="btn btn-quiet btn-sm retry-button" type="button" (click)="retryLoading()">
+          Try again
+        </button>
+      </div>
+    } @else if (!hasLoaded()) {
+      <p class="notice" role="status">Loading users…</p>
+    } @else if (users().length === 0) {
+      <div class="empty-state">
+        @if (loadedSearch()) {
+          <p class="empty-state-title">No users match "{{ loadedSearch() }}"</p>
+          <button class="btn btn-quiet btn-sm clear-search" type="button" (click)="clearSearch()">
+            Clear search
+          </button>
+        } @else {
+          <p class="empty-state-title">No users yet</p>
+        }
+      </div>
+    } @else {
+      <div class="list-group">
+        <div class="list-row column-headings" aria-hidden="true">
+          <span class="list-row-meta">User</span>
+          <span class="column-role">Role</span>
+          <span class="column-action">Change role</span>
+        </div>
+        @for (user of users(); track user.id) {
+          <app-user-role-row
+            [user]="user"
+            [isBusy]="rowsAreBusy()"
+            (roleChangeRequested)="requestRoleChange(user, $event)"
+          />
+        }
+      </div>
+      <div class="paging">
+        <p class="list-group-footer">{{ userCountText() }}</p>
+        <div class="paging-controls">
+          <button
+            class="btn btn-quiet btn-sm previous-page"
+            type="button"
+            [disabled]="isFirstPage() || isLoading()"
+            (click)="goToPreviousPage()"
+          >
+            ‹ Previous
+          </button>
+          <span class="page-number">Page {{ currentPage() + 1 }} of {{ totalPages() }}</span>
+          <button
+            class="btn btn-quiet btn-sm next-page"
+            type="button"
+            [disabled]="isLastPage() || isLoading()"
+            (click)="goToNextPage()"
+          >
+            Next ›
+          </button>
+        </div>
+      </div>
+    }
+  </main>
+
+  <app-role-change-confirmation
+    [pendingChange]="pendingRoleChange()"
+    (confirmed)="confirmRoleChange()"
+    (cancelled)="cancelRoleChange()"
+  />
+</div>
